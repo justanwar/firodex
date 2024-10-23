@@ -1,0 +1,399 @@
+import 'package:app_theme/app_theme.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:komodo_ui_kit/komodo_ui_kit.dart';
+import 'package:web_dex/blocs/blocs.dart';
+import 'package:web_dex/common/screen.dart';
+import 'package:web_dex/generated/codegen_loader.g.dart';
+import 'package:web_dex/mm2/mm2_api/rpc/my_tx_history/transaction.dart';
+import 'package:web_dex/model/coin.dart';
+
+import 'package:web_dex/shared/utils/formatters.dart';
+import 'package:web_dex/shared/utils/utils.dart';
+import 'package:web_dex/shared/widgets/copied_text.dart';
+
+class TransactionDetails extends StatelessWidget {
+  const TransactionDetails({
+    Key? key,
+    required this.transaction,
+    required this.onClose,
+    required this.coin,
+  }) : super(key: key);
+
+  final Transaction transaction;
+  final void Function() onClose;
+  final Coin coin;
+
+  @override
+  Widget build(BuildContext context) {
+    final EdgeInsets padding = EdgeInsets.only(
+        top: isMobile ? 16 : 0,
+        left: 16,
+        right: 16,
+        bottom: isMobile ? 20 : 30);
+    final scrollController = ScrollController();
+
+    return DexScrollbar(
+      isMobile: isMobile,
+      scrollController: scrollController,
+      child: SingleChildScrollView(
+        controller: scrollController,
+        child: Row(
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 550),
+                padding: padding,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.fromLTRB(0, 26, 0, 24),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        color: theme.custom.subCardBackgroundColor,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            LocaleKeys.transactionDetailsTitle.tr(),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontSize: 18),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: CoinIcon(coin.abbr, size: 32),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: SelectableText(coin.name),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: _buildBalanceChanges(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 30,
+                    ),
+                    _buildSimpleData(
+                      context,
+                      title: LocaleKeys.date.tr(),
+                      value: transaction.formattedTime,
+                      hasBackground: true,
+                    ),
+                    _buildFee(context),
+                    _buildMemo(context),
+                    _buildSimpleData(
+                      context,
+                      title: LocaleKeys.confirmations.tr(),
+                      value: transaction.confirmations.toString(),
+                      hasBackground: true,
+                    ),
+                    _buildSimpleData(
+                      context,
+                      title: LocaleKeys.blockHeight.tr(),
+                      value: transaction.blockHeight.toString(),
+                    ),
+                    _buildSimpleData(
+                      context,
+                      title: LocaleKeys.transactionHash.tr(),
+                      value: transaction.txHash,
+                      isCopied: true,
+                    ),
+                    const SizedBox(height: 20),
+                    _buildAddresses(isMobile, context),
+                    _buildControls(context, isMobile),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddress(BuildContext context,
+      {required String title, required String address}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style:
+                Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 14),
+          ),
+          const SizedBox(width: 8),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
+            child: CopiedText(
+              copiedValue: address,
+              isTruncated: true,
+              padding: const EdgeInsets.symmetric(
+                vertical: 8,
+                horizontal: 16,
+              ),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAddresses(bool isMobile, BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(bottom: 10),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildAddress(
+                  context,
+                  title: LocaleKeys.from.tr(),
+                  address: transaction.from.first,
+                ),
+                _buildAddress(
+                  context,
+                  title: LocaleKeys.to.tr(),
+                  address: transaction.toAddress,
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.centerLeft,
+                    child: _buildAddress(
+                      context,
+                      title: LocaleKeys.from.tr(),
+                      address: transaction.from.first,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    alignment: Alignment.centerLeft,
+                    child: _buildAddress(
+                      context,
+                      title: LocaleKeys.to.tr(),
+                      address: transaction.toAddress,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildBalanceChanges(BuildContext context) {
+    final String formatted =
+        formatDexAmt(double.parse(transaction.myBalanceChange).abs());
+    final String sign = transaction.isReceived ? '+' : '-';
+    final double? usd =
+        coinsBloc.getUsdPriceByAmount(formatted, transaction.coin);
+    final String formattedUsd = formatAmt(usd ?? 0);
+    final String value =
+        '$sign $formatted ${Coin.normalizeAbbr(transaction.coin)} (\$$formattedUsd)';
+
+    return SelectableText(
+      value,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontSize: 22,
+            color: theme.custom.balanceColor,
+          ),
+    );
+  }
+
+  Widget _buildControls(BuildContext context, bool isMobile) {
+    final double buttonHeight = isMobile ? 50 : 40;
+    final double buttonWidth = isMobile ? 130 : 150;
+    final double fontSize = isMobile ? 12 : 14;
+    return Row(
+      mainAxisSize: MainAxisSize.max,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        UiPrimaryButton(
+          width: buttonWidth,
+          height: buttonHeight,
+          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                fontSize: fontSize,
+                color: theme.custom.defaultGradientButtonTextColor,
+              ),
+          onPressed: () {
+            launchURL(getTxExplorerUrl(coin, transaction.txHash));
+          },
+          text: LocaleKeys.viewOnExplorer.tr(),
+        ),
+        SizedBox(width: isMobile ? 4 : 20),
+        UiPrimaryButton(
+          width: buttonWidth,
+          height: buttonHeight,
+          onPressed: onClose,
+          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w700,
+              ),
+          backgroundColor: theme.custom.lightButtonColor,
+          text: LocaleKeys.done.tr(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFee(BuildContext context) {
+    final String? fee = transaction.feeDetails.feeValue;
+    final String formattedFee =
+        getNumberWithoutExponent(double.parse(fee ?? '').abs().toString());
+    final double? usd = coinsBloc.getUsdPriceByAmount(formattedFee, _feeCoin);
+    final String formattedUsd = formatAmt(usd ?? 0);
+
+    final String title = LocaleKeys.fees.tr();
+    final String value =
+        '- ${Coin.normalizeAbbr(_feeCoin)} $formattedFee (\$$formattedUsd)';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              title,
+              style:
+                  Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 14),
+            ),
+          ),
+          Expanded(
+            flex: 6,
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 35),
+              alignment: Alignment.centerLeft,
+              child: SelectableText(
+                value,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: theme.custom.decreaseColor,
+                    ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMemo(BuildContext context) {
+    final String? memo = transaction.memo;
+    if (memo == null || memo.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              '${LocaleKeys.memo.tr()}: ',
+              style:
+                  Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 14),
+            ),
+          ),
+          Expanded(
+            flex: 6,
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 35),
+              alignment: Alignment.centerLeft,
+              child: SelectableText(
+                memo,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(fontSize: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimpleData(
+    BuildContext context, {
+    required String title,
+    required String value,
+    bool hasBackground = false,
+    bool isCopied = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              title,
+              style:
+                  Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 14),
+            ),
+          ),
+          Expanded(
+            flex: 6,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: isCopied
+                  ? ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 340),
+                      child: CopiedText(
+                        copiedValue: value,
+                        isTruncated: true,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 16,
+                        ),
+                        fontSize: 14,
+                      ),
+                    )
+                  : SelectableText(
+                      value,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontSize: 14),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String get _feeCoin {
+    return transaction.feeDetails.coin.isNotEmpty
+        ? transaction.feeDetails.coin
+        : transaction.coin;
+  }
+}

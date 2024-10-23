@@ -1,0 +1,27 @@
+name: komodo_ui_kit
+description: Komodo AtomicDEX's UIKit Flutter package.
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  intl: 0.19.0 # flutter.dev
+  app_theme:
+    path: ../../app_theme/
+
+dev_dependencies:
+  flutter_lints: ^2.0.0 # flutter.dev
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - lib/src/custom_icons/Custom.ttf
+
+  fonts:
+  - family: Custom
+    fonts:
+      - asset: lib/src/custom_icons/Custom.ttf

@@ -1,0 +1,17 @@
+---
+- name: restart nginx
+  block:
+
+  - name: Reload daemon and stop service
+    become: true
+    systemd:
+      name: nginx
+      daemon_reload: true
+      state: stopped
+
+  - name: Start service
+    become: true
+    systemd:
+      name: nginx
+      enabled: true
+      state: started

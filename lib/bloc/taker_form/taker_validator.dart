@@ -1,0 +1,394 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:rational/rational.dart';
+import 'package:web_dex/bloc/dex_repository.dart';
+import 'package:web_dex/bloc/taker_form/taker_bloc.dart';
+import 'package:web_dex/bloc/taker_form/taker_event.dart';
+import 'package:web_dex/bloc/taker_form/taker_state.dart';
+import 'package:web_dex/blocs/coins_bloc.dart';
+import 'package:web_dex/generated/codegen_loader.g.dart';
+import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
+import 'package:web_dex/mm2/mm2_api/rpc/best_orders/best_orders.dart';
+import 'package:web_dex/mm2/mm2_api/rpc/trade_preimage/trade_preimage_errors.dart';
+import 'package:web_dex/model/coin.dart';
+import 'package:web_dex/model/data_from_service.dart';
+import 'package:web_dex/model/dex_form_error.dart';
+import 'package:web_dex/model/text_error.dart';
+import 'package:web_dex/model/trade_preimage.dart';
+import 'package:web_dex/shared/utils/formatters.dart';
+import 'package:web_dex/shared/utils/utils.dart';
+import 'package:web_dex/views/dex/dex_helpers.dart';
+import 'package:web_dex/views/dex/simple/form/error_list/dex_form_error_with_action.dart';
+
+class TakerValidator {
+  TakerValidator({
+    required TakerBloc bloc,
+    required CoinsBloc coinsRepo,
+    required DexRepository dexRepo,
+  })  : _bloc = bloc,
+        _coinsRepo = coinsRepo,
+        _dexRepo = dexRepo,
+        add = bloc.add;
+
+  final TakerBloc _bloc;
+  final CoinsBloc _coinsRepo;
+  final DexRepository _dexRepo;
+
+  final Function(TakerEvent) add;
+  TakerState get state => _bloc.state;
+
+  Future<bool> validate() async {
+    final bool isFormValid = validateForm();
+    if (!isFormValid) return false;
+
+    final bool tradingWithSelf = _checkTradeWithSelf();
+    if (tradingWithSelf) return false;
+
+    final bool isPreimageValid = await _validatePreimage();
+    if (!isPreimageValid) return false;
+
+    return true;
+  }
+
+  Future<bool> _validatePreimage() async {
+    add(TakerClearErrors());
+
+    final preimageData = await _getPreimageData();
+    final preimageError = _parsePreimageError(preimageData);
+
+    if (preimageError != null) {
+      add(TakerAddError(preimageError));
+      return false;
+    }
+
+    add(TakerSetPreimage(preimageData.data));
+    return true;
+  }
+
+  DexFormError? _parsePreimageError(
+      DataFromService<TradePreimage, BaseError> preimageData) {
+    final BaseError? error = preimageData.error;
+
+    if (error is TradePreimageNotSufficientBalanceError) {
+      return _insufficientBalanceError(
+          Rational.parse(error.required), error.coin);
+    } else if (error is TradePreimageNotSufficientBaseCoinBalanceError) {
+      return _insufficientBalanceError(
+          Rational.parse(error.required), error.coin);
+    } else if (error is TradePreimageTransportError) {
+      return DexFormError(
+        error: LocaleKeys.notEnoughBalanceForGasError.tr(),
+      );
+    } else if (error is TradePreimageVolumeTooLowError) {
+      return DexFormError(
+        error: LocaleKeys.lowTradeVolumeError
+            .tr(args: [formatAmt(double.parse(error.threshold)), error.coin]),
+      );
+    } else if (error != null) {
+      return DexFormError(
+        error: error.message,
+      );
+    } else if (preimageData.data == null) {
+      return DexFormError(
+        error: LocaleKeys.somethingWrong.tr(),
+      );
+    }
+
+    return null;
+  }
+
+  bool validateForm() {
+    add(TakerClearErrors());
+
+    if (!_isSellCoinSelected) {
+      add(TakerAddError(_selectSellCoinError()));
+      return false;
+    }
+
+    if (!_isOrderSelected) {
+      add(TakerAddError(_selectOrderError()));
+      return false;
+    }
+
+    if (!_validateCoinAndParent(state.sellCoin!.abbr)) return false;
+    if (!_validateCoinAndParent(state.selectedOrder!.coin)) return false;
+
+    if (!_validateAmount()) return false;
+
+    return true;
+  }
+
+  bool _validateAmount() {
+    if (!_validateMinAmount()) return false;
+    if (!_validateMaxAmount()) return false;
+
+    return true;
+  }
+
+  bool _checkTradeWithSelf() {
+    add(TakerClearErrors());
+
+    if (state.selectedOrder == null) return false;
+    final BestOrder selectedOrder = state.selectedOrder!;
+
+    final selectedOrderAddress = selectedOrder.address;
+    final coin = _coinsRepo.getCoin(selectedOrder.coin);
+    final ownAddress = coin?.address;
+
+    if (selectedOrderAddress == ownAddress) {
+      add(TakerAddError(_tradingWithSelfError()));
+      return true;
+    }
+    return false;
+  }
+
+  bool _validateMaxAmount() {
+    final Rational? availableBalance = state.maxSellAmount;
+    if (availableBalance == null) return true; // validated on preimage side
+
+    final Rational? maxOrderVolume = state.selectedOrder?.maxVolume;
+    if (maxOrderVolume == null) {
+      add(TakerAddError(_selectOrderError()));
+      return false;
+    }
+
+    final Rational? sellAmount = state.sellAmount;
+    if (sellAmount == null || sellAmount == Rational.zero) {
+      add(TakerAddError(_enterSellAmountError()));
+      return false;
+    }
+
+    if (maxOrderVolume <= availableBalance && sellAmount > maxOrderVolume) {
+      add(TakerAddError(_setOrderMaxError(maxOrderVolume)));
+      return false;
+    }
+
+    if (availableBalance < maxOrderVolume && sellAmount > availableBalance) {
+      final Rational minAmount = maxRational([
+        state.minSellAmount ?? Rational.zero,
+        state.selectedOrder!.minVolume
+      ])!;
+
+      if (availableBalance < minAmount) {
+        add(TakerAddError(
+          _insufficientBalanceError(minAmount, state.sellCoin!.abbr),
+        ));
+      } else {
+        add(TakerAddError(
+          _setMaxError(availableBalance),
+        ));
+      }
+
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _validateMinAmount() {
+    final Rational minTradingVolume = state.minSellAmount ?? Rational.zero;
+    final Rational minOrderVolume =
+        state.selectedOrder?.minVolume ?? Rational.zero;
+
+    final Rational minAmount =
+        maxRational([minTradingVolume, minOrderVolume]) ?? Rational.zero;
+    final Rational sellAmount = state.sellAmount ?? Rational.zero;
+
+    if (sellAmount < minAmount) {
+      final Rational available = state.maxSellAmount ?? Rational.zero;
+      if (available < minAmount) {
+        add(TakerAddError(
+          _insufficientBalanceError(minAmount, state.sellCoin!.abbr),
+        ));
+      } else {
+        add(TakerAddError(_setMinError(minAmount)));
+      }
+
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _validateCoinAndParent(String abbr) {
+    final Coin? coin = _coinsRepo.getKnownCoin(abbr);
+
+    if (coin == null) {
+      add(TakerAddError(_unknownCoinError(abbr)));
+      return false;
+    }
+
+    if (coin.enabledType == null) {
+      add(TakerAddError(_coinNotActiveError(coin.abbr)));
+      return false;
+    }
+
+    if (coin.isSuspended) {
+      add(TakerAddError(_coinSuspendedError(coin.abbr)));
+      return false;
+    }
+
+    final Coin? parent = coin.parentCoin;
+    if (parent != null) {
+      if (parent.enabledType == null) {
+        add(TakerAddError(_coinNotActiveError(parent.abbr)));
+        return false;
+      }
+
+      if (parent.isSuspended) {
+        add(TakerAddError(_coinSuspendedError(parent.abbr)));
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  bool get _isSellCoinSelected => state.sellCoin != null;
+
+  bool get _isOrderSelected => state.selectedOrder != null;
+
+  bool get canRequestPreimage {
+    final Coin? sellCoin = state.sellCoin;
+    if (sellCoin == null) return false;
+    if (sellCoin.enabledType == null) return false;
+    if (sellCoin.isSuspended) return false;
+
+    final Rational? sellAmount = state.sellAmount;
+    if (sellAmount == null) return false;
+    if (sellAmount == Rational.zero) return false;
+    final Rational? minSellAmount = state.minSellAmount;
+    if (minSellAmount != null && sellAmount < minSellAmount) return false;
+    final Rational? maxSellAmount = state.maxSellAmount;
+    if (maxSellAmount != null && sellAmount > maxSellAmount) return false;
+
+    final Coin? parentSell = sellCoin.parentCoin;
+    if (parentSell != null) {
+      if (parentSell.enabledType == null) return false;
+      if (parentSell.isSuspended) return false;
+      if (parentSell.balance == 0.00) return false;
+    }
+
+    final BestOrder? selectedOrder = state.selectedOrder;
+    if (selectedOrder == null) return false;
+    final Coin? buyCoin = _coinsRepo.getCoin(selectedOrder.coin);
+    if (buyCoin == null) return false;
+    if (buyCoin.enabledType == null) return false;
+
+    final Coin? parentBuy = buyCoin.parentCoin;
+    if (parentBuy != null) {
+      if (parentBuy.enabledType == null) return false;
+      if (parentBuy.isSuspended) return false;
+      if (parentBuy.balance == 0.00) return false;
+    }
+
+    return true;
+  }
+
+  void verifyOrderVolume() {
+    final Coin? sellCoin = state.sellCoin;
+    final BestOrder? selectedOrder = state.selectedOrder;
+    final Rational? sellAmount = state.sellAmount;
+
+    if (sellCoin == null) return;
+    if (selectedOrder == null) return;
+    if (sellAmount == null) return;
+
+    add(TakerClearErrors());
+    if (sellAmount > selectedOrder.maxVolume) {
+      add(TakerAddError(_setOrderMaxError(selectedOrder.maxVolume)));
+      return;
+    }
+  }
+
+  Future<DataFromService<TradePreimage, BaseError>> _getPreimageData() async {
+    try {
+      return await _dexRepo.getTradePreimage(
+        state.sellCoin!.abbr,
+        state.selectedOrder!.coin,
+        state.selectedOrder!.price,
+        'sell',
+        state.sellAmount,
+      );
+    } catch (e, s) {
+      log(e.toString(),
+          trace: s, path: 'taker_validator::_getPreimageData', isError: true);
+      return DataFromService(
+          error: TextError(error: 'Failed to request trade preimage'));
+    }
+  }
+
+  DexFormError _unknownCoinError(String abbr) =>
+      DexFormError(error: 'Unknown coin $abbr.');
+
+  DexFormError _coinSuspendedError(String abbr) {
+    return DexFormError(error: '$abbr suspended.');
+  }
+
+  DexFormError _coinNotActiveError(String abbr) {
+    return DexFormError(error: '$abbr is not active.');
+  }
+
+  DexFormError _selectSellCoinError() =>
+      DexFormError(error: LocaleKeys.dexSelectSellCoinError.tr());
+
+  DexFormError _selectOrderError() =>
+      DexFormError(error: LocaleKeys.dexSelectBuyCoinError.tr());
+
+  DexFormError _enterSellAmountError() =>
+      DexFormError(error: LocaleKeys.dexEnterSellAmountError.tr());
+
+  DexFormError _insufficientBalanceError(Rational required, String abbr) {
+    return DexFormError(
+      error: LocaleKeys.dexBalanceNotSufficientError
+          .tr(args: [abbr, formatDexAmt(required), abbr]),
+    );
+  }
+
+  DexFormError _setOrderMaxError(Rational maxAmount) {
+    return DexFormError(
+      error: LocaleKeys.dexMaxOrderVolume
+          .tr(args: [formatDexAmt(maxAmount), state.sellCoin!.abbr]),
+      type: DexFormErrorType.largerMaxSellVolume,
+      action: DexFormErrorAction(
+        text: LocaleKeys.setMax.tr(),
+        callback: () async {
+          add(TakerSetSellAmount(maxAmount));
+        },
+      ),
+    );
+  }
+
+  DexFormError _setMaxError(Rational available) {
+    return DexFormError(
+      error: LocaleKeys.dexInsufficientFundsError.tr(
+        args: [formatDexAmt(available), state.sellCoin!.abbr],
+      ),
+      type: DexFormErrorType.largerMaxSellVolume,
+      action: DexFormErrorAction(
+        text: LocaleKeys.setMax.tr(),
+        callback: () async {
+          add(TakerSetSellAmount(available));
+        },
+      ),
+    );
+  }
+
+  DexFormError _setMinError(Rational minAmount) {
+    return DexFormError(
+      type: DexFormErrorType.lessMinVolume,
+      error: LocaleKeys.dexMinSellAmountError
+          .tr(args: [formatDexAmt(minAmount), state.sellCoin!.abbr]),
+      action: DexFormErrorAction(
+          text: LocaleKeys.setMin.tr(),
+          callback: () async {
+            add(TakerSetSellAmount(minAmount));
+          }),
+    );
+  }
+
+  DexFormError _tradingWithSelfError() {
+    return DexFormError(
+      error: LocaleKeys.dexTradingWithSelfError.tr(),
+    );
+  }
+}

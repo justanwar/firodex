@@ -1,0 +1,115 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:komodo_ui_kit/src/buttons/divided_button.dart';
+import 'package:komodo_ui_kit/src/display/trend_percentage_text.dart';
+import 'package:komodo_ui_kit/src/images/coin_icon.dart';
+import 'package:komodo_ui_kit/src/inputs/coin_search_dropdown.dart';
+
+class SelectedCoinGraphControl extends StatelessWidget {
+  const SelectedCoinGraphControl({
+    required this.centreAmount,
+    required this.percentageIncrease,
+    this.onCoinSelected,
+    this.emptySelectAllowed = true,
+    this.selectedCoinId,
+    this.availableCoins,
+    this.customCoinItemBuilder,
+    super.key,
+  });
+
+  final Function(String?)? onCoinSelected;
+  final bool emptySelectAllowed;
+  final String? selectedCoinId;
+  final double centreAmount;
+  final double percentageIncrease;
+
+  /// A list of coin IDs that are available for selection.
+  ///
+  /// Must be non-null and not empty if [onCoinSelected] is non-null.
+  final List<String>? availableCoins;
+
+  final CoinSelectItem Function(String)? customCoinItemBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    // assert(onCoinSelected != null || emptySelectAllowed);
+
+    // If onCoinSelected is non-null, then availableCoins must be non-null
+    assert(
+      onCoinSelected == null || availableCoins != null,
+    );
+    return SizedBox(
+      height: 40,
+      child: DividedButton(
+        onPressed: onCoinSelected == null
+            ? null
+            : () async {
+                final selectedCoin = await showCoinSearch(
+                  context,
+                  coins: availableCoins!,
+                  customCoinItemBuilder: customCoinItemBuilder,
+                );
+                if (selectedCoin != null) {
+                  onCoinSelected?.call(selectedCoin.coinId);
+                }
+              },
+        children: [
+          Container(
+            // Min width of 48
+            constraints: const BoxConstraints(minWidth: 48),
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+
+            child: selectedCoinId != null
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      CoinIcon(selectedCoinId!, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        selectedCoinId!,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
+                      if (emptySelectAllowed && selectedCoinId != null) ...[
+                        const SizedBox(width: 4),
+                        SizedBox(
+                          width: 16,
+                          child: IconButton(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(Icons.clear),
+                            iconSize: 16,
+                            splashRadius: 20,
+                            onPressed: () => onCoinSelected?.call(null),
+                          ),
+                        ),
+                      ],
+                    ],
+                  )
+                : Text('All', style: Theme.of(context).textTheme.bodyLarge),
+          ),
+          Text(
+            (NumberFormat.currency(symbol: "\$")
+                  ..minimumSignificantDigits = 3
+                  ..minimumFractionDigits = 2)
+                .format(centreAmount),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  // TODO: Incorporate into theme and remove duplication accross charts
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          Row(
+            children: [
+              TrendPercentageText(
+                investmentReturnPercentage: percentageIncrease,
+              ),
+              if (onCoinSelected != null) ...[
+                const SizedBox(width: 2),
+                const Icon(Icons.expand_more),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
