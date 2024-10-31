@@ -13,15 +13,16 @@ import 'package:web_dex/mm2/mm2_api/rpc/convert_address/convert_address_request.
 import 'package:web_dex/mm2/mm2_api/rpc/disable_coin/disable_coin_req.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/electrum/electrum_req.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/enable/enable_req.dart';
+import 'package:web_dex/mm2/mm2_api/rpc/enable/enable_req_status.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/enable_tendermint/enable_tendermint_token.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/enable_tendermint/enable_tendermint_with_assets.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/get_enabled_coins/get_enabled_coins_req.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/import_swaps/import_swaps_request.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/import_swaps/import_swaps_response.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/kmd_rewards_info/kmd_rewards_info_request.dart';
+import 'package:web_dex/mm2/mm2_api/rpc/market_maker_bot/market_maker_bot_request.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/max_maker_vol/max_maker_vol_req.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/max_maker_vol/max_maker_vol_response.dart';
-import 'package:web_dex/mm2/mm2_api/rpc/market_maker_bot/market_maker_bot_request.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/max_taker_vol/max_taker_vol_request.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/max_taker_vol/max_taker_vol_response.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/min_trading_vol/min_trading_vol.dart';
@@ -121,6 +122,7 @@ class Mm2Api {
     required List<EnableTendermintTokenRequest>? tendermintTokenRequests,
     required List<EnableBchWithTokens>? bchWithTokens,
     required List<EnableSlp>? slpTokens,
+    required List<EnableSiaRequest>? siaRequests,
   }) async {
     if (ethWithTokensRequests != null && ethWithTokensRequests.isNotEmpty) {
       await _enableEthWithTokensCoins(ethWithTokensRequests);
@@ -142,6 +144,41 @@ class Mm2Api {
     }
     if (slpTokens != null && slpTokens.isNotEmpty) {
       await _enableSlpTokens(slpTokens);
+    }
+    if (siaRequests != null && siaRequests.isNotEmpty) {
+      await _enableSiaCoins(siaRequests);
+    }
+  }
+
+  Future<void> _enableSiaCoins(List<EnableSiaRequest> requests) async {
+    try {
+      // final requestToString =
+      //     jsonEncode(requests.map((e) => e.toJson()).toList());
+      // log('SIA COIN ACTIVATION REQUESTS: \n$requestToString\n');
+      final dynamic response = await _call(requests);
+      log(
+        response,
+        path: 'api => _enableSiaCoins => _call',
+      );
+
+      final coinTasks = jsonDecode(response) as List<dynamic>;
+      final taskId = coinTasks[0]["result"]["task_id"];
+
+      final statusReq = EnableSiaStatusRequest(taskId: taskId);
+      String status = "InProgress";
+      while (status == "InProgress") {
+        final statusResp = jsonDecode(await _call(statusReq));
+        status = statusResp["result"]["status"] as String;
+        await Future.delayed(const Duration(milliseconds: 100), () => "2");
+      }
+    } catch (e, s) {
+      log(
+        'Error enabling Sia coins: ${e.toString()}',
+        path: 'api => _enableSiaCoins => _call',
+        trace: s,
+        isError: true,
+      );
+      return;
     }
   }
 

@@ -20,14 +20,12 @@ class ConnectWalletButton extends StatefulWidget {
   const ConnectWalletButton({
     Key? key,
     required this.eventType,
-    this.withText = true,
     this.withIcon = false,
     Size? buttonSize,
   })  : buttonSize = buttonSize ?? const Size(double.infinity, 40),
         super(key: key);
   final Size buttonSize;
   final bool withIcon;
-  final bool withText;
   final WalletsManagerEventType eventType;
 
   @override
@@ -35,9 +33,6 @@ class ConnectWalletButton extends StatefulWidget {
 }
 
 class _ConnectWalletButtonState extends State<ConnectWalletButton> {
-  static const String walletIconPath =
-      '$assetsPath/nav_icons/desktop/dark/wallet.svg';
-
   PopupDispatcher? _popupDispatcher;
 
   @override
@@ -49,51 +44,30 @@ class _ConnectWalletButtonState extends State<ConnectWalletButton> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.withText
-        ? UiPrimaryButton(
-            key: Key('connect-wallet-${widget.eventType.name}'),
-            width: widget.buttonSize.width,
-            height: widget.buttonSize.height,
-            prefix: widget.withIcon
-                ? Padding(
-                    padding: const EdgeInsets.only(right: 7.0),
-                    child: SvgPicture.asset(
-                      walletIconPath,
-                      colorFilter: ColorFilter.mode(
-                          theme.custom.defaultGradientButtonTextColor,
-                          BlendMode.srcIn),
-                      width: 15,
-                      height: 15,
-                    ),
-                  )
-                : null,
-            text: LocaleKeys.connectSomething
-                .tr(args: [LocaleKeys.wallet.tr().toLowerCase()]),
-            onPressed: onButtonPressed,
-          )
-        : ElevatedButton(
-            key: Key('connect-wallet-${widget.eventType.name}'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.currentGlobal.primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+    return UiPrimaryButton(
+      key: Key('connect-wallet-${widget.eventType.name}'),
+      width: widget.buttonSize.width,
+      height: widget.buttonSize.height,
+      prefix: widget.withIcon
+          ? Padding(
+              padding: const EdgeInsets.only(right: 7.0),
+              child: SvgPicture.asset(
+                '$assetsPath/nav_icons/desktop/dark/wallet.svg',
+                colorFilter: ColorFilter.mode(
+                    theme.custom.defaultGradientButtonTextColor,
+                    BlendMode.srcIn),
+                width: 15,
+                height: 15,
               ),
-              minimumSize: const Size(48, 48),
-              padding: EdgeInsets.zero,
-            ),
-            onPressed: onButtonPressed,
-            child: SvgPicture.asset(
-              walletIconPath,
-              colorFilter: ColorFilter.mode(
-                  theme.custom.defaultGradientButtonTextColor, BlendMode.srcIn),
-              width: 20,
-            ),
-          );
-  }
-
-  void onButtonPressed() {
-    _popupDispatcher = _createPopupDispatcher();
-    _popupDispatcher?.show();
+            )
+          : null,
+      text: LocaleKeys.connectSomething
+          .tr(args: [LocaleKeys.wallet.tr().toLowerCase()]),
+      onPressed: () {
+        _popupDispatcher = _createPopupDispatcher();
+        _popupDispatcher?.show();
+      },
+    );
   }
 
   PopupDispatcher _createPopupDispatcher() {

@@ -46,19 +46,60 @@ class Coin {
     Map<String, dynamic> json,
     Map<String, dynamic> globalCoinJson,
   ) {
+    final String? jsonType = json['type'];
+    final String coinAbbr = json['abbr'];
+    final CoinType? type = getCoinType(jsonType, coinAbbr);
+
     final List<Electrum> electrumList = _getElectrumFromJson(json);
     final List<CoinNode> nodesList = _getNodesFromJson(json);
+
+    // final List<CoinNode> nodesList = (type == CoinType.sia)
+    //     ? [
+    //         CoinNode(
+    //           url: json['rpcurl'] ?? 'https://sia-walletd.komodo.earth/',
+    //           guiAuth: false,
+    //         )
+    //       ]
+    //     : _getNodesFromJson(json);
     final List<String> bchdUrls = _getBchdUrlsFromJson(json);
     final List<CoinNode> rpcUrls = _getRpcUrlsFromJson(json);
     final String explorerUrl = _getExplorerFromJson(json);
     final String explorerTxUrl = _getExplorerTxUrlFromJson(json);
     final String explorerAddressUrl = _getExplorerAddressUrlFromJson(json);
 
-    final String? jsonType = json['type'];
-    final String coinAbbr = json['abbr'];
-    final CoinType? type = getCoinType(jsonType, coinAbbr);
     if (type == null) {
       throw ArgumentError.value(jsonType, 'json[\'type\']');
+    }
+    if (type == CoinType.sia) {
+      // nodesList = [
+      //   CoinNode(
+      //       url: json['rpcurl'] ?? 'https://sia-walletd.komodo.earth/',
+      //       guiAuth: false)
+      // ];
+      // return Coin(
+      //   type: type,
+      //   abbr: coinAbbr,
+      //   name: json['name'],
+      //   explorerUrl: '', // Add explorer URL if available
+      //   explorerTxUrl: '', // Add explorer tx URL if available
+      //   explorerAddressUrl: '', // Add explorer address URL if available
+      //   protocolType: 'SIA',
+      //   protocolData:
+      //       null, // Sia doesn't have protocol data in the given config
+      //   isTestCoin: json['is_testnet'] ?? false,
+      //   coingeckoId: json['coingecko_id'],
+      //   fallbackSwapContract: null, // Sia doesn't use swap contracts
+      //   electrum: [], // Sia doesn't use electrum
+      //   nodes: [], // Sia doesn't use nodes
+      //   rpcUrls: [], // Sia doesn't use RPC URLs
+      //   bchdUrls: [], // Sia doesn't use BCHD URLs
+      //   priority: json['priority'] ?? 0,
+      //   state: CoinState.inactive,
+      //   swapContractAddress: null, // Sia doesn't use swap contracts
+      //   walletOnly: json['wallet_only'] ?? false,
+      //   mode: CoinMode.standard,
+      //   decimals: json['decimals'] ?? 24, // Sia uses 24 decimals
+      // );
     }
     // The code below is commented out because of the latest changes
     // to coins config to include "offline" coins so that the user can
@@ -523,6 +564,12 @@ CoinType? getCoinType(String? jsonType, String coinAbbr) {
         }
       case CoinType.slp:
         if (jsonType == 'SLP') {
+          return value;
+        } else {
+          continue;
+        }
+      case CoinType.sia:
+        if (jsonType == 'SIA') {
           return value;
         } else {
           continue;

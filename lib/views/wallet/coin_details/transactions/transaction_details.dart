@@ -7,7 +7,6 @@ import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/my_tx_history/transaction.dart';
 import 'package:web_dex/model/coin.dart';
-
 import 'package:web_dex/shared/utils/formatters.dart';
 import 'package:web_dex/shared/utils/utils.dart';
 import 'package:web_dex/shared/widgets/copied_text.dart';
@@ -228,17 +227,18 @@ class TransactionDetails extends StatelessWidget {
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        UiPrimaryButton(
-          width: buttonWidth,
-          height: buttonHeight,
-          textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: fontSize,
-                color: theme.custom.defaultGradientButtonTextColor,
-              ),
+        if (coin.explorerUrl.isNotEmpty)
+          UiPrimaryButton(
+            width: buttonWidth,
+            height: buttonHeight,
+            textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: fontSize,
+                  color: theme.custom.defaultGradientButtonTextColor,
+                ),
           onPressed: () {
-            launchURL(getTxExplorerUrl(coin, transaction.txHash));
-          },
+                  launchURL(getTxExplorerUrl(coin, transaction.txHash));
+                },
           text: LocaleKeys.viewOnExplorer.tr(),
         ),
         SizedBox(width: isMobile ? 4 : 20),
@@ -260,7 +260,7 @@ class TransactionDetails extends StatelessWidget {
   Widget _buildFee(BuildContext context) {
     final String? fee = transaction.feeDetails.feeValue;
     final String formattedFee =
-        getNumberWithoutExponent(double.parse(fee ?? '').abs().toString());
+        getNumberWithoutExponent(double.parse(fee ?? '0').abs().toString());
     final double? usd = coinsBloc.getUsdPriceByAmount(formattedFee, _feeCoin);
     final String formattedUsd = formatAmt(usd ?? 0);
 

@@ -1,5 +1,16 @@
-import 'package:web_dex/model/coin.dart';
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
+import 'package:web_dex/model/coin.dart';
+
+List<Coin> sortByTicker(List<Coin> coins, SortDirection sortDirection) {
+  if (sortDirection == SortDirection.none) return coins;
+  if (sortDirection == SortDirection.increase) {
+    coins.sort((a, b) => a.abbr.compareTo(b.abbr));
+    return coins;
+  } else {
+    coins.sort((a, b) => b.abbr.compareTo(a.abbr));
+    return coins;
+  }
+}
 
 List<Coin> sortByName(List<Coin> coins, SortDirection sortDirection) {
   if (sortDirection == SortDirection.none) return coins;

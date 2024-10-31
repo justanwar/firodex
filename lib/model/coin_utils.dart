@@ -146,6 +146,8 @@ String getCoinTypeName(CoinType type) {
       return 'Iris';
     case CoinType.slp:
       return 'SLP';
+    case CoinType.sia:
+      return 'Sia';
   }
 }
 
@@ -187,6 +189,8 @@ String getCoinTypeNameLong(CoinType type) {
       return 'Iris';
     case CoinType.slp:
       return 'SLP';
+    case CoinType.sia:
+      return 'Sia';
   }
 }
 

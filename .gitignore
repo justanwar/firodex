@@ -37,9 +37,7 @@
 contrib/coins_config.json
 
 # Web related
-web/dist/*.js
-web/dist/*.wasm
-web/dist/*LICENSE.txt
+web/dist/
 web/src/mm2/
 web/src/kdfi/
 
@@ -83,10 +81,14 @@ macos/kdf
 android/app/.cxx/
 
 # Coins asset files 
-assets/config/coins.json
-assets/config/coins_config.json
+# assets/config/coins.json # Temporarily disabled for SIA Demo
+# assets/config/coins_config.json # Temporarily disabled for SIA Demo
 assets/config/coins_ci.json
-assets/coin_icons/
+assets/coin_icons/**/*.png
+!assets/coin_icons/png/sia.png
+!assets/coin_icons/png/tsia.png
 
 # Python
 venv/
+devtools_options.yaml
+web/index.html

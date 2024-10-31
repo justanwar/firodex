@@ -53,7 +53,31 @@ window.run_mm2 = async function (params, handle_log) {
 window.rpc_request = async function (request_js) {
     try {
         let reqJson = JSON.parse(request_js);
+
+        // // Check if any of the values are "my_orders", "max_maker_vol", "max_taker_vol", or "my_recent_swaps"
+        // let shouldLog = Object.values(reqJson).every(value => 
+        //     value !== "my_orders" && 
+        //     value !== "max_taker_vol" && 
+        //     value !== "max_maker_vol" && 
+        //     value !== "my_recent_swaps"
+        // );
+
+        // // Only log if none of the values match the specified strings
+        // if (shouldLog) {
+        //     console.log('Request:', reqJson);
+        // }
+
+        // Print to console as object if it mentions 'sia' (case-insensitive)
+        if (JSON.stringify(reqJson).toLowerCase().includes('sia')) {
+            console.log(reqJson);
+        }
+
         const response = await mm2_rpc(reqJson);
+
+        // Log the response as a JSON string
+        // if (shouldLog) {
+        //     console.log('Response:', JSON.stringify(response, null, 2));
+        // }
         return JSON.stringify(response);
     } catch (e) {
         switch (e) {
@@ -70,7 +94,7 @@ window.rpc_request = async function (request_js) {
                 alert(`Unexpected error: ${e}`);
                 break;
         }
-        throw(e);
+        throw (e);
     }
 }
 

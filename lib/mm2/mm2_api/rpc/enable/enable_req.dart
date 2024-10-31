@@ -121,3 +121,52 @@ class EnableSlp implements BaseRequest {
     };
   }
 }
+
+class EnableSiaRequest implements BaseRequest {
+  EnableSiaRequest({
+    required this.ticker,
+    required this.httpConf,
+  });
+
+  final String ticker;
+  final SiaHttpConf httpConf;
+
+  @override
+  late String userpass;
+
+  @override
+  final String method = 'enable_sia';
+
+  @override
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'userpass': userpass,
+      'mmrpc': '2.0',
+      'method': method,
+      'params': {
+        'ticker': ticker,
+        'activation_params': {
+          'tx_history': true,
+          'client_conf': httpConf.toJson(),
+        },
+      },
+    };
+  }
+}
+
+class SiaHttpConf {
+  SiaHttpConf({
+    required this.url,
+    required this.password,
+  });
+
+  final String url;
+  final String password;
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'server_url': url,
+      'password': password,
+    };
+  }
+}

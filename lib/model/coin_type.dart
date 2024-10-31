@@ -18,4 +18,5 @@ enum CoinType {
   cosmos,
   iris,
   slp,
+  sia,
 }

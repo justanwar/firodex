@@ -28,7 +28,9 @@ class CoinsManagerListWrapper extends StatefulWidget {
 
 class _CoinsManagerListWrapperState extends State<CoinsManagerListWrapper> {
   CoinsManagerSortData _sortData = const CoinsManagerSortData(
-      sortDirection: SortDirection.none, sortType: CoinsManagerSortType.none);
+    sortDirection: SortDirection.increase,
+    sortType: CoinsManagerSortType.ticker,
+  );
   late InformationPopup _informationPopup;
 
   @override
@@ -103,6 +105,8 @@ class _CoinsManagerListWrapperState extends State<CoinsManagerListWrapper> {
         return sortByProtocol(coins, _sortData.sortDirection);
       case CoinsManagerSortType.balance:
         return sortByUsdBalance(coins, _sortData.sortDirection);
+      case CoinsManagerSortType.ticker:
+        return sortByTicker(coins, _sortData.sortDirection);
       case CoinsManagerSortType.none:
         return coins;
     }
@@ -125,6 +129,7 @@ enum CoinsManagerSortType {
   protocol,
   balance,
   name,
+  ticker,
   none,
 }
 

@@ -74,6 +74,8 @@ class CoinTypeTag extends StatelessWidget {
         return 'Iris';
       case CoinType.slp:
         return 'SLP';
+      case CoinType.sia:
+        return 'Sia';
     }
   }
 }

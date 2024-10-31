@@ -1,13 +1,8 @@
 import 'package:app_theme/app_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:web_dex/bloc/auth_bloc/auth_bloc.dart';
 import 'package:web_dex/common/screen.dart';
-import 'package:web_dex/model/authorize_mode.dart';
-import 'package:web_dex/shared/widgets/connect_wallet/connect_wallet_button.dart';
 import 'package:web_dex/views/common/page_header/back_button_desktop.dart';
 import 'package:web_dex/views/common/page_header/back_button_mobile.dart';
-import 'package:web_dex/views/wallets_manager/wallets_manager_events_factory.dart';
 
 class PageHeader extends StatelessWidget {
   const PageHeader({
@@ -81,17 +76,7 @@ class _MobileHeader extends StatelessWidget {
         ],
       ),
       centerTitle: true,
-      actions: <Widget>[
-        if (actions != null) ...actions!,
-        if (context.watch<AuthBloc>().state.mode != AuthorizeMode.logIn)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 20.0),
-            child: ConnectWalletButton(
-              eventType: WalletsManagerEventType.header,
-              withText: false,
-            ),
-          ),
-      ],
+      actions: actions,
     );
   }
 }

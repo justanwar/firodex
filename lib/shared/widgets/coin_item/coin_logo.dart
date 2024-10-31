@@ -165,6 +165,7 @@ String getProtocolIcon(Coin coin) {
       return 'slp';
     case CoinType.utxo:
     case CoinType.cosmos:
+    case CoinType.sia:
       return abbr2Ticker(coin.abbr).toLowerCase();
   }
 }

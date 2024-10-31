@@ -457,6 +457,7 @@ String? getErcTransactionHistoryUrl(Coin coin) {
     case CoinType.smartChain:
     case CoinType.utxo:
     case CoinType.slp:
+    case CoinType.sia:
       return null;
   }
 }
@@ -513,6 +514,8 @@ Color getProtocolColor(CoinType type) {
       return const Color.fromRGBO(136, 87, 138, 1);
     case CoinType.slp:
       return const Color.fromRGBO(134, 184, 124, 1);
+    case CoinType.sia:
+      return const Color.fromRGBO(0, 0, 0, 1);
   }
 }
 
@@ -540,6 +543,7 @@ bool hasTxHistorySupport(Coin coin) {
     case CoinType.hco20:
     case CoinType.plg20:
     case CoinType.slp:
+    case CoinType.sia:
       return true;
   }
 }
@@ -570,6 +574,7 @@ String getNativeExplorerUrlByCoin(Coin coin, String? address) {
     case CoinType.ubiq:
     case CoinType.krc20:
     case CoinType.slp:
+    case CoinType.sia:
       return '${coin.explorerUrl}address/${address ?? coin.address}';
   }
 }

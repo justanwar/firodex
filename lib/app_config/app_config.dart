@@ -115,6 +115,7 @@ List<String> get enabledByDefaultCoins => [
       'FTM',
       if (kDebugMode || kProfileMode) 'DOC',
       if (kDebugMode || kProfileMode) 'MARTY',
+      'TSIA',
     ];
 
 List<String> get enabledByDefaultTrezorCoins => [
@@ -123,7 +124,7 @@ List<String> get enabledByDefaultTrezorCoins => [
       'LTC',
     ];
 
-List<String> get coinsWithFaucet => ['RICK', 'MORTY', 'DOC', 'MARTY'];
+List<String> get coinsWithFaucet => ['RICK', 'MORTY', 'DOC', 'MARTY', 'TSIA'];
 
 const String logsDbName = 'logs';
 const String appFolder = 'KomodoWallet';

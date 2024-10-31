@@ -107,7 +107,6 @@ class AppBlocRoot extends StatelessWidget {
             demoDataGenerator: DemoDataCache.withDefaults(),
           )
         : TransactionHistoryRepo(api: mm2Api, client: Client());
-    
 
     final profitLossRepo = ProfitLossRepository.withDefaults(
       transactionHistoryRepo: transactionsRepo,
@@ -235,9 +234,8 @@ class AppBlocRoot extends StatelessWidget {
               coinsConfigRepo: CoinConfigRepository.withDefaults(
                 runtimeUpdateConfig,
               ),
-            )
-              ..add(CoinConfigLoadRequested())
-              ..add(CoinConfigUpdateSubscribeRequested()),
+            )..add(CoinConfigLoadRequested()),
+            // ..add(CoinConfigUpdateSubscribeRequested()),
           ),
         ],
         child: _MyAppView(),
