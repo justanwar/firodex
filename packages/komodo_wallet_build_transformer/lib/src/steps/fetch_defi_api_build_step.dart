@@ -261,15 +261,15 @@ class FetchDefiApiStep extends BuildStep {
     try {
       final lastUpdatedData = json.decode(lastUpdatedFile.readAsStringSync());
       if (lastUpdatedData['api_commit_hash'] == apiCommitHash) {
-        // final storedChecksums =
-        //     List<String>.from(lastUpdatedData['checksums'] ?? []);
-        // final targetChecksums =
-        //     List<String>.from(config[platform]['valid_zip_sha256_checksums']);
+        final storedChecksums =
+            List<String>.from(lastUpdatedData['checksums'] ?? []);
+        final targetChecksums =
+            List<String>.from(config[platform]['valid_zip_sha256_checksums']);
 
-        // if (storedChecksums.toSet().containsAll(targetChecksums)) {
-        //   _logMessage("version: $apiCommitHash and SHA256 checksum match.");
-        //   return false;
-        // }
+        if (storedChecksums.toSet().containsAll(targetChecksums)) {
+          _logMessage("version: $apiCommitHash and SHA256 checksum match.");
+          return false;
+        }
         return false;
       }
     } catch (e) {
