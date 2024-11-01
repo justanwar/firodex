@@ -48,7 +48,6 @@ class CoinConfigRepository implements CoinConfigStorage {
   Future<void> updateCoinConfig({
     List<String> excludedAssets = const <String>[],
   }) async {
-    return;
     final List<Coin> coins = await coinConfigProvider.getLatestCoins();
     final Map<String, CoinConfig> coinConfig =
         await coinConfigProvider.getLatestCoinConfigs();

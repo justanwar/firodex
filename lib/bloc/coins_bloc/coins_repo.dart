@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:komodo_coin_updates/komodo_coin_updates.dart' as coin_updates;
 import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/app_config/coins_config_parser.dart';
+import 'package:web_dex/bloc/runtime_coin_updates/runtime_update_config_provider.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/mm2/mm2_api/mm2_api.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/convert_address/convert_address_request.dart';
@@ -38,26 +39,24 @@ class CoinsRepo {
   Future<List<Coin>> getKnownCoins() async {
     if (_cachedKnownCoins != null) return _cachedKnownCoins!;
 
-    // _coinRepo ??= coin_updates.CoinConfigRepository.withDefaults(
-    //   await RuntimeUpdateConfigProvider().getRuntimeUpdateConfig(),
-    // );
+    _coinRepo ??= coin_updates.CoinConfigRepository.withDefaults(
+      await RuntimeUpdateConfigProvider().getRuntimeUpdateConfig(),
+    );
     // If the bundled config files don't exist, then download the latest configs
     // and load them from the storage provider.
-    // final bool bundledConfigsExist = await coinConfigParser.hasLocalConfigs();
-    // if (!bundledConfigsExist) {
-    //   await _coinRepo!.updateCoinConfig(excludedAssets: excludedAssetList);
-    // }
+    final bool bundledConfigsExist = await coinConfigParser.hasLocalConfigs();
+    if (!bundledConfigsExist) {
+      await _coinRepo!.updateCoinConfig(excludedAssets: excludedAssetList);
+    }
 
-    // final bool hasUpdatedConfigs = await _coinRepo!.coinConfigExists();
-    // if (!bundledConfigsExist || hasUpdatedConfigs) {
-    //   final coins = await _getKnownCoinsFromStorage();
-    //   if (coins.isNotEmpty) {
-    //     _cachedKnownCoins = coins;
-    //     return coins;
-    //   }
-    // }
-
-    //
+    final bool hasUpdatedConfigs = await _coinRepo!.coinConfigExists();
+    if (!bundledConfigsExist || hasUpdatedConfigs) {
+      final coins = await _getKnownCoinsFromStorage();
+      if (coins.isNotEmpty) {
+        _cachedKnownCoins = coins;
+        return coins;
+      }
+    }
 
     final coins = _cachedKnownCoins ?? await _getKnownCoinsFromConfig();
     return [...coins];
@@ -69,25 +68,25 @@ class CoinsRepo {
   /// Otherwise, the coins from storage are loaded.
   Future<List<coin_updates.Coin>> getKnownGlobalCoins() async {
     // Disable runtime coin updates for sia
-    // _coinRepo ??= coin_updates.CoinConfigRepository.withDefaults(
-    //   await RuntimeUpdateConfigProvider().getRuntimeUpdateConfig(),
-    // );
+    _coinRepo ??= coin_updates.CoinConfigRepository.withDefaults(
+      await RuntimeUpdateConfigProvider().getRuntimeUpdateConfig(),
+    );
 
-    // final bool bundledConfigsExist = await coinConfigParser.hasLocalConfigs();
-    // if (!bundledConfigsExist) {
-    //   await _coinRepo!.updateCoinConfig(excludedAssets: excludedAssetList);
-    // }
+    final bool bundledConfigsExist = await coinConfigParser.hasLocalConfigs();
+    if (!bundledConfigsExist) {
+      await _coinRepo!.updateCoinConfig(excludedAssets: excludedAssetList);
+    }
 
-    // final bool hasUpdatedConfigs = await _coinRepo!.coinConfigExists();
-    // if (!bundledConfigsExist || hasUpdatedConfigs) {
-    //   final coins =
-    //       await _coinRepo!.getCoins(excludedAssets: excludedAssetList);
-    //   if (coins != null && coins.isNotEmpty) {
-    //     return coins
-    //         .where((coin) => !excludedAssetList.contains(coin.coin))
-    //         .toList();
-    //   }
-    // }
+    final bool hasUpdatedConfigs = await _coinRepo!.coinConfigExists();
+    if (!bundledConfigsExist || hasUpdatedConfigs) {
+      final coins =
+          await _coinRepo!.getCoins(excludedAssets: excludedAssetList);
+      if (coins != null && coins.isNotEmpty) {
+        return coins
+            .where((coin) => !excludedAssetList.contains(coin.coin))
+            .toList();
+      }
+    }
 
     final globalCoins = await coinConfigParser.getGlobalCoinsJson();
     return globalCoins
