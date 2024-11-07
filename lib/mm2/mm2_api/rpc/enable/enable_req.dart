@@ -135,21 +135,16 @@ class EnableSiaRequest implements BaseRequest {
   late String userpass;
 
   @override
-  final String method = 'enable_sia';
+  final String method = 'enable';
 
   @override
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'userpass': userpass,
-      'mmrpc': '2.0',
       'method': method,
-      'params': {
-        'ticker': ticker,
-        'activation_params': {
-          'tx_history': true,
-          'client_conf': httpConf.toJson(),
-        },
-      },
+      'tx_history': true,
+      'coin': ticker,
+      'client_conf': httpConf.toJson(),
     };
   }
 }
