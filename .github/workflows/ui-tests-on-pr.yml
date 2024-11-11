@@ -18,10 +18,10 @@ jobs:
               ]
             include:
               - name: web-app-linux
-                os: [self-hosted, Linux]
+                os: ubuntu-latest
 
               - name: web-app-macos
-                os: [self-hosted, macos]
+                os: macos-latest
 
     steps:
 
