@@ -1,6 +1,6 @@
 {
     "api": {
-        "api_commit_hash": "b021d34",
+        "api_commit_hash": "171f5f6",
         "branch": "remaining-sia-swapops",
         "fetch_at_build_enabled": true,
         "source_urls": [
@@ -10,29 +10,35 @@
             "web": {
                 "matching_keyword": "wasm",
                 "valid_zip_sha256_checksums": [
-                    "cea9d2df6cba6af4de2b2583ed90ce7a6b1eb7658e2792778404bd4f192a76a3"
+                    "f3dda3a77ca9da50ca924e82e7455decf0862a50b57d1b8bada7281eb7d2ce70"
                 ],
                 "path": "web/src/mm2"
             },
             "ios": {
                 "matching_keyword": "ios-aarch64",
-                "valid_zip_sha256_checksums": ["3c8cad2bb1e58d3fc12a4a3d44d1d21499652b7aadb4ea5dadf583f695a1af05"],
+                "valid_zip_sha256_checksums": [
+                    "0ad0ada35f41756bde4d3de479f5fe3f261559faba11430308da9d35e0f776e8"
+                ],
                 "path": "ios"
             },
             "macos": {
                 "matching_keyword": "mac-arm64",
-                "valid_zip_sha256_checksums": ["e67f76ed5f3284c279b377f79e8288796c123ff4055168d15b0d17f5576352d7"],
+                "valid_zip_sha256_checksums": [
+                    "db9d84bf61e7355cad6ea1af09db48b86a21c99bef874d7276931265684ff03d"
+                ],
                 "path": "macos"
             },
             "windows": {
                 "matching_keyword": "win-x86-64",
-                "valid_zip_sha256_checksums": ["46298c52939a5220f719e1fb855cb3eff45de1b6ff6e72c9518279ac15160ae3"],
+                "valid_zip_sha256_checksums": [
+                    "ea5d0e59ac7a940b54d37a9e16cc900be550ecc5131092c8fbea1ae03cb2f9f1"
+                ],
                 "path": "windows/runner/exe"
             },
             "linux": {
                 "matching_keyword": "linux-x86-64",
                 "valid_zip_sha256_checksums": [
-                    "eadf1e240d06004791cad99fff36b2ee939538d1349e7e0cc7b27d3339fa92e6"
+                    "e89098bc317404975f9459a261e2a996f95d3a55fe50cb96c5e7fbb01b6cfbe5"
                 ],
                 "path": "linux/mm2"
             }
@@ -41,7 +47,7 @@
     },
     "coins": {
         "update_commit_on_build": true,
-        "bundled_coins_repo_commit": "5e49096c30ece1fd0092e34261278be7632bc09e",
+        "bundled_coins_repo_commit": "dc9ace1cceed5da4a402d001b67fc28bbcd92bb8",
         "coins_repo_api_url": "https://api.github.com/repos/KomodoPlatform/coins",
         "coins_repo_content_url": "https://raw.githubusercontent.com/KomodoPlatform/coins",
         "coins_repo_branch": "master",
@@ -52,4 +58,3 @@
         }
     }
 }
-

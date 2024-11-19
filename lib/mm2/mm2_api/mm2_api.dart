@@ -13,7 +13,6 @@ import 'package:web_dex/mm2/mm2_api/rpc/convert_address/convert_address_request.
 import 'package:web_dex/mm2/mm2_api/rpc/disable_coin/disable_coin_req.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/electrum/electrum_req.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/enable/enable_req.dart';
-import 'package:web_dex/mm2/mm2_api/rpc/enable/enable_req_status.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/enable_tendermint/enable_tendermint_token.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/enable_tendermint/enable_tendermint_with_assets.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/get_enabled_coins/get_enabled_coins_req.dart';
@@ -152,25 +151,8 @@ class Mm2Api {
 
   Future<void> _enableSiaCoins(List<EnableSiaRequest> requests) async {
     try {
-      // final requestToString =
-      //     jsonEncode(requests.map((e) => e.toJson()).toList());
-      // log('SIA COIN ACTIVATION REQUESTS: \n$requestToString\n');
       final dynamic response = await _call(requests);
-      log(
-        response,
-        path: 'api => _enableSiaCoins => _call',
-      );
-
-      final coinTasks = jsonDecode(response) as List<dynamic>;
-      final taskId = coinTasks[0]["result"]["task_id"];
-
-      final statusReq = EnableSiaStatusRequest(taskId: taskId);
-      String status = "InProgress";
-      while (status == "InProgress") {
-        final statusResp = jsonDecode(await _call(statusReq));
-        status = statusResp["result"]["status"] as String;
-        await Future.delayed(const Duration(milliseconds: 100), () => "2");
-      }
+      log( response, path: 'api => _enableSiaCoins');
     } catch (e, s) {
       log(
         'Error enabling Sia coins: ${e.toString()}',
