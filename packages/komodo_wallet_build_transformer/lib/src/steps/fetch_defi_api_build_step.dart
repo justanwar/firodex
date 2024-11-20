@@ -224,6 +224,9 @@ class FetchDefiApiStep extends BuildStep {
     if (validChecksums.contains(fileSha256Checksum)) {
       stdout.writeln('Checksum validated for $filePath');
       return true;
+    } else if (validChecksums.contains("*")) {
+      stdout.writeln('Checksum validation bypassed for $filePath');
+      return true;
     } else {
       stderr.writeln(
         'SHA256 Checksum mismatch for $filePath: expected any of '
