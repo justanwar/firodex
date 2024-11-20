@@ -19,7 +19,9 @@ def main():
 
     # Get_checksums
     platforms = data["api"]["platforms"]
+    # This does not work for some reason. 
     for p in platforms:
+        break
         kw = platforms[p]["matching_keyword"]
         url = f"https://sdk.devbuilds.komodo.earth/{args.api_branch}/kdf_{args.api[:7]}-{kw}.zip.sha256"
         print(url)
