@@ -186,7 +186,10 @@ String getAddressExplorerUrl(Coin coin, String address) {
   final String explorerUrl = coin.explorerUrl;
   final String explorerAddressUrl = coin.explorerAddressUrl;
   if (explorerUrl.isEmpty) return '';
-
+  if (explorerAddressUrl.contains('{ADDRESS}')) {
+    explorerAddressUrl.replaceAll('{ADDRESS}', address);
+    return '$explorerUrl$explorerAddressUrl';
+  }
   return '$explorerUrl$explorerAddressUrl$address';
 }
 

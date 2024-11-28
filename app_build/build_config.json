@@ -1,6 +1,6 @@
 {
     "api": {
-        "api_commit_hash": "ba8752a7dd68ebb6b249b437488a702881ae5275",
+        "api_commit_hash": "50e1071aac2a9eee21b1457d51aed379f3f6f7ef",
         "branch": "remaining-sia-swapops",
         "fetch_at_build_enabled": true,
         "source_urls": [
@@ -10,28 +10,28 @@
             "web": {
                 "matching_keyword": "wasm",
                 "valid_zip_sha256_checksums": [
-                    "2e69c9dc1ec2767c5d6548fc4a7e4fa231b42b3db94e617cbea992ac3c0e116d"
+                    "*"
                 ],
                 "path": "web/src/mm2"
             },
             "ios": {
                 "matching_keyword": "ios-aarch64",
                 "valid_zip_sha256_checksums": [
-                    "1d4a65ef210a718ea005f561c8ccaf352beddc674541698ccfea84dc78271cdd"
+                    "*"
                 ],
                 "path": "ios"
             },
             "macos": {
                 "matching_keyword": "mac-arm64",
                 "valid_zip_sha256_checksums": [
-                    "0beb9a066903a1877d1d3359d4916c449582bccf3d7d7bbd88f15f8002515084"
+                    "*"
                 ],
                 "path": "macos"
             },
             "windows": {
                 "matching_keyword": "win-x86-64",
                 "valid_zip_sha256_checksums": [
-                    "454d79bff5e059c37691b96325a401a30bc59482ccb1782efaf5a0aa81121377"
+                    "*"
                 ],
                 "path": "windows/runner/exe"
             },
@@ -47,7 +47,7 @@
     },
     "coins": {
         "update_commit_on_build": true,
-        "bundled_coins_repo_commit": "55abfdedbd640958cad8ef3c339bd51d54838e8e",
+        "bundled_coins_repo_commit": "5c8100dbefe16eb3eec9a672bb6e628ce37ddb57",
         "coins_repo_api_url": "https://api.github.com/repos/KomodoPlatform/coins",
         "coins_repo_content_url": "https://raw.githubusercontent.com/KomodoPlatform/coins",
         "coins_repo_branch": "master",

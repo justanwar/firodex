@@ -85,8 +85,6 @@ assets/config/coins.json
 assets/config/coins_config.json 
 assets/config/coins_ci.json
 assets/coin_icons/**/*.png
-!assets/coin_icons/png/sia.png
-!assets/coin_icons/png/tsia.png
 
 # Python
 venv/

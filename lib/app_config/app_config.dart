@@ -124,7 +124,14 @@ List<String> get enabledByDefaultTrezorCoins => [
       'LTC',
     ];
 
-List<String> get coinsWithFaucet => ['RICK', 'MORTY', 'DOC', 'MARTY', 'TSIA'];
+List<String> get coinsWithFaucet => [
+      'RICK',
+      'MORTY',
+      'DOC',
+      'MARTY',
+      'TSIA',
+      'ANAGAMI'
+    ];
 
 const String logsDbName = 'logs';
 const String appFolder = 'KomodoWallet';

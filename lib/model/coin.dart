@@ -56,7 +56,7 @@ class Coin {
     // final List<CoinNode> nodesList = (type == CoinType.sia)
     //     ? [
     //         CoinNode(
-    //           url: json['rpcurl'] ?? 'https://api.siascan.com/anagami/wallet/',
+    //           url: json['rpcurl'],
     //           guiAuth: false,
     //         )
     //       ]
@@ -73,7 +73,7 @@ class Coin {
     if (type == CoinType.sia) {
       // nodesList = [
       //   CoinNode(
-      //       url: json['rpcurl'] ?? 'https://api.siascan.com/anagami/wallet/',
+      //       url: json['rpcurl'],
       //       guiAuth: false)
       // ];
       // return Coin(

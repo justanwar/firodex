@@ -283,7 +283,7 @@ class CoinsRepo {
           ticker: coin.abbr,
           httpConf: SiaHttpConf(
             url: coin.nodes.firstOrNull?.url ??
-                'https://api.siascan.com/anagami/wallet/',
+                '',
             password: 'dummy',
           ),
         ));
