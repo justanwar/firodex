@@ -1,8 +1,10 @@
+version: '3.8'
 services:
-  flutter-web:
+  komodo-wallet-web:
     build: .
-    volumes:
-      - ./output:/komodo-wallet/build/web
+    ports:
+      - "8080:80" # Map port 8080 on the host to port 80 in the container
     environment:
       - OVERRIDE_DEFI_API_DOWNLOAD=true
-    command: bash -c "flutter pub get && flutter build web --release"
+    volumes:
+      - ./output:/komodo-wallet/build/web # Optional, for debugging purposes

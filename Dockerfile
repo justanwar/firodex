@@ -1,6 +1,9 @@
+# Use Ubuntu base image
 FROM ubuntu:22.04
 
 LABEL Author="smk <smk@komodoplatform.com>"
+
+ENV OVERRIDE_DEFI_API_DOWNLOAD=true
 
 # Install required dependencies
 RUN apt-get update -y && \
@@ -13,24 +16,14 @@ RUN apt-get update -y && \
     git \
     unzip \
     xz-utils \
-    zip && \
+    zip \
+    nginx && \
     apt-get clean
 
 # Install Node.js 18
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean
-
-# Install Android SDK
-RUN mkdir -p /usr/lib/android-sdk/cmdline-tools/latest && \
-    curl -o android-sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9123335_latest.zip && \
-    unzip -o android-sdk.zip -d /usr/lib/android-sdk/cmdline-tools && \
-    rm android-sdk.zip && \
-    mv /usr/lib/android-sdk/cmdline-tools/cmdline-tools/* /usr/lib/android-sdk/cmdline-tools/latest && \
-    rmdir /usr/lib/android-sdk/cmdline-tools/cmdline-tools && \
-    yes | /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses && \
-    /usr/lib/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-
 
 # Install Flutter v3.22.0
 RUN mkdir -p /usr/local/flutter && \
@@ -41,18 +34,37 @@ RUN mkdir -p /usr/local/flutter && \
 # Add Flutter to PATH
 ENV PATH="/usr/local/flutter/bin:$PATH"
 
-RUN flutter config --android-sdk /usr/lib/android-sdk
-# Verify Flutter installation and enable Android support
-RUN flutter doctor --android-licenses && \
-    flutter doctor 
-
-
+# Create working directory and copy application
 WORKDIR /komodo-wallet
 COPY ./ /komodo-wallet
 
+# Clean build and intermediate files
 RUN git config --global --add safe.directory /usr/local/flutter
+RUN rm -rf output/* build/* web/src/mm2/* web/src/kdf/* web/dist/*
 
-RUN rm -rf build/* web/src/mm2/* web/src/kdf/* web/dist/*
+# Build the Flutter app
+RUN flutter pub get && \
+    flutter build web --release || \
+    flutter pub get && \
+    flutter build web --release
 
-CMD ["bash"]
+# Move the Flutter build output to the NGINX web root
+RUN rm -rf /var/www/html/* && \
+    cp -r build/web/* /var/www/html/
 
+# Expose NGINX default port
+EXPOSE 80
+
+# Configure NGINX
+RUN echo 'server { \
+    listen 80; \
+    root /var/www/html; \
+    index index.html; \
+    server_name _; \
+    location / { \
+        try_files $uri /index.html; \
+    } \
+}' > /etc/nginx/sites-available/default
+
+# Start NGINX
+CMD ["nginx", "-g", "daemon off;"]
