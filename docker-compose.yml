@@ -1,0 +1,8 @@
+services:
+  flutter-web:
+    build: .
+    volumes:
+      - ./output:/komodo-wallet/build/web
+    environment:
+      - OVERRIDE_DEFI_API_DOWNLOAD=true
+    command: bash -c "flutter pub get && flutter build web --release"

@@ -58,6 +58,7 @@ airdex-build.tar.gz
 **/test_wallet.json
 **/debug_data.json
 **/config/firebase_analytics.json
+output/
 
 # js
 node_modules
