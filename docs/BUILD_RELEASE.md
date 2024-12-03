@@ -37,21 +37,14 @@ flutter build apk
 
 ### Build for Web
 
-```bash
-sh .docker/build.sh web release
-```
-
-Alternatively, you can run the docker build commands directly:
+Update `app_build/build_config.json` with the branch/commit of `KDF` and `coins` repos to use for the build, then from the project root folder:
 
 ```bash
-# Build the supporting images
-docker build -f .docker/kdf-android.dockerfile . -t komodo/kdf-android --build-arg KDF_BRANCH=main
-docker build -f .docker/android-sdk.dockerfile . -t komodo/android-sdk:34
-docker build -f .docker/komodo-wallet-android.dockerfile . -t komodo/komodo-wallet
-# Build the app
-mkdir -p build
-docker run --rm -v ./build:/app/build komodo/komodo-wallet:latest bash -c "flutter pub get && flutter build web --release || flutter build web --release"
+docker compose build && docker compose up -d
 ```
+
+This will build and then launch the wallet on port 8080 (this can be changed in `docker-compose.yaml`). Build files will also be available on the host in the `output/` subfolder.
+
 
 ### Build for Android
 
