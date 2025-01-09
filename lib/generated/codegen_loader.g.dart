@@ -214,6 +214,7 @@ abstract class LocaleKeys {
       'swapFeeDetailsPaidFromReceivedVolume';
   static const logoutPopupTitle = 'logoutPopupTitle';
   static const logoutPopupDescription = 'logoutPopupDescription';
+  static const logoutPopupDescriptionWalletOnly = 'logoutPopupDescriptionWalletOnly';
   static const transactionDetailsTitle = 'transactionDetailsTitle';
   static const customSeedWarningText = 'customSeedWarningText';
   static const customSeedIUnderstand = 'customSeedIUnderstand';
