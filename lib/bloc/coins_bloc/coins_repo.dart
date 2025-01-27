@@ -15,7 +15,6 @@ import 'package:web_dex/mm2/mm2.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/bloc_response.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/disable_coin/disable_coin_req.dart';
-import 'package:web_dex/mm2/mm2_api/rpc/get_enabled_coins_request.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/withdraw/withdraw_errors.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/withdraw/withdraw_request.dart';
 import 'package:web_dex/model/cex_price.dart';
@@ -138,7 +137,7 @@ class CoinsRepo {
     final coinsMap = Map.fromEntries(entries);
     for (final coinId in coinsMap.keys) {
       final coin = coinsMap[coinId]!;
-      final coinAddress = await _getCoinAddress(coin.abbr, coinsMap);
+      final coinAddress = await getFirstPubkey(coin.abbr);
       coinsMap[coinId] = coin.copyWith(
         address: coinAddress,
         state: CoinState.active,
@@ -169,9 +168,27 @@ class CoinsRepo {
     );
   }
 
-  Future<kdf_rpc.MyBalanceResponse> tryGetBalanceInfo(String abbr) async {
+  /// Attempts to get the balance of a coin. If the coin is not found, it will
+  /// return a zero balance.
+  Future<kdf_rpc.BalanceInfo> tryGetBalanceInfo(String abbr) async {
     try {
-      return await _kdfSdk.client.rpc.wallet.myBalance(coin: abbr);
+      final assets = _kdfSdk.assets.findAssetsByTicker(abbr).nonNulls;
+      if (assets.isEmpty) {
+        throw Exception("Asset $abbr not found");
+      }
+
+      if (assets.length == 1) {
+        final pubkeys = await _kdfSdk.pubkeys.getPubkeys(assets.single);
+        return pubkeys.balance;
+      }
+
+      final balances = await Future.wait(
+        assets.map((asset) => _kdfSdk.pubkeys.getPubkeys(asset)),
+      );
+      return balances.fold<kdf_rpc.BalanceInfo>(
+        kdf_rpc.BalanceInfo.zero(),
+        (a, b) => a + b.balance,
+      );
     } catch (e, s) {
       log(
         'Failed to get coin $abbr balance: $e',
@@ -179,12 +196,7 @@ class CoinsRepo {
         path: 'coins_repo => tryGetBalanceInfo',
         trace: s,
       ).ignore();
-      return kdf_rpc.MyBalanceResponse(
-        address: '',
-        balance: kdf_rpc.BalanceInfo.zero(),
-        coin: abbr,
-        mmrpc: '2',
-      );
+      return kdf_rpc.BalanceInfo.zero();
     }
   }
 
@@ -255,73 +267,15 @@ class CoinsRepo {
     }
   }
 
-  Future<String?> getCoinAddress(String coinId) async {
-    final enabledCoins = await getEnabledCoinsMap();
-    return _getCoinAddress(coinId, enabledCoins);
-  }
-
-  Future<String?> _getCoinAddress(
-    String coinId,
-    Map<String, Coin> walletCoins,
-  ) async {
-    final isLoggedIn = await _kdfSdk.auth.isSignedIn();
-    final currentWallet = (await _kdfSdk.auth.currentUser)?.wallet;
-    final loggedIn = isLoggedIn && currentWallet != null;
-    if (!loggedIn) {
+  @Deprecated('Use SDK pubkeys.getPubkeys instead and let the user '
+      'select from the available options.')
+  Future<String?> getFirstPubkey(String coinId) async {
+    final asset = _kdfSdk.assets.findAssetsByTicker(coinId).single;
+    final pubkeys = await _kdfSdk.pubkeys.getPubkeys(asset);
+    if (pubkeys.keys.isEmpty) {
       return null;
     }
-
-    final String accountKey = currentWallet.id;
-    if (_addressCache.containsKey(accountKey) &&
-        _addressCache[accountKey]!.containsKey(coinId)) {
-      return _addressCache[accountKey]![coinId];
-    } else {
-      try {
-        if (walletCoins[coinId] == null) {
-          await activateCoinsSync([getCoin(coinId)!]);
-        }
-
-        // This function is also called within `getEnabledCoins`, so cannot use
-        // that function unless you enjoy recursive stackoverflow :)
-        final legacyEnabledCoins = await _getEnabledCoins(walletCoins.values);
-        final Coin? coin = legacyEnabledCoins
-            ?.firstWhereOrNull((enabledCoin) => enabledCoin.abbr == coinId);
-
-        if (coin == null || coin.address == null) {
-          if (!_addressCache.containsKey(accountKey)) {
-            _addressCache[accountKey] = {};
-          }
-
-          // Cache this wallet's addresses
-          for (final walletCoin in walletCoins.values) {
-            if (walletCoin.address != null &&
-                !_addressCache[accountKey]!.containsKey(walletCoin.abbr)) {
-              // Exit if the address already exists in a different account
-              // Address belongs to another account, this is a bug,
-              // gives outdated data
-              for (final entry in _addressCache.entries) {
-                if (entry.key != accountKey &&
-                    entry.value.containsValue(walletCoin.address)) {
-                  return null;
-                }
-              }
-
-              _addressCache[accountKey]![walletCoin.abbr] = walletCoin.address!;
-            }
-          }
-
-          return _addressCache[accountKey]![coinId];
-        }
-      } catch (e, s) {
-        log(
-          'Failed to get coin address: $e',
-          isError: true,
-          path: 'coins_repo => _getCoinAddress',
-          trace: s,
-        ).ignore();
-      }
-    }
-    return null;
+    return pubkeys.keys.first.address;
   }
 
   double? getUsdPriceByAmount(String amount, String coinAbbr) {
@@ -495,8 +449,8 @@ class CoinsRepo {
         await Future.wait(coins.map((coin) => tryGetBalanceInfo(coin.abbr)));
 
     for (int i = 0; i < coins.length; i++) {
-      final newBalance = newBalances[i].balance.total.toDouble();
-      final newSendableBalance = newBalances[i].balance.spendable.toDouble();
+      final newBalance = newBalances[i].total.toDouble();
+      final newSendableBalance = newBalances[i].spendable.toDouble();
 
       final balanceChanged = newBalance != coins[i].balance;
       final sendableBalanceChanged =
@@ -548,52 +502,5 @@ class CoinsRepo {
     return BlocResponse(
       result: withdrawDetails,
     );
-  }
-
-  /// This is needed to access the legacy `coin.address` field. The alternative
-  /// method is to use the [tryGetBalanceInfo] method, which also returns an
-  /// address field (although idk if it's equivalent at the time of writing)
-  Future<List<Coin>?> _getEnabledCoins(Iterable<Coin> knownCoins) async {
-    JsonMap response;
-    try {
-      response = await _mm2.call(GetEnabledCoinsReq());
-    } catch (e) {
-      log(
-        'Error getting enabled coins: $e',
-        path: 'api => getEnabledCoins => _call',
-        isError: true,
-      ).ignore();
-      return null;
-    }
-
-    dynamic resultJson;
-    try {
-      resultJson = response['result'];
-    } catch (e, s) {
-      log(
-        'Error parsing of enabled coins response: $e',
-        path: 'api => getEnabledCoins => jsonDecode',
-        trace: s,
-        isError: true,
-      ).ignore();
-      return null;
-    }
-
-    final List<Coin> list = [];
-    if (resultJson is List) {
-      for (final dynamic item in resultJson) {
-        final enabledCoinItem = item as Map<String, dynamic>? ?? {};
-        final Coin? coin = knownCoins.firstWhereOrNull(
-          (Coin known) => known.abbr == enabledCoinItem['ticker'],
-        );
-
-        if (coin != null) {
-          coin.address = enabledCoinItem['address'] as String?;
-          list.add(coin);
-        }
-      }
-    }
-
-    return list;
   }
 }
