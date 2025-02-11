@@ -1,11 +1,29 @@
+import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:web_dex/model/cex_price.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/coin_type.dart';
 
-Coin setCoin(
-    {double? usdPrice, double? change24h, String? coinAbbr, double? balance}) {
+Coin setCoin({
+  double? usdPrice,
+  double? change24h,
+  String? coinAbbr,
+  double? balance,
+}) {
   return Coin(
     abbr: coinAbbr ?? 'KMD',
+    id: AssetId(
+      id: coinAbbr ?? 'KMD',
+      name: 'Komodo',
+      parentId: null,
+      symbol: AssetSymbol(
+        assetConfigId: coinAbbr ?? 'KMD',
+        coinGeckoId: 'komodo',
+        coinPaprikaId: 'kmd-komodo',
+      ),
+      derivationPath: "m/44'/141'/0'",
+      chainId: AssetChainId(chainId: 0),
+      subClass: CoinSubClass.smartChain,
+    ),
     accounts: null,
     activeByDefault: true,
     coingeckoId: "komodo",

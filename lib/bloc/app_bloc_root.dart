@@ -28,6 +28,7 @@ import 'package:web_dex/bloc/cex_market_data/profit_loss/profit_loss_bloc.dart';
 import 'package:web_dex/bloc/cex_market_data/profit_loss/profit_loss_repository.dart';
 import 'package:web_dex/bloc/coins_bloc/coins_bloc.dart';
 import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
+import 'package:web_dex/bloc/coins_manager/coins_manager_bloc.dart';
 import 'package:web_dex/bloc/dex_repository.dart';
 import 'package:web_dex/bloc/market_maker_bot/market_maker_bot/market_maker_bot_bloc.dart';
 import 'package:web_dex/bloc/market_maker_bot/market_maker_bot/market_maker_bot_repository.dart';
@@ -125,7 +126,7 @@ class AppBlocRoot extends StatelessWidget {
             demoDataGenerator: DemoDataCache.withDefaults(),
           )
         : */
-        TransactionHistoryRepo(sdk: komodoDefiSdk);
+        SdkTransactionHistoryRepository(sdk: komodoDefiSdk);
 
     final profitLossRepo = ProfitLossRepository.withDefaults(
       transactionHistoryRepo: transactionsRepo,
@@ -135,7 +136,6 @@ class AppBlocRoot extends StatelessWidget {
       demoMode: performanceMode,
       coinsRepository: coinsRepository,
       mm2Api: mm2Api,
-      sdk: komodoDefiSdk,
     );
 
     final portfolioGrowthRepo = PortfolioGrowthRepository.withDefaults(
@@ -144,7 +144,6 @@ class AppBlocRoot extends StatelessWidget {
       demoMode: performanceMode,
       coinsRepository: coinsRepository,
       mm2Api: mm2Api,
-      sdk: komodoDefiSdk,
     );
 
     _clearCachesIfPerformanceModeChanged(
@@ -301,6 +300,12 @@ class AppBlocRoot extends StatelessWidget {
               kdfSdk: komodoDefiSdk,
               trezorRepo: trezorRepo,
               coinsRepository: coinsRepository,
+            ),
+          ),
+          BlocProvider<CoinsManagerBloc>(
+            create: (context) => CoinsManagerBloc(
+              coinsRepo: coinsRepository,
+              sdk: komodoDefiSdk,
             ),
           ),
         ],

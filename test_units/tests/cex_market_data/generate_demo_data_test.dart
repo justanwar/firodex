@@ -52,17 +52,19 @@ void testGenerateDemoData() {
         final goodTransactions =
             await generator.generateTransactions('BTC', PerformanceMode.good);
         final badTransactions = await generator.generateTransactions(
-            'BTC', PerformanceMode.veryBad);
+          'BTC',
+          PerformanceMode.veryBad,
+        );
 
         double goodBalance = generator.initialBalance;
         double badBalance = generator.initialBalance;
 
         for (final tx in goodTransactions) {
-          goodBalance += double.parse(tx.myBalanceChange);
+          goodBalance += tx.balanceChanges.netChange.toDouble();
         }
 
         for (final tx in badTransactions) {
-          badBalance += double.parse(tx.myBalanceChange);
+          badBalance += tx.balanceChanges.netChange.toDouble();
         }
 
         expect(goodBalance, greaterThan(badBalance));
@@ -70,18 +72,17 @@ void testGenerateDemoData() {
 
       test('generateTransactions produces valid transaction objects', () async {
         final transactions = await generator.generateTransactions(
-            'BTC', PerformanceMode.mediocre);
+          'BTC',
+          PerformanceMode.mediocre,
+        );
 
         for (final tx in transactions) {
-          expect(tx.coin, equals('BTC'));
+          expect(tx.assetId.id, equals('BTC'));
           expect(tx.confirmations, inInclusiveRange(1, 3));
-          expect(tx.feeDetails.coin, equals('USDT'));
           expect(tx.from, isNotEmpty);
           expect(tx.to, isNotEmpty);
           expect(tx.internalId, isNotEmpty);
           expect(tx.txHash, isNotEmpty);
-          expect(double.tryParse(tx.myBalanceChange), isNotNull);
-          expect(double.tryParse(tx.totalAmount), isNotNull);
         }
       });
 
