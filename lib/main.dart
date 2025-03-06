@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:device_preview_screenshot/device_preview_screenshot.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,7 @@ import 'package:web_dex/services/storage/get_storage.dart';
 import 'package:web_dex/shared/constants.dart';
 import 'package:web_dex/shared/utils/platform_tuner.dart';
 import 'package:web_dex/shared/utils/utils.dart';
+import 'package:web_dex/utilities/image_clipboard_processor.dart';
 import 'package:feedback/feedback.dart';
 
 part 'services/initializer/app_bootstrapper.dart';
@@ -78,23 +80,34 @@ Future<void> main() async {
       await initializeLogger(mm2Api);
 
       runApp(
-        EasyLocalization(
-          supportedLocales: localeList,
-          fallbackLocale: localeList.first,
-          useFallbackTranslations: true,
-          useOnlyLangCode: true,
-          path: '$assetsPath/translations',
-          child: MultiRepositoryProvider(
-            providers: [
-              RepositoryProvider(create: (_) => komodoDefiSdk),
-              RepositoryProvider(create: (_) => mm2Api),
-              RepositoryProvider(create: (_) => coinsRepo),
-              RepositoryProvider(create: (_) => trezorRepo),
-              RepositoryProvider(create: (_) => trezor),
-              RepositoryProvider(create: (_) => walletsRepository),
-            ],
-            child: const MyApp(),
-          ),
+        DevicePreview(
+                tools: [
+                  ...DevicePreview.defaultTools,
+                   DevicePreviewScreenshot(
+                    onScreenshot: screenshotAsImage,
+                    multipleScreenshots: true,
+                  ),
+                ],
+          builder: (context) {
+            return EasyLocalization(
+              supportedLocales: localeList,
+              fallbackLocale: localeList.first,
+              useFallbackTranslations: true,
+              useOnlyLangCode: true,
+              path: '$assetsPath/translations',
+              child: MultiRepositoryProvider(
+                providers: [
+                  RepositoryProvider(create: (_) => komodoDefiSdk),
+                  RepositoryProvider(create: (_) => mm2Api),
+                  RepositoryProvider(create: (_) => coinsRepo),
+                  RepositoryProvider(create: (_) => trezorRepo),
+                  RepositoryProvider(create: (_) => trezor),
+                  RepositoryProvider(create: (_) => walletsRepository),
+                ],
+                child: const MyApp(),
+              ),
+            );
+          }
         ),
       );
     },

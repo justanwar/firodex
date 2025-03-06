@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "walletrc",
+    "site": "komodo-preview",
     "public": "build/web",
     "ignore": [
       "firebase.json",

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_theme/app_theme.dart';
+import 'package:device_preview/device_preview.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -345,11 +346,12 @@ class _MyAppViewState extends State<_MyAppView> {
       darkTheme: theme.global.dark,
       theme: theme.global.light,
       routerDelegate: _routerDelegate,
-      locale: context.locale,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,
       routeInformationParser: _routeInformationParser,
       backButtonDispatcher: _airDexBackButtonDispatcher,
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
     );
   }
 
