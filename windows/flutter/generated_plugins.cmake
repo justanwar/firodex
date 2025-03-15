@@ -6,8 +6,10 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_core
   flutter_inappwebview_windows
   flutter_secure_storage_windows
+  irondash_engine_context
   local_auth_windows
   share_plus
+  super_native_extensions
   url_launcher_windows
   window_size
 )
