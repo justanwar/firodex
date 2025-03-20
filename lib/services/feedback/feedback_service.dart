@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
+import 'package:web_dex/utilities/image_clipboard_processor.dart';
 
 // The following environment variables must be set using dart-define:
 // TRELLO_API_KEY: Your Trello API key
@@ -193,11 +194,19 @@ ${metadata.entries.map((e) => '${e.key}: ${e.value}').join('\n')}
 extension BuildContextShowFeedback on BuildContext {
   /// Shows the feedback dialog if the feedback service is available.
   /// Does nothing if the feedback service is not configured.
+  /// Also respects the visibility toggle from DevicePreviewBugReportNotifier if present.
   void showFeedback() {
     final feedbackService = FeedbackService.fromEnvironment();
     if (feedbackService == null) {
       debugPrint(
           'Feedback dialog not shown: feedback service is not configured');
+      return;
+    }
+
+    // Check if the bug report feature is enabled in DevicePreview
+    final bugReportNotifier = DevicePreviewBugReportNotifier.of(this);
+    if (bugReportNotifier != null && !bugReportNotifier.isVisible) {
+      debugPrint('Feedback dialog not shown: disabled by DevicePreview toggle');
       return;
     }
 

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:device_preview_screenshot/device_preview_screenshot.dart';
+import 'package:device_preview_plus/device_preview_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +37,7 @@ import 'package:web_dex/shared/utils/platform_tuner.dart';
 import 'package:web_dex/shared/utils/utils.dart';
 import 'package:web_dex/utilities/image_clipboard_processor.dart';
 import 'package:feedback/feedback.dart';
+import 'package:web_dex/services/feedback/feedback_service.dart';
 
 part 'services/initializer/app_bootstrapper.dart';
 
@@ -80,34 +81,34 @@ Future<void> main() async {
       await initializeLogger(mm2Api);
 
       runApp(
-        DevicePreview(
-                tools: [
-                  ...DevicePreview.defaultTools,
-                   DevicePreviewScreenshot(
-                    onScreenshot: screenshotAsImage,
-                    multipleScreenshots: true,
+        DevicePreviewBugReportNotifier(
+          child: DevicePreview(
+              key: MyApp.devicePreviewKey,
+              tools: [
+                const DevicePreviewScreenshotButtonSliver(),
+                const DevicePreviewBugReportToggleSliver(),
+                ...DevicePreview.defaultTools,
+              ],
+              builder: (context) {
+                return EasyLocalization(
+                  supportedLocales: localeList,
+                  fallbackLocale: localeList.first,
+                  useFallbackTranslations: true,
+                  useOnlyLangCode: true,
+                  path: '$assetsPath/translations',
+                  child: MultiRepositoryProvider(
+                    providers: [
+                      RepositoryProvider(create: (_) => komodoDefiSdk),
+                      RepositoryProvider(create: (_) => mm2Api),
+                      RepositoryProvider(create: (_) => coinsRepo),
+                      RepositoryProvider(create: (_) => trezorRepo),
+                      RepositoryProvider(create: (_) => trezor),
+                      RepositoryProvider(create: (_) => walletsRepository),
+                    ],
+                    child: const MyApp(),
                   ),
-                ],
-          builder: (context) {
-            return EasyLocalization(
-              supportedLocales: localeList,
-              fallbackLocale: localeList.first,
-              useFallbackTranslations: true,
-              useOnlyLangCode: true,
-              path: '$assetsPath/translations',
-              child: MultiRepositoryProvider(
-                providers: [
-                  RepositoryProvider(create: (_) => komodoDefiSdk),
-                  RepositoryProvider(create: (_) => mm2Api),
-                  RepositoryProvider(create: (_) => coinsRepo),
-                  RepositoryProvider(create: (_) => trezorRepo),
-                  RepositoryProvider(create: (_) => trezor),
-                  RepositoryProvider(create: (_) => walletsRepository),
-                ],
-                child: const MyApp(),
-              ),
-            );
-          }
+                );
+              }),
         ),
       );
     },
@@ -154,6 +155,9 @@ PerformanceMode? _getPerformanceModeFromUrl() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  static GlobalKey<DevicePreviewWidgetState> devicePreviewKey =
+      GlobalKey<DevicePreviewWidgetState>();
 
   @override
   Widget build(BuildContext context) {

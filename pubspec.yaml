@@ -169,8 +169,7 @@ dependencies:
       path: packages/komodo_ui
       ref: dev
   feedback: ^3.1.0
-  device_preview: ^1.2.0
-  device_preview_screenshot: ^1.0.0
+  device_preview_plus: ^2.3.3
   super_clipboard: ^0.8.24
 
 dev_dependencies:

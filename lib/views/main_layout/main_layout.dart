@@ -11,6 +11,7 @@ import 'package:web_dex/router/state/routing_state.dart';
 import 'package:web_dex/services/alpha_version_alert_service/alpha_version_alert_service.dart';
 import 'package:web_dex/services/feedback/feedback_service.dart';
 import 'package:web_dex/shared/utils/window/window.dart';
+import 'package:web_dex/utilities/image_clipboard_processor.dart';
 import 'package:web_dex/views/common/header/app_header.dart';
 import 'package:web_dex/views/common/main_menu/main_menu_bar_mobile.dart';
 
@@ -41,6 +42,10 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    // Get the bug report visibility status from DevicePreviewBugReportNotifier
+    final bugReportNotifier = DevicePreviewBugReportNotifier.of(context);
+    final showBugReportButton = bugReportNotifier?.isVisible ?? true;
+
     return BlocListener<AuthBloc, AuthBlocState>(
       listener: (context, state) {
         if (state.mode == AuthorizeMode.noLogin) {
@@ -58,7 +63,7 @@ class _MainLayoutState extends State<MainLayout> {
               ),
         body: SafeArea(child: MainLayoutRouter()),
         bottomNavigationBar: !isDesktop ? MainMenuBarMobile() : null,
-        floatingActionButton: context.isFeedbackAvailable
+        floatingActionButton: context.isFeedbackAvailable && showBugReportButton
             ? FloatingActionButton(
                 onPressed: () => context.showFeedback(),
                 tooltip: 'Report a bug or feedback',
