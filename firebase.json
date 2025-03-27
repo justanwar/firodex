@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "walletrc",
+    "site": "wallet-rc-device-preview",
     "public": "build/web",
     "ignore": [
       "firebase.json",
