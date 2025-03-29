@@ -70,18 +70,28 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
 
       _log.info('login  from a wallet');
       emit(AuthBlocState.loading());
-      await _kdfSdk.auth.signIn(
-        walletName: event.wallet.name,
-        password: event.password,
-        options: AuthOptions(
-          derivationMethod: event.wallet.config.type == WalletType.hdwallet
-              ? DerivationMethod.hdWallet
-              : DerivationMethod.iguana,
-        ),
-      );
+      try {
+        await _kdfSdk.auth.signIn(
+          walletName: event.wallet.name,
+          password: event.password,
+          options: AuthOptions(
+            derivationMethod: event.wallet.config.type == WalletType.hdwallet
+                ? DerivationMethod.hdWallet
+                : DerivationMethod.iguana,
+          ),
+        );
+      } catch (e) {
+        // Handle specific SDK authentication errors
+        if (e.toString().contains('Invalid password')) {
+          return emit(AuthBlocState.error('invalid_password'));
+        }
+        // For other SDK authentication errors, pass through the specific error
+        return emit(AuthBlocState.error(e.toString()));
+      }
+
       final KdfUser? currentUser = await _kdfSdk.auth.currentUser;
       if (currentUser == null) {
-        return emit(AuthBlocState.error('Failed to login'));
+        return emit(AuthBlocState.error('user_not_found'));
       }
 
       _log.info('logged in  from a wallet');
@@ -90,7 +100,7 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
     } catch (e, s) {
       final error = 'Failed to login wallet ${event.wallet.name}';
       _log.shout(error, e, s);
-      emit(AuthBlocState.error(error));
+      emit(AuthBlocState.error('login_failed'));
       await _authChangesSubscription?.cancel();
     }
   }

@@ -79,9 +79,8 @@ class _WalletLogInState extends State<WalletLogIn> {
   Widget build(BuildContext context) {
     return BlocBuilder<AuthBloc, AuthBlocState>(
       builder: (context, state) {
-        // TODO: expand to parse SDK errors and show more specific messages
-        final errorMessage = state.errorMessage != null
-            ? LocaleKeys.invalidPasswordError.tr()
+        final String? errorMessage = state.errorMessage != null
+            ? _mapErrorToMessage(state.errorMessage!)
             : null;
 
         return Column(
@@ -142,6 +141,19 @@ class _WalletLogInState extends State<WalletLogIn> {
         );
       },
     );
+  }
+
+  String _mapErrorToMessage(String error) {
+    switch (error) {
+      case 'invalid_password':
+        return LocaleKeys.invalidPasswordError.tr();
+      case 'user_not_found':
+        return LocaleKeys.userNotFoundError.tr();
+      case 'login_failed':
+        return LocaleKeys.loginFailedError.tr();
+      default:
+        return error;
+    }
   }
 }
 
