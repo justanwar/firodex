@@ -19,10 +19,28 @@ class UiBorderButton extends StatelessWidget {
     this.fontSize = 14,
     this.textColor,
   });
-  final String text;
 
-  final double width;
-  final double height;
+  /// Constructor for a border button which inherits its size from the parent widget.
+  const UiBorderButton.minSize({
+    required this.text,
+    required this.onPressed,
+    super.key,
+    this.borderColor,
+    this.borderWidth = 3,
+    this.backgroundColor,
+    this.prefix,
+    this.suffix,
+    this.icon,
+    this.allowMultiline = false,
+    this.fontWeight = FontWeight.w700,
+    this.fontSize = 14,
+    this.textColor,
+  })  : width = null,
+        height = null;
+
+  final String text;
+  final double? width;
+  final double? height;
   final Widget? prefix;
   final Widget? suffix;
   final Color? borderColor;
@@ -42,10 +60,7 @@ class UiBorderButton extends StatelessWidget {
     return Opacity(
       opacity: onPressed == null ? 0.4 : 1,
       child: Container(
-        constraints: BoxConstraints.tightFor(
-          width: width,
-          height: allowMultiline ? null : height,
-        ),
+        constraints: _buildConstraints(),
         decoration: BoxDecoration(
           borderRadius: const BorderRadius.all(Radius.circular(18)),
           color: borderColor ?? theme.custom.defaultBorderButtonBorder,
@@ -107,6 +122,21 @@ class UiBorderButton extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  BoxConstraints _buildConstraints() {
+    if (width != null && height != null) {
+      if (allowMultiline) {
+        return BoxConstraints.tightFor(width: width);
+      }
+      return BoxConstraints.tightFor(width: width, height: height);
+    } else if (width != null) {
+      return BoxConstraints.tightFor(width: width);
+    } else if (height != null && !allowMultiline) {
+      return BoxConstraints.tightFor(height: height);
+    } else {
+      return const BoxConstraints();
+    }
   }
 }
 

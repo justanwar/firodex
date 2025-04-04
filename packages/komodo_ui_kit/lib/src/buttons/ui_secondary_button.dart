@@ -18,10 +18,27 @@ class UiSecondaryButton extends StatefulWidget {
     super.key,
   });
 
+  /// Constructor for a secondary button which inherits its size from the parent
+  /// widget.
+  const UiSecondaryButton.minSize({
+    required this.onPressed,
+    this.buttonKey,
+    this.text = '',
+    this.borderColor,
+    this.textStyle,
+    this.prefix,
+    this.border,
+    this.focusNode,
+    this.shadowColor,
+    this.child,
+    super.key,
+  })  : width = null,
+        height = null;
+
   final String text;
   final TextStyle? textStyle;
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
   final Color? borderColor;
   final Widget? prefix;
   final Key? buttonKey;

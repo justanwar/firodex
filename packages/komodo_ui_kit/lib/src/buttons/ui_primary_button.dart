@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:komodo_ui_kit/src/buttons/ui_base_button.dart';
 
 class UiPrimaryButton extends StatefulWidget {
+  /// Creates a primary button with the given properties.
+  ///
+  /// NB! Prefer using the [UiPrimaryButton.minSize] constructor. The [width]
+  /// and [height] parameters will be deprecated in the future and the button
+  /// will have the same behavior as the [UiPrimaryButton.minSize] constructor.
   const UiPrimaryButton({
     required this.onPressed,
     this.buttonKey,
@@ -12,6 +17,7 @@ class UiPrimaryButton extends StatefulWidget {
     this.backgroundColor,
     this.textStyle,
     this.prefix,
+    this.prefixPadding,
     this.border,
     this.focusNode,
     this.shadowColor,
@@ -21,12 +27,38 @@ class UiPrimaryButton extends StatefulWidget {
     super.key,
   });
 
+  /// Constructor for a primary button which inherits its size from the parent
+  /// widget.
+  ///
+  /// By default, the button will take up the minimum width required to fit its
+  /// content and use the minimum height needed. If you want it to take up the
+  /// full width of its parent, wrap it in a [SizedBox] or a [Container] with
+  /// `width: double.infinity`.
+  const UiPrimaryButton.minSize({
+    required this.onPressed,
+    this.buttonKey,
+    this.text = '',
+    this.backgroundColor,
+    this.textStyle,
+    this.prefix,
+    this.prefixPadding = const EdgeInsets.only(right: 12),
+    this.border,
+    this.focusNode,
+    this.shadowColor,
+    this.child,
+    this.padding,
+    this.borderRadius,
+    super.key,
+  })  : width = null,
+        height = null;
+
   final String text;
   final TextStyle? textStyle;
-  final double width;
-  final double height;
+  final double? width;
+  final double? height;
   final Color? backgroundColor;
   final Widget? prefix;
+  final EdgeInsets? prefixPadding;
   final Key? buttonKey;
   final BoxBorder? border;
   final void Function()? onPressed;
@@ -71,6 +103,7 @@ class _UiPrimaryButtonState extends State<UiPrimaryButton> {
               text: widget.text,
               textStyle: widget.textStyle,
               prefix: widget.prefix,
+              prefixPadding: widget.prefixPadding,
             ),
       ),
     );
@@ -104,18 +137,24 @@ class _ButtonContent extends StatelessWidget {
     required this.text,
     required this.textStyle,
     required this.prefix,
+    this.prefixPadding,
   });
 
   final String text;
   final TextStyle? textStyle;
   final Widget? prefix;
+  final EdgeInsets? prefixPadding;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (prefix != null) prefix!,
+        if (prefix != null)
+          Padding(
+            padding: prefixPadding ?? const EdgeInsets.only(right: 12),
+            child: prefix!,
+          ),
         Text(text, style: textStyle ?? _defaultTextStyle(context)),
       ],
     );
