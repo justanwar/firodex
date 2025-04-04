@@ -22,7 +22,7 @@ environment:
   # the new formatting style may cause conflicts. This allows to run 3.7.0, but it will not
   # enforce the new formatting style until the mininum Dart version is updated.
   sdk: ">=3.6.0 <4.0.0"
-  flutter: ^3.29.0
+  flutter: ^3.29.2
 
 dependencies:
   ## ---- Flutter SDK
@@ -45,11 +45,11 @@ dependencies:
     path: packages/komodo_persistence_layer
 
   komodo_cex_market_data:
-    path: sdk/packages/komodo_cex_market_data # Requires symlink to the SDK in the root of the project
-    # git:
-    #   url: https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git
-    #   path: packages/komodo_cex_market_data
-    #   ref: dev
+    # path: sdk/packages/komodo_cex_market_data # Requires symlink to the SDK in the root of the project
+    git:
+      url: https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git
+      path: packages/komodo_cex_market_data
+      ref: dev
 
   ## ---- KomodoPlatform pub.dev packages (First-party)
 
@@ -57,8 +57,7 @@ dependencies:
 
   ## ---- Dart.dev, Flutter.dev
   args: ^2.7.0 # dart.dev
-  
-  flutter_markdown: 0.7.6+2 # flutter.dev
+  flutter_markdown: ^0.7.7 # flutter.dev
   http: 1.3.0 # dart.dev
   intl: 0.20.2 # dart.dev
   js: ">=0.6.7 <=0.7.2" # dart.dev
@@ -81,8 +80,8 @@ dependencies:
 
   # Upgraded Firebase, needs secure code review
 
-  firebase_analytics: 11.4.4
-  firebase_core: 3.12.1
+  firebase_analytics: ^11.4.5
+  firebase_core: ^3.13.0
 
   ## ---- Fluttercommunity.dev
 
@@ -111,10 +110,10 @@ dependencies:
   universal_html: 2.2.4
 
   # Approved via https://github.com/KomodoPlatform/komodo-wallet/pull/1106
-  hive: 2.2.3
+  hive: ^2.2.3 # Changed from git to pub.dev because git dependencies are not allowed in published packages
 
   # Approved via https://github.com/KomodoPlatform/komodo-wallet/pull/1106
-  hive_flutter: 1.1.0
+  hive_flutter: ^1.1.0 # Changed from git to pub.dev because git dependencies are not allowed in published packages
 
   # Approved via https://github.com/KomodoPlatform/komodo-wallet/pull/1106 (Outdated)
   badges: 3.1.2
@@ -131,7 +130,7 @@ dependencies:
   # TODO: review required
   dragon_charts_flutter: 0.1.1-dev.1
   bloc_concurrency: 0.3.0
-  file_picker: ^9.0.2
+  file_picker: ^10.0.0
 
   # TODO: review required - SDK integration
   path_provider: 2.1.5 # flutter.dev
@@ -142,25 +141,25 @@ dependencies:
   flutter_bloc: ^9.1.0 # sdk depends on this version, and hosted instead of git reference
   get_it: ^8.0.3 # sdk depends on this version, and hosted instead of git reference
   komodo_defi_sdk: # TODO: change to pub.dev version?
-    path: sdk/packages/komodo_defi_sdk # Requires symlink to the SDK in the root of the project
-    # git:
-    #   url: https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git
-    #   path: packages/komodo_defi_sdk
-    #   ref: dev
+    # path: sdk/packages/komodo_defi_sdk # Requires symlink to the SDK in the root of the project
+    git:
+      url: https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git
+      path: packages/komodo_defi_sdk
+      ref: dev
 
   komodo_defi_types:
-    path: sdk/packages/komodo_defi_types # Requires symlink to the SDK in the root of the project
-    # git:
-    #   url: https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git
-    #   path: packages/komodo_defi_types
-    #   ref: dev
+    # path: sdk/packages/komodo_defi_types # Requires symlink to the SDK in the root of the project
+    git:
+      url: https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git
+      path: packages/komodo_defi_types
+      ref: dev
 
   komodo_ui:
-    path: sdk/packages/komodo_ui # Requires symlink to the SDK in the root of the project
-    # git:
-    #   url: https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git
-    #   path: packages/komodo_ui
-    #   ref: dev
+    # path: sdk/packages/komodo_ui # Requires symlink to the SDK in the root of the project
+    git:
+      url: https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git
+      path: packages/komodo_ui
+      ref: dev
   feedback: ^3.1.0
 
 dev_dependencies:
