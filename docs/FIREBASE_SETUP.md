@@ -17,3 +17,15 @@ git update-index --assume-unchanged ios/firebase_app_id_file.json
 git update-index --assume-unchanged macos/firebase_app_id_file.json
 git update-index --assume-unchanged lib/firebase_options.dart
 ```
+
+## CI Pipeline Configuration
+
+For CI builds, the Firebase configuration is automatically handled in the GitHub CI workflows. The FlutterFire CLI is installed and configured during build steps with the project ID from a GitHub secret.
+
+To set up the CI pipeline for Firebase:
+
+1. Add your Firebase project ID as a GitHub secret named `FIREBASE_PROJECT_ID`
+2. The CI pipeline will automatically:
+   - Install the FlutterFire CLI
+   - Configure Firebase for all platforms (Android, iOS, macOS, web)
+   - Use the generated configuration files during the build process

@@ -1,5 +1,10 @@
 name: "Flutter Dependencies"
 description: "Installs Flutter and any other dependencies required for the build"
+inputs:
+  firebase_project_id:
+    description: "Firebase project ID to configure"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -18,3 +23,21 @@ runs:
         rm -rf web/src/mm2/*
         rm -rf web/src/kdfi/*
         rm -rf web/dist/*
+
+    - name: Install FlutterFire CLI
+      shell: bash
+      run: |
+        dart pub global activate flutterfire_cli
+
+    - name: Configure Firebase
+      shell: bash
+      if: ${{ inputs.firebase_project_id != '' }}
+      run: |
+        # Add flutterfire to PATH
+        export PATH="$PATH":"$HOME/.pub-cache/bin"
+
+        # Configure FlutterFire with the specified project
+        flutterfire configure \
+          --project=${{ inputs.firebase_project_id }} \
+          --platforms=android,ios,macos,web \
+          --yes

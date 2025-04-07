@@ -38,6 +38,8 @@ jobs:
 
       - name: Install Flutter and dependencies
         uses: ./.github/actions/flutter-deps
+        with:
+          firebase_project_id: ${{ secrets.FIREBASE_PROJECT_ID }}
 
       # macOS setup
       - name: Setup macOS environment
