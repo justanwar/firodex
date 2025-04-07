@@ -47,17 +47,25 @@ runs:
         # Add flutterfire to PATH
         export PATH="$PATH":"$HOME/.pub-cache/bin"
 
-        # Decode and save the service account key
-        echo "${{ inputs.firebase_service_account_key }}" | base64 -d > /tmp/firebase-service-account.json
+        # Validate and decode service account key
+        # First check if it's valid base64
+        if echo "${{ inputs.firebase_service_account_key }}" | base64 -d >/dev/null 2>&1; then
+          echo "Service account key is valid base64, decoding..."
+          echo "${{ inputs.firebase_service_account_key }}" | base64 -d > /tmp/firebase-service-account.json
+        else
+          echo "Service account key doesn't appear to be base64-encoded, using as-is..."
+          echo "${{ inputs.firebase_service_account_key }}" > /tmp/firebase-service-account.json
+        fi
 
-        # Authenticate with Firebase using service account
-        firebase login:ci --no-localhost --token "$(node -e "console.log(require('/tmp/firebase-service-account.json').refresh_token)")"
+        # Authenticate with Firebase using CI token
+        # Using a simpler authentication approach for CI
+        firebase use --add "${{ inputs.firebase_project_id }}" --token "${{ inputs.firebase_service_account_key }}"
 
         # Configure FlutterFire with the specified project
         flutterfire configure \
           --project=${{ inputs.firebase_project_id }} \
           --platforms=android,ios,macos,web \
           --yes
-
+          
         # Clean up
-        rm /tmp/firebase-service-account.json
+        rm -f /tmp/firebase-service-account.json
