@@ -20,12 +20,25 @@ git update-index --assume-unchanged lib/firebase_options.dart
 
 ## CI Pipeline Configuration
 
-For CI builds, the Firebase configuration is automatically handled in the GitHub CI workflows. The FlutterFire CLI is installed and configured during build steps with the project ID from a GitHub secret.
+For CI builds, the Firebase configuration is automatically handled in the GitHub CI workflows. The FlutterFire CLI is installed and configured during build steps with the project ID and service account from GitHub secrets.
 
 To set up the CI pipeline for Firebase:
 
-1. Add your Firebase project ID as a GitHub secret named `FIREBASE_PROJECT_ID`
-2. The CI pipeline will automatically:
-   - Install the FlutterFire CLI
+1. Create a Firebase service account:
+   - Go to Firebase Console > Project Settings > Service accounts
+   - Click "Generate new private key"
+   - Save the JSON file securely
+
+2. Add the following GitHub secrets:
+   - `FIREBASE_PROJECT_ID`: Your Firebase project ID
+   - `FIREBASE_SERVICE_ACCOUNT_KOMODO_WALLET_OFFICIAL`: The entire service account JSON file, base64-encoded
+
+     ```
+     cat your-service-account-file.json | base64
+     ```
+
+3. The CI pipeline will automatically:
+   - Install the Firebase CLI and FlutterFire CLI
+   - Authenticate with Firebase using the service account credentials
    - Configure Firebase for all platforms (Android, iOS, macOS, web)
    - Use the generated configuration files during the build process
