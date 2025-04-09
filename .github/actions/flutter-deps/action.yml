@@ -48,13 +48,12 @@ runs:
         export PATH="$PATH":"$HOME/.pub-cache/bin"
 
         # Use the service account key directly (plain text)
-        # TODO: Handle both base64 and plain text keys
         echo "Using service account key as plain text..."
         echo "${{ inputs.firebase_service_account_key }}" > /tmp/firebase-service-account.json
 
-        # Authenticate with Firebase using CI token
-        # Using a simpler authentication approach for CI
-        firebase use --add "${{ inputs.firebase_project_id }}" --token "${{ inputs.firebase_service_account_key }}"
+        # Authenticate with Firebase using service account
+        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-service-account.json
+        firebase use --add "${{ inputs.firebase_project_id }}"
 
         # Configure FlutterFire with the specified project
         flutterfire configure \
