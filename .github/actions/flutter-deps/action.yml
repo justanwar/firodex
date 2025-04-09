@@ -15,7 +15,6 @@ runs:
     - name: Get stable flutter
       uses: subosito/flutter-action@v2
       with:
-        # NB! Keep up-to-date with the flutter version used for development
         flutter-version: "3.29.2"
         channel: "stable"
 
@@ -31,13 +30,8 @@ runs:
     - name: Install Firebase CLI and FlutterFire CLI
       shell: bash
       run: |
-        # Install Firebase CLI first
-        npm install -g firebase-tools
-
-        # Verify Firebase CLI installation
+        curl -sL https://firebase.tools | bash
         firebase --version
-
-        # Install FlutterFire CLI
         dart pub global activate flutterfire_cli
 
     - name: Configure Firebase
@@ -47,19 +41,28 @@ runs:
         # Add flutterfire to PATH
         export PATH="$PATH":"$HOME/.pub-cache/bin"
 
-        # Use the service account key directly (plain text)
-        echo "Using service account key as plain text..."
-        echo "${{ inputs.firebase_service_account_key }}" > /tmp/firebase-service-account.json
-
-        # Authenticate with Firebase using service account
-        export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-service-account.json
-        firebase use --add "${{ inputs.firebase_project_id }}"
-
-        # Configure FlutterFire with the specified project
+        # Create a temporary directory for Firebase configuration
+        mkdir -p ~/.config/firebase
+        
+        # Save the service account key properly escaped
+        echo '${{ inputs.firebase_service_account_key }}' > ~/.config/firebase/service-account.json
+        
+        # Set the Google Application Credentials
+        export GOOGLE_APPLICATION_CREDENTIALS=~/.config/firebase/service-account.json
+        
+        # Authenticate with Firebase CLI using the service account
+        firebase login:ci --no-localhost
+        
+        # Configure Firebase project
+        firebase use --add "${{ inputs.firebase_project_id }}" --token "$(firebase login:ci --no-localhost)"
+        
+        # Configure FlutterFire
         flutterfire configure \
-          --project=${{ inputs.firebase_project_id }} \
+          --project="${{ inputs.firebase_project_id }}" \
           --platforms=android,ios,macos,web \
-          --yes
-          
-        # Clean up
-        rm -f /tmp/firebase-service-account.json
+          --yes \
+          --override-platforms \
+          --out=lib/firebase_options.dart
+        
+        # Clean up sensitive data
+        rm -f ~/.config/firebase/service-account.json
