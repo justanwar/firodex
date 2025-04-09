@@ -31,11 +31,9 @@ To set up the CI pipeline for Firebase:
 
 2. Add the following GitHub secrets:
    - `FIREBASE_PROJECT_ID`: Your Firebase project ID
-   - `FIREBASE_SERVICE_ACCOUNT_KOMODO_WALLET_OFFICIAL`: The entire service account JSON file, base64-encoded
-
-     ```
-     cat your-service-account-file.json | base64
-     ```
+   - `FIREBASE_SERVICE_ACCOUNT_KOMODO_WALLET_OFFICIAL`: The entire service account JSON file as plain text
+     - Copy the contents of your service account JSON file directly into the GitHub secret
+     - Do NOT encode it in base64
 
 3. The CI pipeline will automatically:
    - Install the Firebase CLI and FlutterFire CLI

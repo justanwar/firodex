@@ -6,7 +6,7 @@ inputs:
     required: false
     default: ""
   firebase_service_account_key:
-    description: "Firebase service account key JSON as a base64-encoded string"
+    description: "Firebase service account key JSON as a plain text string"
     required: false
     default: ""
 runs:
@@ -47,15 +47,10 @@ runs:
         # Add flutterfire to PATH
         export PATH="$PATH":"$HOME/.pub-cache/bin"
 
-        # Validate and decode service account key
-        # First check if it's valid base64
-        if echo "${{ inputs.firebase_service_account_key }}" | base64 -d >/dev/null 2>&1; then
-          echo "Service account key is valid base64, decoding..."
-          echo "${{ inputs.firebase_service_account_key }}" | base64 -d > /tmp/firebase-service-account.json
-        else
-          echo "Service account key doesn't appear to be base64-encoded, using as-is..."
-          echo "${{ inputs.firebase_service_account_key }}" > /tmp/firebase-service-account.json
-        fi
+        # Use the service account key directly (plain text)
+        # TODO: Handle both base64 and plain text keys
+        echo "Using service account key as plain text..."
+        echo "${{ inputs.firebase_service_account_key }}" > /tmp/firebase-service-account.json
 
         # Authenticate with Firebase using CI token
         # Using a simpler authentication approach for CI
