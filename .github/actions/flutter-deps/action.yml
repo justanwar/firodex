@@ -37,24 +37,17 @@ runs:
     - name: Configure Firebase
       shell: bash
       if: ${{ inputs.firebase_project_id != '' && inputs.firebase_service_account_key != '' }}
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ inputs.firebase_service_account_key }}
       run: |
         # Add flutterfire to PATH
         export PATH="$PATH":"$HOME/.pub-cache/bin"
-
-        # Create a temporary directory for Firebase configuration
-        mkdir -p ~/.config/firebase
         
-        # Save the service account key properly escaped
-        echo '${{ inputs.firebase_service_account_key }}' > ~/.config/firebase/service-account.json
-        
-        # Set the Google Application Credentials
-        export GOOGLE_APPLICATION_CREDENTIALS=~/.config/firebase/service-account.json
-        
-        # Authenticate with Firebase CLI using the service account
-        firebase login:ci --no-localhost
+        # Authenticate with Firebase CLI using environment variable
+        echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" | firebase login:ci --token-stdin
         
         # Configure Firebase project
-        firebase use --add "${{ inputs.firebase_project_id }}" --token "$(firebase login:ci --no-localhost)"
+        firebase use --add "${{ inputs.firebase_project_id }}"
         
         # Configure FlutterFire
         flutterfire configure \
@@ -63,6 +56,3 @@ runs:
           --yes \
           --override-platforms \
           --out=lib/firebase_options.dart
-        
-        # Clean up sensitive data
-        rm -f ~/.config/firebase/service-account.json
