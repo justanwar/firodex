@@ -1,1 +1,1 @@
-enum CoinPageType { send, faucet, claim, info, claimSuccess, signMessage }
+enum CoinPageType { send, claim, info, claimSuccess, signMessage }
