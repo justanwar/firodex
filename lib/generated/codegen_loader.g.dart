@@ -52,7 +52,6 @@ abstract class  LocaleKeys {
   static const fees = 'fees';
   static const recipientAddress = 'recipientAddress';
   static const transactionHash = 'transactionHash';
-  static const transactionSuccessful = 'transactionSuccessful';
   static const transactionFailed = 'transactionFailed';
   static const hash = 'hash';
   static const fullHash = 'fullHash';
@@ -60,7 +59,6 @@ abstract class  LocaleKeys {
   static const youSend = 'youSend';
   static const invalidAddress = 'invalidAddress';
   static const customFeeCoin = 'customFeeCoin';
-  static const customNetworkFee = 'customNetworkFee';
   static const customFeeOptional = 'customFeeOptional';
   static const optional = 'optional';
   static const showMore = 'showMore';
@@ -653,7 +651,11 @@ abstract class  LocaleKeys {
   static const successPageHeadline = 'successPageHeadline';
   static const successPageBodySmall = 'successPageBodySmall';
   static const withdrawErrorCardTileTitle = 'withdrawErrorCardTileTitle';
+  static const transactionSuccessful = 'transactionSuccessful';
+  static const customNetworkFee = 'customNetworkFee';
   static const previewWithdrawal = 'previewWithdrawal';
   static const createNewAddress = 'createNewAddress';
+  static const searchAddresses = 'searchAddresses';
+  static const chart = 'chart';
 
 }
