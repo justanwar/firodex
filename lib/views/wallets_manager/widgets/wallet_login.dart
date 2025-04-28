@@ -148,19 +148,6 @@ class _WalletLogInState extends State<WalletLogIn> {
       },
     );
   }
-
-  String _mapErrorToMessage(String error) {
-    switch (error) {
-      case 'invalid_password':
-        return LocaleKeys.invalidPasswordError.tr();
-      case 'user_not_found':
-        return LocaleKeys.userNotFoundError.tr();
-      case 'login_failed':
-        return LocaleKeys.loginFailedError.tr();
-      default:
-        return error;
-    }
-  }
 }
 
 class PasswordTextField extends StatefulWidget {

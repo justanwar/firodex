@@ -83,10 +83,16 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
       } catch (e) {
         // Handle specific SDK authentication errors
         if (e.toString().contains('Invalid password')) {
-          return emit(AuthBlocState.error('invalid_password'));
+          return emit(AuthBlocState.error(AuthException(
+            'incorrect_password',
+            type: AuthExceptionType.incorrectPassword,
+          )));
         }
         // For other SDK authentication errors, pass through the specific error
-        return emit(AuthBlocState.error(e.toString()));
+        return emit(AuthBlocState.error(AuthException(
+          e.toString(),
+          type: AuthExceptionType.generalAuthError,
+        )));
       }
 
       final KdfUser? currentUser = await _kdfSdk.auth.currentUser;
