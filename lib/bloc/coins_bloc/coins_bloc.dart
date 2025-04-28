@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
 import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:logging/logging.dart';
+import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
 import 'package:web_dex/blocs/trezor_coins_bloc.dart';
 import 'package:web_dex/mm2/mm2_api/mm2_api.dart';
@@ -299,7 +300,9 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
 
     Map<String, Coin> updateCoinsWithPrices(Map<String, Coin> coins) {
       final map = coins.map((key, coin) {
-        final price = prices[coin.id.id];
+        // Use configSymbol to lookup for backwards compatibility with the old,
+        // string-based price list (and fallback)
+        final price = prices[coin.id.symbol.configSymbol];
         if (price != null) {
           return MapEntry(key, coin.copyWith(usdPrice: price));
         }

@@ -91,16 +91,31 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
 
       final KdfUser? currentUser = await _kdfSdk.auth.currentUser;
       if (currentUser == null) {
-        return emit(AuthBlocState.error('user_not_found'));
+        return emit(AuthBlocState.error(AuthException.notSignedIn()));
       }
 
       _log.info('logged in  from a wallet');
       emit(AuthBlocState.loggedIn(currentUser));
       _listenToAuthStateChanges();
     } catch (e, s) {
-      final error = 'Failed to login wallet ${event.wallet.name}';
-      _log.shout(error, e, s);
-      emit(AuthBlocState.error('login_failed'));
+      if (e is AuthException) {
+        // Preserve the original error type for specific errors like incorrect password
+        _log.shout(
+          'Auth error during login for wallet ${event.wallet.name}',
+          e,
+          s,
+        );
+        emit(AuthBlocState.error(e));
+      } else {
+        // For non-auth exceptions, use a generic error type
+        final errorMsg = 'Failed to login wallet ${event.wallet.name}';
+        _log.shout(errorMsg, e, s);
+        emit(
+          AuthBlocState.error(
+            AuthException(errorMsg, type: AuthExceptionType.generalAuthError),
+          ),
+        );
+      }
       await _authChangesSubscription?.cancel();
     }
   }
@@ -153,9 +168,13 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
       emit(AuthBlocState.loggedIn(currentUser));
       _listenToAuthStateChanges();
     } catch (e, s) {
-      final error = 'Failed to register wallet ${event.wallet.name}';
-      _log.shout(error, e, s);
-      emit(AuthBlocState.error(error));
+      final errorMsg = 'Failed to register wallet ${event.wallet.name}';
+      _log.shout(errorMsg, e, s);
+      emit(
+        AuthBlocState.error(
+          AuthException(errorMsg, type: AuthExceptionType.generalAuthError),
+        ),
+      );
       await _authChangesSubscription?.cancel();
     }
   }
@@ -202,20 +221,22 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
 
       _listenToAuthStateChanges();
     } catch (e, s) {
-      final error = 'Failed to restore existing wallet ${event.wallet.name}';
-      _log.shout(error, e, s);
-      emit(AuthBlocState.error(error));
+      final errorMsg = 'Failed to restore existing wallet ${event.wallet.name}';
+      _log.shout(errorMsg, e, s);
+      emit(
+        AuthBlocState.error(
+          AuthException(errorMsg, type: AuthExceptionType.generalAuthError),
+        ),
+      );
       await _authChangesSubscription?.cancel();
     }
   }
 
-  Future<bool> _didSignInExistingWallet(
-    Wallet wallet,
-    String password,
-  ) async {
+  Future<bool> _didSignInExistingWallet(Wallet wallet, String password) async {
     final existingWallets = await _kdfSdk.auth.getUsers();
-    final walletExists = existingWallets
-        .any((KdfUser user) => user.walletId.name == wallet.name);
+    final walletExists = existingWallets.any(
+      (KdfUser user) => user.walletId.name == wallet.name,
+    );
     if (walletExists) {
       add(AuthSignInRequested(wallet: wallet, password: password));
       _log.warning('Wallet ${wallet.name} already exist, attempting sign-in');
