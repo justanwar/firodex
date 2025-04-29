@@ -172,7 +172,7 @@ class FiatPageLayout extends StatelessWidget {
 class _TabContent extends StatelessWidget {
   const _TabContent({
     required int activeTabIndex,
-    // ignore: unused_element
+    // ignore: unused_element, unused_element_parameter
     super.key,
   }) : _activeTabIndex = activeTabIndex;
 

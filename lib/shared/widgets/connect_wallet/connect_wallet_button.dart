@@ -12,20 +12,18 @@ import 'package:web_dex/bloc/taker_form/taker_event.dart';
 import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/dispatchers/popup_dispatcher.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
-import 'package:web_dex/shared/ui/ui_primary_button.dart';
 import 'package:web_dex/views/dex/dex_helpers.dart';
 import 'package:web_dex/views/wallets_manager/wallets_manager_events_factory.dart';
 import 'package:web_dex/views/wallets_manager/wallets_manager_wrapper.dart';
 
 class ConnectWalletButton extends StatefulWidget {
   const ConnectWalletButton({
-    Key? key,
+    super.key,
     required this.eventType,
     this.withText = true,
     this.withIcon = false,
     Size? buttonSize,
-  })  : buttonSize = buttonSize ?? const Size(double.infinity, 40),
-        super(key: key);
+  })  : buttonSize = buttonSize ?? const Size(double.infinity, 40);
   final Size buttonSize;
   final bool withIcon;
   final bool withText;

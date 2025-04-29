@@ -15,7 +15,6 @@ import 'package:web_dex/views/bitrefill/bitrefill_button.dart';
 import 'package:web_dex/views/wallet/coin_details/coin_details_info/coin_addresses.dart';
 import 'package:web_dex/views/wallet/coin_details/coin_details_info/contract_address_button.dart';
 import 'package:web_dex/views/wallet/coin_details/coin_page_type.dart';
-import 'package:web_dex/views/wallet/coin_details/faucet/faucet_button.dart';
 
 class CoinDetailsCommonButtons extends StatelessWidget {
   const CoinDetailsCommonButtons({
@@ -196,6 +195,7 @@ class CoinDetailsReceiveButton extends StatelessWidget {
       onPressed: coin.isSuspended || !hasAddresses
           ? null
           : () => _handleReceive(context),
+      optimisticEnabledDuration: const Duration(seconds: 5),
       text: LocaleKeys.receive.tr(),
     );
   }
