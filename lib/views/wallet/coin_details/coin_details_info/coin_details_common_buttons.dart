@@ -15,225 +15,143 @@ import 'package:web_dex/views/bitrefill/bitrefill_button.dart';
 import 'package:web_dex/views/wallet/coin_details/coin_details_info/coin_addresses.dart';
 import 'package:web_dex/views/wallet/coin_details/coin_details_info/contract_address_button.dart';
 import 'package:web_dex/views/wallet/coin_details/coin_page_type.dart';
+import 'package:web_dex/views/wallet/coin_details/faucet/faucet_button.dart';
 
 class CoinDetailsCommonButtons extends StatelessWidget {
   const CoinDetailsCommonButtons({
-    required this.isMobile,
     required this.selectWidget,
     required this.onClickSwapButton,
     required this.coin,
     super.key,
   });
 
-  final bool isMobile;
   final Coin coin;
   final void Function(CoinPageType) selectWidget;
   final VoidCallback? onClickSwapButton;
 
   @override
   Widget build(BuildContext context) {
-    return isMobile
-        ? CoinDetailsCommonButtonsMobileLayout(
-            coin: coin,
-            isMobile: isMobile,
-            selectWidget: selectWidget,
-            clickSwapButton: onClickSwapButton,
-            context: context,
-          )
-        : CoinDetailsCommonButtonsDesktopLayout(
-            isMobile: isMobile,
-            coin: coin,
-            selectWidget: selectWidget,
-            clickSwapButton: onClickSwapButton,
-            context: context,
-          );
-  }
-}
-
-class CoinDetailsCommonButtonsMobileLayout extends StatelessWidget {
-  const CoinDetailsCommonButtonsMobileLayout({
-    required this.coin,
-    required this.isMobile,
-    required this.selectWidget,
-    required this.clickSwapButton,
-    required this.context,
-    super.key,
-  });
-
-  final Coin coin;
-  final bool isMobile;
-  final void Function(CoinPageType p1) selectWidget;
-  final VoidCallback? clickSwapButton;
-  final BuildContext context;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Visibility(
-          visible: coin.protocolData?.contractAddress.isNotEmpty ?? false,
-          child: ContractAddressButton(coin),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: CoinDetailsSendButton(
-                isMobile: isMobile,
-                coin: coin,
-                selectWidget: selectWidget,
-                context: context,
-              ),
-            ),
-            const SizedBox(width: 15),
-            Flexible(
-              child: CoinDetailsReceiveButton(
-                isMobile: isMobile,
-                coin: coin,
-                selectWidget: selectWidget,
-                context: context,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: CoinDetailsMessageSigningButton(
-                isMobile: isMobile,
-                coin: coin,
-                selectWidget: selectWidget,
-                context: context,
-              ),
-            ),
-            if (!coin.walletOnly) ...[
-              const SizedBox(width: 15),
-              Flexible(
-                child: CoinDetailsSwapButton(
-                  isMobile: isMobile,
-                  coin: coin,
-                  onClickSwapButton: clickSwapButton,
-                  context: context,
-                ),
-              ),
-            ],
-          ],
-        ),
-        if (isBitrefillIntegrationEnabled)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: BitrefillButton(
-              key: Key(
-                'coin-details-bitrefill-button-${coin.abbr.toLowerCase()}',
-              ),
-              coin: coin,
-              onPaymentRequested: (_) => selectWidget(CoinPageType.send),
-            ),
-          ),
-      ],
+    return ResponsiveButtonLayout(
+      coin: coin,
+      selectWidget: selectWidget,
+      onClickSwapButton: onClickSwapButton,
     );
   }
 }
 
-class CoinDetailsCommonButtonsDesktopLayout extends StatelessWidget {
-  const CoinDetailsCommonButtonsDesktopLayout({
-    required this.isMobile,
+class ResponsiveButtonLayout extends StatelessWidget {
+  const ResponsiveButtonLayout({
     required this.coin,
     required this.selectWidget,
-    required this.clickSwapButton,
-    required this.context,
+    required this.onClickSwapButton,
     super.key,
   });
 
-  final bool isMobile;
   final Coin coin;
-  final void Function(CoinPageType p1) selectWidget;
-  final VoidCallback? clickSwapButton;
-  final BuildContext context;
+  final void Function(CoinPageType) selectWidget;
+  final VoidCallback? onClickSwapButton;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 120),
-          child: CoinDetailsSendButton(
-            isMobile: isMobile,
+    final hasContractAddress =
+        coin.protocolData?.contractAddress.isNotEmpty ?? false;
+    final double spacing = 12.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrowLayout = constraints.maxWidth < 600;
+        final List<Widget> buttons = [];
+
+        // Add send button
+        buttons.add(
+          CoinDetailsSendButton(
             coin: coin,
             selectWidget: selectWidget,
             context: context,
           ),
-        ),
-        Container(
-          margin: const EdgeInsets.only(left: 21),
-          constraints: const BoxConstraints(maxWidth: 120),
-          child: CoinDetailsReceiveButton(
-            isMobile: isMobile,
+        );
+
+        // Add receive button
+        buttons.add(
+          CoinDetailsReceiveButton(
             coin: coin,
             selectWidget: selectWidget,
             context: context,
           ),
-        ),
-        Container(
-          margin: const EdgeInsets.only(left: 21),
-          constraints: const BoxConstraints(maxWidth: 120),
-          child: CoinDetailsMessageSigningButton(
-            isMobile: isMobile,
+        );
+
+        // Add message signing button
+        buttons.add(
+          CoinDetailsMessageSigningButton(
             coin: coin,
             selectWidget: selectWidget,
             context: context,
           ),
-        ),
-        if (!coin.walletOnly && !kIsWalletOnly)
-          Container(
-            margin: const EdgeInsets.only(left: 21),
-            constraints: const BoxConstraints(maxWidth: 120),
-            child: CoinDetailsSwapButton(
-              isMobile: isMobile,
+        );
+
+        // Add swap button if needed
+        if (!coin.walletOnly && !kIsWalletOnly) {
+          buttons.add(
+            CoinDetailsSwapButton(
               coin: coin,
-              onClickSwapButton: clickSwapButton,
+              onClickSwapButton: onClickSwapButton,
               context: context,
             ),
-          ),
-        if (isBitrefillIntegrationEnabled)
-          Container(
-            margin: const EdgeInsets.only(left: 21),
-            constraints: const BoxConstraints(maxWidth: 120),
-            child: BitrefillButton(
+          );
+        }
+
+        if (isBitrefillIntegrationEnabled) {
+          buttons.add(
+            BitrefillButton(
               key: Key(
-                'coin-details-bitrefill-button-${coin.abbr.toLowerCase()}',
-              ),
+                  'coin-details-bitrefill-button-${coin.abbr.toLowerCase()}'),
               coin: coin,
               onPaymentRequested: (_) => selectWidget(CoinPageType.send),
             ),
-          ),
-        Flexible(
-          flex: 2,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: coin.protocolData?.contractAddress.isNotEmpty ?? false
-                ? SizedBox(width: 230, child: ContractAddressButton(coin))
-                : null,
-          ),
-        ),
-      ],
+          );
+        }
+
+        // Add contract address button if the coin has a contract address
+        if (hasContractAddress) {
+          buttons.add(
+            ContractAddressButton(
+              coin,
+              key: const Key('coin-details-contract-address-button'),
+            ),
+          );
+        }
+
+        // // Determine button height based on layout
+        final buttonHeight = isNarrowLayout ? 52.0 : 48.0;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          alignment: WrapAlignment.start,
+          children: buttons
+              .map(
+                (button) => IntrinsicWidth(
+                  child: SizedBox(
+                    height: buttonHeight,
+                    child: button,
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
     );
   }
 }
 
 class CoinDetailsReceiveButton extends StatelessWidget {
   const CoinDetailsReceiveButton({
-    required this.isMobile,
     required this.coin,
     required this.selectWidget,
     required this.context,
     super.key,
   });
 
-  final bool isMobile;
   final Coin coin;
   final void Function(CoinPageType p1) selectWidget;
   final BuildContext context;
@@ -265,14 +183,12 @@ class CoinDetailsReceiveButton extends StatelessWidget {
     final hasAddresses =
         context.watch<CoinAddressesBloc>().state.addresses.isNotEmpty;
     final ThemeData themeData = Theme.of(context);
-    return UiPrimaryButton(
+
+    return UiPrimaryButton.flexible(
       key: const Key('coin-details-receive-button'),
-      height: isMobile ? 52 : 40,
-      prefix: Container(
-        padding: const EdgeInsets.only(right: 14),
-        child: SvgPicture.asset(
-          '$assetsPath/others/receive.svg',
-        ),
+      // height: isNarrowLayout ? 52 : 40,
+      prefix: SvgPicture.asset(
+        '$assetsPath/others/receive.svg',
       ),
       textStyle: themeData.textTheme.labelLarge
           ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
@@ -354,14 +270,12 @@ class AddressListItem extends StatelessWidget {
 
 class CoinDetailsSendButton extends StatelessWidget {
   const CoinDetailsSendButton({
-    required this.isMobile,
     required this.coin,
     required this.selectWidget,
     required this.context,
     super.key,
   });
 
-  final bool isMobile;
   final Coin coin;
   final void Function(CoinPageType p1) selectWidget;
   final BuildContext context;
@@ -369,9 +283,9 @@ class CoinDetailsSendButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData themeData = Theme.of(context);
-    return UiPrimaryButton(
+
+    return UiPrimaryButton.flexible(
       key: const Key('coin-details-send-button'),
-      height: isMobile ? 52 : 40,
       prefix: Container(
         padding: const EdgeInsets.only(right: 14),
         child: SvgPicture.asset(
@@ -381,8 +295,9 @@ class CoinDetailsSendButton extends StatelessWidget {
       textStyle: themeData.textTheme.labelLarge
           ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
       backgroundColor: themeData.colorScheme.tertiary,
+      optimisticEnabledDuration: const Duration(seconds: 5),
       onPressed: coin.isSuspended
-          //TODO!.sdk || coin.balance == 0
+          //TODO!: coin.balance == 0
           ? null
           : () {
               selectWidget(CoinPageType.send);
@@ -394,14 +309,12 @@ class CoinDetailsSendButton extends StatelessWidget {
 
 class CoinDetailsSwapButton extends StatelessWidget {
   const CoinDetailsSwapButton({
-    required this.isMobile,
     required this.coin,
     required this.onClickSwapButton,
     required this.context,
     super.key,
   });
 
-  final bool isMobile;
   final Coin coin;
   final VoidCallback? onClickSwapButton;
   final BuildContext context;
@@ -415,9 +328,9 @@ class CoinDetailsSwapButton extends StatelessWidget {
     }
 
     final ThemeData themeData = Theme.of(context);
-    return UiPrimaryButton(
+
+    return UiPrimaryButton.flexible(
       key: const Key('coin-details-swap-button'),
-      height: isMobile ? 52 : 40,
       textStyle: themeData.textTheme.labelLarge
           ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
       backgroundColor: themeData.colorScheme.tertiary,
@@ -435,14 +348,12 @@ class CoinDetailsSwapButton extends StatelessWidget {
 
 class CoinDetailsMessageSigningButton extends StatelessWidget {
   const CoinDetailsMessageSigningButton({
-    required this.isMobile,
     required this.coin,
     required this.selectWidget,
     required this.context,
     super.key,
   });
 
-  final bool isMobile;
   final Coin coin;
   final void Function(CoinPageType) selectWidget;
   final BuildContext context;
@@ -453,19 +364,13 @@ class CoinDetailsMessageSigningButton extends StatelessWidget {
         context.watch<CoinAddressesBloc>().state.addresses.isNotEmpty;
     final ThemeData themeData = Theme.of(context);
 
-    return UiPrimaryButton(
+    return UiPrimaryButton.flexible(
       key: const Key('coin-details-sign-message-button'),
-      height: isMobile ? 52 : 40,
-      width: 210,
-      prefix: Container(
-          padding: const EdgeInsets.only(right: 14),
-          // child: SvgPicture.asset(
-          //   '$assetsPath/others/signature.svg',
-          // ),
-          child: Icon(Icons.fingerprint)),
+      prefix: Icon(Icons.fingerprint),
       textStyle: themeData.textTheme.labelLarge
           ?.copyWith(fontSize: 14, fontWeight: FontWeight.w600),
       backgroundColor: themeData.colorScheme.tertiary,
+      optimisticEnabledDuration: const Duration(seconds: 5),
       onPressed: coin.isSuspended || !hasAddresses
           ? null
           : () {

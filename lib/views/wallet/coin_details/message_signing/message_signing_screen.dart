@@ -13,10 +13,12 @@ import 'package:web_dex/shared/utils/utils.dart';
 
 class MessageSigningScreen extends StatefulWidget {
   final Coin coin;
+  final VoidCallback? onBackButtonPressed;
 
   const MessageSigningScreen({
     super.key,
     required this.coin,
+    this.onBackButtonPressed,
   });
 
   @override
@@ -42,6 +44,7 @@ class _MessageSigningScreenState extends State<MessageSigningScreen> {
       child: _MessageSigningScreenContent(
         coin: widget.coin,
         asset: asset,
+        onBackButtonPressed: widget.onBackButtonPressed,
       ),
     );
   }
@@ -50,10 +53,12 @@ class _MessageSigningScreenState extends State<MessageSigningScreen> {
 class _MessageSigningScreenContent extends StatefulWidget {
   final Coin coin;
   final Asset asset;
+  final VoidCallback? onBackButtonPressed;
 
   const _MessageSigningScreenContent({
     required this.coin,
     required this.asset,
+    this.onBackButtonPressed,
   });
 
   @override
@@ -202,7 +207,7 @@ class _MessageSigningScreenContentState
                     if (errorMessage != null && !isLoadingAddresses)
                       ErrorMessageWidget(errorMessage: errorMessage!)
                     else
-                      EnhancedAddressDropdown(
+                      AddressSelectInput(
                         addresses: pubkeys?.keys ?? [],
                         selectedAddress: selectedAddress,
                         onAddressSelected: !isSelectEnabled
@@ -230,11 +235,6 @@ class _MessageSigningScreenContentState
                     ),
                     const SizedBox(height: 24),
                     Center(
-                      // child: EnhancedSignButton(
-                      //   text: LocaleKeys.signMessageButton.tr(),
-                      //   onPressed: isLoading ? null : _signMessage,
-                      //   isLoading: isLoading,
-                      // ),
                       child: UiPrimaryButton(
                         text: LocaleKeys.signMessageButton.tr(),
                         onPressed: isLoading ? null : _signMessage,
@@ -302,7 +302,6 @@ class EnhancedSignedMessageCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSectionHeader(context, LocaleKeys.address.tr()),
               _buildContentSection(
@@ -399,60 +398,12 @@ class EnhancedSignedMessageCard extends StatelessWidget {
   }
 
   Widget _buildCopyAllButton(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Container(
-        width: 200,
-        height: 48,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.secondary.withOpacity(0.9),
-              theme.colorScheme.tertiary.withOpacity(0.9),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.secondary.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: MaterialButton(
-          onPressed: () => onCopyToClipboard(
-            'Address: ${selectedAddress.address}\n\n'
-            'Message: $message\n\n'
-            'Signature: $signedMessage',
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          padding: EdgeInsets.zero,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.copy_all,
-                color: Colors.white,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                LocaleKeys.copyAllDetails.tr(),
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
+    return UiPrimaryButton.flexible(
+      child: Text(LocaleKeys.copyAllDetails.tr()),
+      onPressed: () => onCopyToClipboard(
+        'Address:\n${selectedAddress.address}\n\n'
+        'Message:\n$message\n\n'
+        'Signature:\n$signedMessage',
       ),
     );
   }
@@ -573,7 +524,7 @@ class _CopyableTextFieldState extends State<CopyableTextField>
                         size: 16,
                         color: _isCopied
                             ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurface.withOpacity(0.6),
+                            : theme.colorScheme.onPrimaryContainer,
                       ),
                     ),
                   ),
@@ -611,116 +562,6 @@ class ErrorMessageWidget extends StatelessWidget {
 }
 
 // Enhanced Address Selection Widget
-class EnhancedAddressDropdown extends StatelessWidget {
-  final List<PubkeyInfo> addresses;
-  final PubkeyInfo? selectedAddress;
-  final Function(PubkeyInfo)? onAddressSelected;
-  final String assetName;
-
-  const EnhancedAddressDropdown({
-    super.key,
-    required this.addresses,
-    required this.selectedAddress,
-    required this.onAddressSelected,
-    required this.assetName,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isEnabled = onAddressSelected != null;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isEnabled
-              ? theme.colorScheme.primary.withOpacity(0.2)
-              : theme.colorScheme.outline.withOpacity(0.2),
-        ),
-        gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.surface,
-            theme.colorScheme.surface.withOpacity(0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<PubkeyInfo>(
-          isExpanded: true,
-          value: selectedAddress,
-          onChanged: isEnabled
-              ? (newValue) {
-                  if (newValue != null) {
-                    onAddressSelected!(newValue);
-                  }
-                }
-              : null,
-          borderRadius: BorderRadius.circular(12),
-          icon: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            child: Icon(
-              Icons.keyboard_arrow_down,
-              color: isEnabled
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withOpacity(0.4),
-            ),
-          ),
-          items: addresses.map((address) {
-            return DropdownMenuItem<PubkeyInfo>(
-              value: address,
-              child: Row(
-                children: [
-                  Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      color: _getColorFromAddress(address.address),
-                    ),
-                    child: Center(
-                      child: Text(
-                        address.address.substring(0, 1).toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _formatAddress(address.address),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        letterSpacing: 0.5,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-      ),
-    );
-  }
-
-  String _formatAddress(String address) {
-    if (address.length <= 16) return address;
-    return '${address.substring(0, 8)}...${address.substring(address.length - 8)}';
-  }
-
-  Color _getColorFromAddress(String address) {
-    final hash = address.codeUnits.fold(0, (a, b) => a + b);
-    return HSLColor.fromAHSL(1.0, hash % 360, 0.7, 0.5).toColor();
-  }
-}
 
 // Enhanced Message Input Widget
 class EnhancedMessageInput extends StatefulWidget {
@@ -821,132 +662,6 @@ class _EnhancedMessageInputState extends State<EnhancedMessageInput> {
           ),
         ),
       ],
-    );
-  }
-}
-
-// Enhanced Sign Button
-class EnhancedSignButton extends StatefulWidget {
-  final String text;
-  final VoidCallback? onPressed;
-  final bool isLoading;
-
-  const EnhancedSignButton({
-    super.key,
-    required this.text,
-    required this.onPressed,
-    this.isLoading = false,
-  });
-
-  @override
-  State<EnhancedSignButton> createState() => _EnhancedSignButtonState();
-}
-
-class _EnhancedSignButtonState extends State<EnhancedSignButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.03).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isEnabled = widget.onPressed != null && !widget.isLoading;
-
-    if (isEnabled) {
-      _animationController.forward();
-    } else {
-      _animationController.stop();
-      _animationController.reset();
-    }
-
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: isEnabled ? _scaleAnimation.value : 1.0,
-          child: Container(
-            width: double.infinity,
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: isEnabled
-                  ? LinearGradient(
-                      colors: [
-                        theme.colorScheme.primary,
-                        Color.fromARGB(
-                          255,
-                          theme.colorScheme.primary.red + 20,
-                          theme.colorScheme.primary.green + 20,
-                          theme.colorScheme.primary.blue + 40,
-                        ),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
-              color:
-                  isEnabled ? null : theme.colorScheme.primary.withOpacity(0.5),
-              boxShadow: isEnabled
-                  ? [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: MaterialButton(
-              onPressed: widget.onPressed,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-              ),
-              padding: EdgeInsets.zero,
-              child: widget.isLoading
-                  ? SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          theme.colorScheme.onPrimary,
-                        ),
-                      ),
-                    )
-                  : Text(
-                      widget.text,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onPrimary,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-            ),
-          ),
-        );
-      },
     );
   }
 }

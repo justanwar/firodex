@@ -18,10 +18,16 @@ class UiBorderButton extends StatelessWidget {
     this.fontWeight = FontWeight.w700,
     this.fontSize = 14,
     this.textColor,
+    this.padding,
   });
 
-  /// Constructor for a border button which inherits its size from the parent widget.
-  const UiBorderButton.minSize({
+  /// Constructor for a border button which inherits its size from the parent
+  /// widget. See [UiPrimaryButton.flexible] for more details.
+  ///
+  /// The padding defaults to 16dp horizontal and 8dp vertical, following Material Design
+  /// specifications. The button maintains the minimum dimensions of an outlined button
+  /// (88dp width, 36dp height) unless explicitly overridden.
+  const UiBorderButton.flexible({
     required this.text,
     required this.onPressed,
     super.key,
@@ -35,6 +41,7 @@ class UiBorderButton extends StatelessWidget {
     this.fontWeight = FontWeight.w700,
     this.fontSize = 14,
     this.textColor,
+    this.padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
   })  : width = null,
         height = null;
 
@@ -52,6 +59,7 @@ class UiBorderButton extends StatelessWidget {
   final FontWeight fontWeight;
   final double fontSize;
   final Color? textColor;
+  final EdgeInsets? padding;
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +91,7 @@ class UiBorderButton extends StatelessWidget {
                 focusColor: secondaryColor.withValues(alpha: 0.2),
                 splashColor: secondaryColor.withValues(alpha: 0.4),
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+                  padding: padding ?? const EdgeInsets.fromLTRB(12, 6, 12, 6),
                   child: Builder(
                     builder: (context) {
                       if (icon == null) {
@@ -125,18 +133,35 @@ class UiBorderButton extends StatelessWidget {
   }
 
   BoxConstraints _buildConstraints() {
-    if (width != null && height != null) {
-      if (allowMultiline) {
-        return BoxConstraints.tightFor(width: width);
+    // Material Design minimum dimensions for outlined buttons
+    const double materialMinWidth = 88;
+    const double materialMinHeight = 36;
+
+    // For fixed sizes (backward compatibility)
+    if (width != null || height != null) {
+      if (width != null && height != null) {
+        if (allowMultiline) {
+          return BoxConstraints(minWidth: width!);
+        }
+        return BoxConstraints(minWidth: width!, minHeight: height!);
+      } else if (width != null) {
+        return BoxConstraints(minWidth: width!);
+      } else if (height != null && !allowMultiline) {
+        return BoxConstraints(minHeight: height!);
       }
-      return BoxConstraints.tightFor(width: width, height: height);
-    } else if (width != null) {
-      return BoxConstraints.tightFor(width: width);
-    } else if (height != null && !allowMultiline) {
-      return BoxConstraints.tightFor(height: height);
-    } else {
-      return const BoxConstraints();
     }
+
+    // For flexible constructor - apply Material Design minimums
+    // but allow growing to fit content
+    if (width == null && height == null) {
+      return BoxConstraints(
+        minWidth: materialMinWidth,
+        minHeight: materialMinHeight,
+      );
+    }
+
+    // Fallback
+    return const BoxConstraints();
   }
 }
 

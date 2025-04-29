@@ -68,7 +68,7 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
         );
       }
 
-      _log.info('login  from a wallet');
+      _log.info('login from a wallet');
       emit(AuthBlocState.loading());
       try {
         await _kdfSdk.auth.signIn(
@@ -100,7 +100,7 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> {
         return emit(AuthBlocState.error(AuthException.notSignedIn()));
       }
 
-      _log.info('logged in  from a wallet');
+      _log.info('logged in from a wallet');
       emit(AuthBlocState.loggedIn(currentUser));
       _listenToAuthStateChanges();
     } catch (e, s) {

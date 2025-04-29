@@ -562,6 +562,7 @@ abstract class  LocaleKeys {
   static const qrScannerErrorGenericError = 'qrScannerErrorGenericError';
   static const qrScannerErrorTitle = 'qrScannerErrorTitle';
   static const spend = 'spend';
+  static const zeroBalanceTooltip = 'zeroBalanceTooltip';
   static const viewInvoice = 'viewInvoice';
   static const systemTimeWarning = 'systemTimeWarning';
   static const errorCode = 'errorCode';

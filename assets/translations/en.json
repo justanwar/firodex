@@ -565,6 +565,7 @@
     "qrScannerErrorGenericError": "An error occurred",
     "qrScannerErrorTitle": "ERROR",
     "spend": "Spend",
+    "zeroBalanceTooltip": "Insufficient balance to use Bitrefill",
     "viewInvoice": "View Invoice",
     "systemTimeWarning": "System Time Incorrect: Your system time is more than 60 seconds off from the network time. Please update your system time before starting any swaps.",
     "errorCode": "Error code",

@@ -94,6 +94,7 @@ class _CoinDetailsState extends State<CoinDetails> {
       case CoinPageType.signMessage:
         return MessageSigningScreen(
           coin: widget.coin,
+          onBackButtonPressed: _openInfo,
         );
     }
   }
