@@ -10,6 +10,7 @@ import 'package:web_dex/bloc/coin_addresses/bloc/coin_addresses_event.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/shared/utils/utils.dart';
+import 'package:web_dex/views/common/page_header/page_header.dart';
 
 class MessageSigningScreen extends StatefulWidget {
   final Coin coin;
@@ -123,7 +124,6 @@ class _MessageSigningScreenContentState
 
     setState(() {
       isLoading = true;
-      signedMessage = null;
       errorMessage = null;
     });
 
@@ -135,13 +135,38 @@ class _MessageSigningScreenContentState
       );
 
       setState(() {
-        signedMessage = signResult;
         isLoading = false;
       });
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          contentPadding: EdgeInsets.all(32),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              EnhancedSignedMessageCard(
+                selectedAddress: selectedAddress!,
+                message: messageController.text,
+                signedMessage: signResult,
+                onCopyToClipboard: _copyToClipboard,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(LocaleKeys.ok.tr()),
+            ),
+          ],
+        ),
+      );
     } catch (e) {
       setState(() {
-        errorMessage = LocaleKeys.failedToSignMessage.tr(args: [e.toString()]);
         isLoading = false;
+        errorMessage = LocaleKeys.failedToSignMessage.tr(args: [e.toString()]);
       });
     }
   }
@@ -167,97 +192,118 @@ class _MessageSigningScreenContentState
     final theme = Theme.of(context);
     final isSelectEnabled = pubkeys != null && pubkeys!.keys.length > 1;
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            theme.scaffoldBackgroundColor,
-            theme.scaffoldBackgroundColor.withOpacity(0.95),
-          ],
+    return Column(
+      children: [
+        MessageSigningHeader(
+          title: LocaleKeys.signMessage.tr(),
+          onBackButtonPressed: widget.onBackButtonPressed,
         ),
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                side: BorderSide(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              color: theme.colorScheme.surface.withOpacity(0.95),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Signing Address',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (errorMessage != null && !isLoadingAddresses)
-                      ErrorMessageWidget(errorMessage: errorMessage!)
-                    else
-                      AddressSelectInput(
-                        addresses: pubkeys?.keys ?? [],
-                        selectedAddress: selectedAddress,
-                        onAddressSelected: !isSelectEnabled
-                            ? null
-                            : (address) {
-                                setState(() {
-                                  selectedAddress = address;
-                                  signedMessage = null;
-                                  errorMessage = null;
-                                });
-                              },
-                        assetName: widget.asset.id.name,
-                      ),
-                    const SizedBox(height: 20),
-                    Text(
-                      LocaleKeys.messageToSign.tr(),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    EnhancedMessageInput(
-                      controller: messageController,
-                      hintText: LocaleKeys.enterMessage.tr(),
-                    ),
-                    const SizedBox(height: 24),
-                    Center(
-                      child: UiPrimaryButton(
-                        text: LocaleKeys.signMessageButton.tr(),
-                        onPressed: isLoading ? null : _signMessage,
-                        width: double.infinity,
-                        height: 56,
-                      ),
-                    ),
-                  ],
-                ),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  theme.scaffoldBackgroundColor,
+                  theme.scaffoldBackgroundColor.withOpacity(0.95),
+                ],
               ),
             ),
-            if (signedMessage != null) ...[
-              const SizedBox(height: 24),
-              EnhancedSignedMessageCard(
-                selectedAddress: selectedAddress!,
-                message: messageController.text,
-                signedMessage: signedMessage!,
-                onCopyToClipboard: _copyToClipboard,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: theme.colorScheme.primary.withOpacity(0.2),
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    color: theme.colorScheme.surface.withOpacity(0.95),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Signing Address',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          if (errorMessage != null && !isLoadingAddresses)
+                            ErrorMessageWidget(errorMessage: errorMessage!)
+                          else
+                            AddressSelectInput(
+                              addresses: pubkeys?.keys ?? [],
+                              selectedAddress: selectedAddress,
+                              onAddressSelected: !isSelectEnabled
+                                  ? null
+                                  : (address) {
+                                      setState(() {
+                                        selectedAddress = address;
+                                        signedMessage = null;
+                                        errorMessage = null;
+                                      });
+                                    },
+                              assetName: widget.asset.id.name,
+                            ),
+                          const SizedBox(height: 20),
+                          Text(
+                            LocaleKeys.messageToSign.tr(),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          EnhancedMessageInput(
+                            controller: messageController,
+                            hintText: LocaleKeys.enterMessage.tr(),
+                          ),
+                          const SizedBox(height: 24),
+                          Center(
+                            child: UiPrimaryButton(
+                              text: LocaleKeys.signMessageButton.tr(),
+                              onPressed: isLoading ? null : _signMessage,
+                              width: double.infinity,
+                              height: 56,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ],
+            ),
+          ),
         ),
-      ),
+      ],
+    );
+  }
+}
+
+class MessageSigningHeader extends StatelessWidget {
+  final VoidCallback? onBackButtonPressed;
+  final String title;
+
+  const MessageSigningHeader({
+    super.key,
+    required this.title,
+    this.onBackButtonPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PageHeader(
+      title: title,
+      backText: LocaleKeys.backToWallet.tr(),
+      onBackButtonPressed: onBackButtonPressed,
     );
   }
 }
