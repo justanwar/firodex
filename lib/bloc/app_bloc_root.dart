@@ -284,7 +284,8 @@ class AppBlocRoot extends StatelessWidget {
             ),
           ),
           BlocProvider<SystemHealthBloc>(
-            create: (_) => SystemHealthBloc(SystemClockRepository(), mm2Api),
+            create: (_) => SystemHealthBloc(SystemClockRepository(), mm2Api)
+              ..add(SystemHealthPeriodicCheckStarted()),
           ),
           BlocProvider<TrezorInitBloc>(
             create: (context) => TrezorInitBloc(
@@ -300,7 +301,8 @@ class AppBlocRoot extends StatelessWidget {
             ),
           ),
           BlocProvider<FaucetBloc>(
-            create: (context) => FaucetBloc(kdfSdk: context.read<KomodoDefiSdk>()),
+            create: (context) =>
+                FaucetBloc(kdfSdk: context.read<KomodoDefiSdk>()),
           )
         ],
         child: _MyAppView(),
