@@ -675,5 +675,9 @@ abstract class  LocaleKeys {
   static const previewWithdrawal = 'previewWithdrawal';
   static const createNewAddress = 'createNewAddress';
   static const chart = 'chart';
+  static const confirmMessageSigning = 'confirmMessageSigning';
+  static const messageSigningWarning = 'messageSigningWarning';
+  static const messageSigningCheckboxText = 'messageSigningCheckboxText';
+  static const messageSigned = 'messageSigned';
 
 }
