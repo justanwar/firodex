@@ -14,11 +14,11 @@ import 'package:web_dex/views/wallets_manager/widgets/hdwallet_mode_switch.dart'
 
 class WalletCreation extends StatefulWidget {
   const WalletCreation({
-    Key? key,
+    super.key,
     required this.action,
     required this.onCreate,
     required this.onCancel,
-  }) : super(key: key);
+  });
 
   final WalletsManagerAction action;
   final void Function({

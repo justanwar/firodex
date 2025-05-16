@@ -7,7 +7,6 @@ class CoinsState extends Equatable {
   CoinsState({
     required Map<String, Coin> coins,
     required Map<String, Coin> walletCoins,
-    required this.loginActivationFinished,
     required this.pubkeys,
     required this.prices,
   })  : coins = _filterExcludedAssets(coins),
@@ -16,20 +15,18 @@ class CoinsState extends Equatable {
   factory CoinsState.initial() => CoinsState(
         coins: const {},
         walletCoins: const {},
-        loginActivationFinished: false,
         pubkeys: const {},
         prices: const {},
       );
 
   final Map<String, Coin> coins;
   final Map<String, Coin> walletCoins;
-  final bool loginActivationFinished;
   final Map<String, AssetPubkeys> pubkeys;
   final Map<String, CexPrice> prices;
 
   @override
   List<Object> get props =>
-      [coins, walletCoins, loginActivationFinished, pubkeys, prices];
+      [coins, walletCoins, pubkeys, prices];
 
   /// Creates a copy of the current state with the option to update
   /// specific fields.
@@ -53,8 +50,6 @@ class CoinsState extends Equatable {
     return CoinsState(
       coins: coinsWithoutExcludedCoins,
       walletCoins: walletCoinsWithoutExcludedCoins,
-      loginActivationFinished:
-          loginActivationFinished ?? this.loginActivationFinished,
       pubkeys: pubkeys ?? this.pubkeys,
       prices: prices ?? this.prices,
     );
