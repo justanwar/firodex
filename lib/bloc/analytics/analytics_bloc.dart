@@ -19,7 +19,6 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
         super(AnalyticsState.fromSettings(storedData.analytics)) {
     on<AnalyticsActivateEvent>(_onActivate);
     on<AnalyticsDeactivateEvent>(_onDeactivate);
-    on<AnalyticsSendDataEvent>(_onSendData);
   }
 
   final AnalyticsRepo _analytics;
@@ -50,14 +49,5 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
         analytics: _storedData.analytics.copyWith(isSendAllowed: false),
       ),
     );
-  }
-
-  Future<void> _onSendData(
-    AnalyticsSendDataEvent event,
-    Emitter<AnalyticsState> emitter,
-  ) async {
-    if (state.isSendDataAllowed) {
-      await _analytics.sendData(event.data);
-    }
   }
 }

@@ -1,5 +1,4 @@
-import 'package:web_dex/bloc/analytics/analytics_repo.dart';
-
+// filepath: /Users/charl/Code/UTXO/komodo-wallet/lib/bloc/analytics/analytics_event.dart
 abstract class AnalyticsEvent {
   const AnalyticsEvent();
 }
@@ -10,9 +9,4 @@ class AnalyticsActivateEvent extends AnalyticsEvent {
 
 class AnalyticsDeactivateEvent extends AnalyticsEvent {
   const AnalyticsDeactivateEvent();
-}
-
-class AnalyticsSendDataEvent extends AnalyticsEvent {
-  const AnalyticsSendDataEvent(this.data);
-  final AnalyticsEventData data;
 }

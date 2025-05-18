@@ -36,12 +36,10 @@ class WalletsManagerEvent extends AnalyticsEventData {
   final String method;
 
   WalletsManagerEvent({
-    required String name,
+    required super.name,
     required this.source,
     required this.method,
-  }) {
-    this.name = name;
-  }
+  });
 
   @override
   Map<String, Object> get parameters => {
