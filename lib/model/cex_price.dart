@@ -1,5 +1,18 @@
-import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
+
+enum CexDataProvider {
+  binance,
+  coingecko,
+  coinpaprika,
+  nomics,
+  unknown,
+}
+
+CexDataProvider cexDataProvider(String string) {
+  return CexDataProvider.values.firstWhere(
+      (e) => e.toString().split('.').last == string,
+      orElse: () => CexDataProvider.unknown);
+}
 
 class CexPrice extends Equatable {
   const CexPrice({
@@ -27,6 +40,34 @@ class CexPrice extends Equatable {
     return 'CexPrice(ticker: $ticker, price: $price)';
   }
 
+  factory CexPrice.fromJson(Map<String, dynamic> json) {
+    return CexPrice(
+      ticker: json['ticker'] as String,
+      price: (json['price'] as num).toDouble(),
+      lastUpdated: json['lastUpdated'] == null
+          ? null
+          : DateTime.parse(json['lastUpdated'] as String),
+      priceProvider: cexDataProvider(json['priceProvider'] as String),
+      volume24h: (json['volume24h'] as num?)?.toDouble(),
+      volumeProvider: cexDataProvider(json['volumeProvider'] as String),
+      change24h: (json['change24h'] as num?)?.toDouble(),
+      changeProvider: cexDataProvider(json['changeProvider'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'ticker': ticker,
+      'price': price,
+      'lastUpdated': lastUpdated?.toIso8601String(),
+      'priceProvider': priceProvider?.toString(),
+      'volume24h': volume24h,
+      'volumeProvider': volumeProvider?.toString(),
+      'change24h': change24h,
+      'changeProvider': changeProvider?.toString(),
+    };
+  }
+
   @override
   List<Object?> get props => [
         ticker,
@@ -38,18 +79,4 @@ class CexPrice extends Equatable {
         change24h,
         changeProvider,
       ];
-}
-
-enum CexDataProvider {
-  binance,
-  coingecko,
-  coinpaprika,
-  nomics,
-  unknown,
-}
-
-CexDataProvider cexDataProvider(String string) {
-  return CexDataProvider.values
-          .firstWhereOrNull((e) => e.toString().split('.').last == string) ??
-      CexDataProvider.unknown;
 }

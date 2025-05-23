@@ -2,11 +2,11 @@ import 'package:app_theme/app_theme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:web_dex/bloc/system_health/system_health_bloc.dart';
-import 'package:web_dex/bloc/system_health/system_health_state.dart';
-import 'package:web_dex/blocs/blocs.dart';
-import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
+import 'package:web_dex/bloc/auth_bloc/auth_bloc.dart';
+import 'package:web_dex/bloc/system_health/system_health_bloc.dart';
+import 'package:web_dex/blocs/maker_form_bloc.dart';
+import 'package:web_dex/generated/codegen_loader.g.dart';
 
 class MakerFormTradeButton extends StatelessWidget {
   const MakerFormTradeButton({Key? key}) : super(key: key);
@@ -19,6 +19,9 @@ class MakerFormTradeButton extends StatelessWidget {
       final bool isSystemClockValid =
           systemHealthState is SystemHealthLoadSuccess &&
               systemHealthState.isValid;
+
+      final makerFormBloc = RepositoryProvider.of<MakerFormBloc>(context);
+      final authBloc = context.watch<AuthBloc>();
 
       return StreamBuilder<bool>(
           initialData: makerFormBloc.inProgress,
@@ -46,7 +49,7 @@ class MakerFormTradeButton extends StatelessWidget {
                 onPressed: disabled
                     ? null
                     : () async {
-                        while (!coinsBloc.loginActivationFinished) {
+                        while (!authBloc.state.isSignedIn) {
                           await Future<dynamic>.delayed(
                               const Duration(milliseconds: 300));
                         }

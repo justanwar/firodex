@@ -1,21 +1,22 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
+import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:rational/rational.dart';
-import 'package:web_dex/bloc/auth_bloc/auth_repository.dart';
+import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/bloc/bridge_form/bridge_event.dart';
 import 'package:web_dex/bloc/bridge_form/bridge_repository.dart';
 import 'package:web_dex/bloc/bridge_form/bridge_state.dart';
 import 'package:web_dex/bloc/bridge_form/bridge_validator.dart';
+import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
 import 'package:web_dex/bloc/dex_repository.dart';
 import 'package:web_dex/bloc/transformers.dart';
-import 'package:web_dex/blocs/coins_bloc.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/best_orders/best_orders.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/best_orders/best_orders_request.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/sell/sell_request.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/sell/sell_response.dart';
-import 'package:web_dex/model/authorize_mode.dart';
 import 'package:web_dex/model/available_balance_state.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/data_from_service.dart';
@@ -23,18 +24,24 @@ import 'package:web_dex/model/dex_form_error.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/trade_preimage.dart';
 import 'package:web_dex/model/typedef.dart';
+import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/shared/utils/utils.dart';
 import 'package:web_dex/views/dex/dex_helpers.dart';
+import 'package:web_dex/bloc/analytics/analytics_bloc.dart';
+import 'package:web_dex/analytics/events/cross_chain_events.dart';
 
 class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
   BridgeBloc({
     required BridgeRepository bridgeRepository,
     required DexRepository dexRepository,
-    required CoinsBloc coinsRepository,
-    required AuthRepository authRepository,
+    required CoinsRepo coinsRepository,
+    required KomodoDefiSdk kdfSdk,
+    required AnalyticsBloc analyticsBloc,
   })  : _bridgeRepository = bridgeRepository,
         _dexRepository = dexRepository,
         _coinsRepository = coinsRepository,
+        _kdfSdk = kdfSdk,
+        _analyticsBloc = analyticsBloc,
         super(BridgeState.initial()) {
     on<BridgeInit>(_onInit);
     on<BridgeReInit>(_onReInit);
@@ -71,20 +78,22 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
       dexRepository: dexRepository,
     );
 
-    _authorizationSubscription = authRepository.authMode.listen((event) {
-      _isLoggedIn = event == AuthorizeMode.logIn;
+    _authorizationSubscription = _kdfSdk.auth.authStateChanges.listen((event) {
+      _isLoggedIn = event != null;
       if (!_isLoggedIn) add(const BridgeLogout());
     });
   }
 
   final BridgeRepository _bridgeRepository;
   final DexRepository _dexRepository;
-  final CoinsBloc _coinsRepository;
+  final CoinsRepo _coinsRepository;
+  final KomodoDefiSdk _kdfSdk;
+  final AnalyticsBloc _analyticsBloc;
 
   bool _activatingAssets = false;
   bool _waitingForWallet = true;
   bool _isLoggedIn = false;
-  late StreamSubscription<AuthorizeMode> _authorizationSubscription;
+  late StreamSubscription<KdfUser?> _authorizationSubscription;
   late BridgeValidator _validator;
   Timer? _maxSellAmountTimer;
   Timer? _preimageTimer;
@@ -94,8 +103,8 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
     Emitter<BridgeState> emit,
   ) {
     if (state.selectedTicker != null) return;
-    final Coin? defaultTickerCoin = _coinsRepository.getCoin(event.ticker);
 
+    final Coin? defaultTickerCoin = _coinsRepository.getCoin(event.ticker);
     emit(state.copyWith(
       selectedTicker: () => defaultTickerCoin?.abbr,
     ));
@@ -160,8 +169,7 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
     BridgeUpdateTickers event,
     Emitter<BridgeState> emit,
   ) async {
-    final CoinsByTicker tickers =
-        await _bridgeRepository.getAvailableTickers(_coinsRepository);
+    final CoinsByTicker tickers = await _bridgeRepository.getAvailableTickers();
 
     emit(state.copyWith(
       tickers: () => tickers,
@@ -257,6 +265,11 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
       type: BestOrdersRequestType.number,
       number: 1,
     ));
+
+    /// Unsupported coins like ARRR cause downstream errors, so we need to
+    /// remove them from the list here
+    bestOrders.result
+        ?.removeWhere((coinId, _) => excludedAssetList.contains(coinId));
 
     emit(state.copyWith(
       bestOrders: () => bestOrders,
@@ -505,6 +518,21 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
     BridgeStartSwap event,
     Emitter<BridgeState> emit,
   ) async {
+    final sellCoin = state.sellCoin;
+    final bestOrder = state.bestOrder;
+    if (sellCoin != null && bestOrder != null) {
+      final buyCoin = _coinsRepository.getCoin(bestOrder.coin);
+      final walletType =
+          (await _kdfSdk.auth.currentUser)?.wallet.config.type.name ?? '';
+      _analyticsBloc.logEvent(
+        BridgeInitiatedEventData(
+          fromChain: sellCoin.protocolType,
+          toChain: buyCoin?.protocolType ?? '',
+          asset: sellCoin.abbr,
+          walletType: walletType,
+        ),
+      );
+    }
     emit(state.copyWith(
       inProgress: () => true,
     ));
@@ -516,11 +544,36 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
       orderType: SellBuyOrderType.fillOrKill,
     ));
 
-    if (response.error != null) {
-      add(BridgeSetError(DexFormError(error: response.error!.message)));
-    }
-
     final String? uuid = response.result?.uuid;
+
+    if (uuid != null) {
+      final buyCoin = _coinsRepository.getCoin(state.bestOrder!.coin);
+      final walletType =
+          (await _kdfSdk.auth.currentUser)?.wallet.config.type.name ?? '';
+      _analyticsBloc.logEvent(
+        BridgeSucceededEventData(
+          fromChain: state.sellCoin!.protocolType,
+          toChain: buyCoin?.protocolType ?? '',
+          asset: state.sellCoin!.abbr,
+          amount: state.sellAmount?.toDouble() ?? 0.0,
+          walletType: walletType,
+        ),
+      );
+    } else {
+      final buyCoin = _coinsRepository.getCoin(state.bestOrder!.coin);
+      final walletType =
+          (await _kdfSdk.auth.currentUser)?.wallet.config.type.name ?? '';
+      final error = response.error?.message ?? 'unknown';
+      _analyticsBloc.logEvent(
+        BridgeFailedEventData(
+          fromChain: state.sellCoin!.protocolType,
+          toChain: buyCoin?.protocolType ?? '',
+          failError: error,
+          walletType: walletType,
+        ),
+      );
+      add(BridgeSetError(DexFormError(error: error)));
+    }
 
     emit(state.copyWith(
       inProgress: uuid == null ? () => false : null,
@@ -562,7 +615,7 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
 
     _activatingAssets = true;
     final List<DexFormError> activationErrors =
-        await activateCoinIfNeeded(abbr);
+        await activateCoinIfNeeded(abbr, _coinsRepository);
     _activatingAssets = false;
 
     if (activationErrors.isNotEmpty) {

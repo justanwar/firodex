@@ -1,21 +1,21 @@
 import 'package:collection/collection.dart';
-import 'package:web_dex/blocs/blocs.dart';
+import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/orderbook_depth/orderbook_depth_response.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/coin_type.dart';
 import 'package:web_dex/model/typedef.dart';
 import 'package:web_dex/shared/utils/utils.dart';
 
-List<Coin> sortFiatBalance(List<Coin> coins) {
+List<Coin> sortFiatBalance(List<Coin> coins, KomodoDefiSdk sdk) {
   final List<Coin> list = List.from(coins);
   list.sort((a, b) {
-    final double usdBalanceA = a.usdBalance ?? 0.00;
-    final double usdBalanceB = b.usdBalance ?? 0.00;
+    final double usdBalanceA = a.lastKnownUsdBalance(sdk) ?? 0.00;
+    final double usdBalanceB = b.lastKnownUsdBalance(sdk) ?? 0.00;
     if (usdBalanceA > usdBalanceB) return -1;
     if (usdBalanceA < usdBalanceB) return 1;
 
-    if (a.balance > b.balance) return -1;
-    if (a.balance < b.balance) return 1;
+    if ((a.balance(sdk) ?? 0) > (b.balance(sdk) ?? 0)) return -1;
+    if ((a.balance(sdk) ?? 0) < (b.balance(sdk) ?? 0)) return 1;
 
     final bool isAEnabled = a.isActive;
     final bool isBEnabled = b.isActive;
@@ -27,6 +27,14 @@ List<Coin> sortFiatBalance(List<Coin> coins) {
   return list;
 }
 
+List<Coin> removeTestCoins(List<Coin> coins) {
+  final List<Coin> list = List.from(coins);
+
+  list.removeWhere((Coin coin) => coin.isTestCoin);
+
+  return list;
+}
+
 List<Coin> removeWalletOnly(List<Coin> coins) {
   final List<Coin> list = List.from(coins);
 
@@ -35,8 +43,8 @@ List<Coin> removeWalletOnly(List<Coin> coins) {
   return list;
 }
 
-List<Coin> removeSuspended(List<Coin> coins) {
-  if (!coinsBloc.isLoggedIn) return coins;
+List<Coin> removeSuspended(List<Coin> coins, bool isLoggedIn) {
+  if (!isLoggedIn) return coins;
   final List<Coin> list = List.from(coins);
 
   list.removeWhere((Coin coin) => coin.isSuspended);

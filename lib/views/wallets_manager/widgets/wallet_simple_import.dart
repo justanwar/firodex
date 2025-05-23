@@ -1,27 +1,30 @@
-import 'package:bip39/bip39.dart' as bip39;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
+import 'package:komodo_defi_types/komodo_defi_type_utils.dart'
+    show MnemonicFailedReason;
+import 'package:komodo_ui_kit/komodo_ui_kit.dart';
 import 'package:web_dex/app_config/app_config.dart';
-import 'package:web_dex/blocs/blocs.dart';
+import 'package:web_dex/blocs/wallets_repository.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/services/file_loader/file_loader.dart';
-import 'package:web_dex/services/file_loader/get_file_loader.dart';
-import 'package:komodo_ui_kit/komodo_ui_kit.dart';
 import 'package:web_dex/shared/utils/utils.dart';
 import 'package:web_dex/shared/widgets/disclaimer/eula_tos_checkboxes.dart';
 import 'package:web_dex/shared/widgets/password_visibility_control.dart';
 import 'package:web_dex/views/wallets_manager/widgets/creation_password_fields.dart';
-import 'package:web_dex/views/wallets_manager/widgets/custom_seed_dialog.dart';
+import 'package:web_dex/views/wallets_manager/widgets/custom_seed_checkbox.dart';
+import 'package:web_dex/views/wallets_manager/widgets/hdwallet_mode_switch.dart';
 
 class WalletSimpleImport extends StatefulWidget {
   const WalletSimpleImport({
-    Key? key,
     required this.onImport,
     required this.onUploadFiles,
     required this.onCancel,
-  }) : super(key: key);
+    super.key,
+  });
 
   final void Function({
     required String name,
@@ -53,10 +56,13 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
   bool _isSeedHidden = true;
   bool _eulaAndTosChecked = false;
   bool _inProgress = false;
-  bool? _allowCustomSeed;
+  bool _allowCustomSeed = false;
+  bool _isHdMode = true;
 
   bool get _isButtonEnabled {
-    return _eulaAndTosChecked && !_inProgress;
+    final isFormValid = _refreshFormValidationState();
+
+    return _eulaAndTosChecked && !_inProgress && isFormValid;
   }
 
   @override
@@ -70,18 +76,18 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
               : LocaleKeys.walletImportCreatePasswordTitle
                   .tr(args: [_nameController.text]),
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontSize: 18,
+                fontSize: 20,
               ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 36),
+        const SizedBox(height: 20),
         Form(
           key: _formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               _buildFields(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 20),
               UiPrimaryButton(
                 key: const Key('confirm-seed-button'),
                 text: _inProgress
@@ -117,27 +123,27 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
   }
 
   Widget _buildCheckBoxCustomSeed() {
-    return UiCheckbox(
-      checkboxKey: const Key('checkbox-custom-seed'),
-      value: _allowCustomSeed!,
-      text: LocaleKeys.allowCustomFee.tr(),
-      onChanged: (bool? data) async {
-        if (data == null) return;
-        if (!_allowCustomSeed!) {
-          final bool confirmed = await customSeedDialog(context);
-          if (!confirmed) return;
-        }
-
+    return CustomSeedCheckbox(
+      value: _allowCustomSeed,
+      onChanged: (value) {
         setState(() {
-          _allowCustomSeed = !_allowCustomSeed!;
+          _allowCustomSeed = value;
         });
 
-        if (_seedController.text.isNotEmpty &&
-            _nameController.text.isNotEmpty) {
-          _formKey.currentState!.validate();
-        }
+        _refreshFormValidationState();
       },
     );
+  }
+
+  bool _refreshFormValidationState() {
+    final nameHasValue = _nameController.text.isNotEmpty;
+    final seedHasValue = _seedController.text.isNotEmpty;
+
+    if (seedHasValue && nameHasValue) {
+      return _formKey.currentState!.validate();
+    }
+
+    return false;
   }
 
   Widget _buildFields() {
@@ -160,7 +166,7 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
     return UploadButton(
       buttonText: LocaleKeys.walletCreationUploadFile.tr(),
       uploadFile: () async {
-        await fileLoader.upload(
+        await FileLoader.fromPlatform().upload(
           onUpload: (fileName, fileData) => widget.onUploadFiles(
             fileData: fileData ?? '',
             fileName: fileName,
@@ -181,19 +187,30 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
 
   Widget _buildNameAndSeed() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildNameField(),
         const SizedBox(height: 16),
         _buildSeedField(),
-        if (_allowCustomSeed != null) ...[
-          const SizedBox(height: 15),
-          _buildCheckBoxCustomSeed(),
-        ],
-        const SizedBox(height: 25),
-        UiDivider(text: LocaleKeys.or.tr()),
+        const SizedBox(height: 16),
+        HDWalletModeSwitch(
+          value: _isHdMode,
+          onChanged: (value) {
+            setState(() {
+              _isHdMode = value;
+              _allowCustomSeed = false;
+            });
+
+            _refreshFormValidationState();
+          },
+        ),
+        const SizedBox(height: 20),
+        UiDivider(text: LocaleKeys.seedOr.tr()),
         const SizedBox(height: 20),
         _buildImportFileButton(),
-        const SizedBox(height: 22),
+        const SizedBox(height: 15),
+        if (!_isHdMode) _buildCheckBoxCustomSeed(),
+        const SizedBox(height: 15),
         EulaTosCheckboxes(
           key: const Key('import-wallet-eula-checks'),
           isChecked: _eulaAndTosChecked,
@@ -208,18 +225,17 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
   }
 
   Widget _buildNameField() {
+    final walletsRepository = RepositoryProvider.of<WalletsRepository>(context);
     return UiTextFormField(
       key: const Key('name-wallet-field'),
       controller: _nameController,
       autofocus: true,
       autocorrect: false,
       textInputAction: TextInputAction.next,
-      enableInteractiveSelection: true,
       validator: (String? name) =>
-          _inProgress ? null : walletsBloc.validateWalletName(name ?? ''),
+          _inProgress ? null : walletsRepository.validateWalletName(name ?? ''),
       inputFormatters: [LengthLimitingTextInputFormatter(40)],
       hintText: LocaleKeys.walletCreationNameHint.tr(),
-      validationMode: InputValidationMode.eager,
     );
   }
 
@@ -232,7 +248,6 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
       textInputAction: TextInputAction.done,
       autocorrect: false,
       obscureText: _isSeedHidden,
-      enableInteractiveSelection: true,
       maxLines: _isSeedHidden ? 1 : null,
       errorMaxLines: 4,
       style: Theme.of(context).textTheme.bodyMedium,
@@ -275,6 +290,7 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
     }
 
     final WalletConfig config = WalletConfig(
+      type: _isHdMode ? WalletType.hdwallet : WalletType.iguana,
       activatedCoins: enabledByDefaultCoins,
       hasBackup: true,
       seedPhrase: _seedController.text,
@@ -292,18 +308,38 @@ class _WalletImportWrapperState extends State<WalletSimpleImport> {
   }
 
   String? _validateSeed(String? seed) {
-    if (seed == null || seed.isEmpty) {
-      return LocaleKeys.walletCreationEmptySeedError.tr();
-    } else if ((_allowCustomSeed != true) && !bip39.validateMnemonic(seed)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _allowCustomSeed = false;
-          });
-        }
-      });
-      return LocaleKeys.walletCreationBip39SeedError.tr();
+    if (_allowCustomSeed) {
+      return null;
     }
-    return null;
+
+    final maybeFailedReason =
+        context.read<KomodoDefiSdk>().mnemonicValidator.validateMnemonic(
+              seed ?? '',
+              minWordCount: 12,
+              maxWordCount: 24,
+              isHd: _isHdMode,
+              allowCustomSeed: _allowCustomSeed,
+            );
+
+    if (maybeFailedReason == null) {
+      return null;
+    }
+
+    return switch (maybeFailedReason) {
+      MnemonicFailedReason.empty =>
+        LocaleKeys.walletCreationEmptySeedError.tr(),
+      MnemonicFailedReason.customNotSupportedForHd => _isHdMode
+          ? LocaleKeys.walletCreationHdBip39SeedError.tr()
+          : LocaleKeys.walletCreationBip39SeedError.tr(),
+      MnemonicFailedReason.customNotAllowed =>
+        LocaleKeys.customSeedWarningText.tr(),
+      MnemonicFailedReason.invalidLength =>
+        // TODO: Add this string has placeholders for min/max counts, which we
+        // specify as "12" and "24"
+        // LocaleKeys.seedPhraseCheckingEnterWord.tr(args: ['12', '24']),
+        _isHdMode
+            ? LocaleKeys.walletCreationHdBip39SeedError.tr()
+            : LocaleKeys.walletCreationBip39SeedError.tr(),
+    };
   }
 }

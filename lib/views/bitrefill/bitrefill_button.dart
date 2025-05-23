@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:web_dex/bloc/bitrefill/bloc/bitrefill_bloc.dart';
@@ -9,10 +7,9 @@ import 'package:web_dex/bloc/bitrefill/models/bitrefill_event.dart';
 import 'package:web_dex/bloc/bitrefill/models/bitrefill_event_factory.dart';
 import 'package:web_dex/bloc/bitrefill/models/bitrefill_payment_intent_event.dart';
 import 'package:web_dex/model/coin.dart';
-import 'package:web_dex/shared/utils/utils.dart';
-import 'package:web_dex/views/bitrefill/bitrefill_button_view.dart';
-import 'package:web_dex/views/bitrefill/bitrefill_desktop_webview_button.dart';
-import 'package:web_dex/views/bitrefill/bitrefill_inappbrowser_button.dart';
+import 'package:web_dex/views/bitrefill/bitrefill_inappwebview_button.dart';
+import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
+import 'package:get_it/get_it.dart';
 
 /// A button that opens the Bitrefill widget in a new window or tab.
 /// The Bitrefill widget is a web page that allows the user to purchase gift
@@ -25,9 +22,9 @@ import 'package:web_dex/views/bitrefill/bitrefill_inappbrowser_button.dart';
 /// The event is passed to the [onPaymentRequested] callback.
 class BitrefillButton extends StatefulWidget {
   const BitrefillButton({
-    super.key,
     required this.coin,
     required this.onPaymentRequested,
+    super.key,
     this.windowTitle = 'Bitrefill',
   });
 
@@ -40,9 +37,6 @@ class BitrefillButton extends StatefulWidget {
 }
 
 class _BitrefillButtonState extends State<BitrefillButton> {
-  final bool isInAppBrowserSupported =
-      !kIsWeb && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
-
   @override
   void initState() {
     context
@@ -54,6 +48,7 @@ class _BitrefillButtonState extends State<BitrefillButton> {
   @override
   Widget build(BuildContext context) {
     void handleMessage(String event) => _handleMessage(event, context);
+    final KomodoDefiSdk sdk = GetIt.I<KomodoDefiSdk>();
 
     return BlocConsumer<BitrefillBloc, BitrefillState>(
       listener: (BuildContext context, BitrefillState state) {
@@ -67,11 +62,16 @@ class _BitrefillButtonState extends State<BitrefillButton> {
         if (bitrefillLoadSuccess) {
           isCoinSupported = state.supportedCoins.contains(widget.coin.abbr);
         }
-        final bool hasNonZeroBalance = widget.coin.balance > 0;
+
+        final double coinBalance =
+            sdk.balances.lastKnown(widget.coin.id)?.spendable.toDouble() ?? 0.0;
+        final bool hasNonZeroBalance = coinBalance > 0;
+
         final bool isEnabled = bitrefillLoadSuccess &&
             isCoinSupported &&
             !widget.coin.isSuspended &&
             hasNonZeroBalance;
+
         final String url = state is BitrefillLoadSuccess ? state.url : '';
 
         if (!isEnabled) {
@@ -80,37 +80,16 @@ class _BitrefillButtonState extends State<BitrefillButton> {
 
         return Column(
           children: [
-            if (kIsWeb)
-              // Temporary solution for web until this PR is approved and released:
-              // https://github.com/pichillilorenzo/flutter_inappwebview/pull/2058
-              BitrefillButtonView(
-                onPressed: isEnabled
-                    ? () => _openBitrefillInNewTab(context, url)
-                    : null,
-              )
-            else if (isInAppBrowserSupported)
-              BitrefillInAppBrowserButton(
-                windowTitle: widget.windowTitle,
-                url: url,
-                enabled: isEnabled,
-                onMessage: handleMessage,
-              )
-            else
-              BitrefillDesktopWebviewButton(
-                windowTitle: widget.windowTitle,
-                url: url,
-                enabled: isEnabled,
-                onMessage: handleMessage,
-              ),
+            BitrefillInAppWebviewButton(
+              windowTitle: widget.windowTitle,
+              url: url,
+              enabled: isEnabled,
+              onMessage: handleMessage,
+            ),
           ],
         );
       },
     );
-  }
-
-  void _openBitrefillInNewTab(BuildContext context, String url) {
-    launchURL(url, inSeparateTab: true);
-    context.read<BitrefillBloc>().add(const BitrefillLaunchRequested());
   }
 
   /// Handles messages from the Bitrefill widget.

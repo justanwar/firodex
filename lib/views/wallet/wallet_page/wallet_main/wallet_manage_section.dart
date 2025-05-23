@@ -1,7 +1,8 @@
-import 'package:app_theme/app_theme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
+import 'package:web_dex/bloc/coins_manager/coins_manager_bloc.dart';
 import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/model/authorize_mode.dart';
@@ -33,157 +34,93 @@ class WalletManageSection extends StatelessWidget {
         : _buildDesktopSection(context);
   }
 
+  bool get isAuthenticated => mode == AuthorizeMode.logIn;
   Widget _buildDesktopSection(BuildContext context) {
-    final ThemeData themeData = Theme.of(context);
+    final ThemeData theme = Theme.of(context);
     return Card(
       clipBehavior: Clip.antiAlias,
-      color: Theme.of(context).colorScheme.surface,
+      color: theme.colorScheme.surface,
       margin: const EdgeInsets.all(0),
-      elevation: pinned ? 4 : 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      elevation: pinned ? 2 : 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               children: [
-                HiddenWithoutWallet(
+                Flexible(
                   child: Container(
-                    padding: const EdgeInsets.all(3.0),
-                    decoration: BoxDecoration(
-                      color: theme.custom.walletEditButtonsBackgroundColor,
-                      borderRadius: BorderRadius.circular(18.0),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        UiPrimaryButton(
-                          buttonKey: const Key('add-assets-button'),
-                          onPressed: _onAddAssetsPress,
-                          text: LocaleKeys.addAssets.tr(),
-                          height: 30.0,
-                          width: 110,
-                          backgroundColor: themeData.colorScheme.surface,
-                          textStyle: TextStyle(
-                            color: themeData.colorScheme.primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 3.0),
-                          child: UiPrimaryButton(
-                            buttonKey: const Key('remove-assets-button'),
-                            onPressed: _onRemoveAssetsPress,
-                            text: LocaleKeys.removeAssets.tr(),
-                            height: 30.0,
-                            width: 125,
-                            backgroundColor: themeData.colorScheme.surface,
-                            textStyle: TextStyle(
-                              color: themeData.textTheme.labelLarge?.color
-                                  ?.withOpacity(0.7),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    alignment: Alignment.centerLeft,
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: WalletManagerSearchField(onChange: onSearchChange),
                   ),
                 ),
-                Row(
-                  children: [
-                    HiddenWithoutWallet(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 30.0),
-                        child: CoinsWithBalanceCheckbox(
-                          withBalance: withBalance,
-                          onWithBalanceChange: onWithBalanceChange,
-                        ),
-                      ),
-                    ),
-                    WalletManagerSearchField(onChange: onSearchChange),
-                  ],
-                ),
+                if (isAuthenticated) ...[
+                  Spacer(),
+                  CoinsWithBalanceCheckbox(
+                    withBalance: withBalance,
+                    onWithBalanceChange: onWithBalanceChange,
+                  ),
+                  SizedBox(width: 24),
+                  UiPrimaryButton(
+                    buttonKey: const Key('add-assets-button'),
+                    onPressed: () => _onAddAssetsPress(context),
+                    text: LocaleKeys.addAssets.tr(),
+                    height: 36,
+                    width: 147,
+                    borderRadius: 10,
+                    textStyle: theme.textTheme.bodySmall,
+                  ),
+                ],
               ],
             ),
-          ),
-          const CoinsListHeader(),
-        ],
+            Spacer(),
+            CoinsListHeader(isAuth: mode == AuthorizeMode.logIn),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildMobileSection(BuildContext context) {
-    final ThemeData themeData = Theme.of(context);
+    final ThemeData theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(2, 20, 2, 10),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          HiddenWithoutWallet(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 17.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    LocaleKeys.portfolio.tr(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.all(3.0),
-                    decoration: BoxDecoration(
-                      color: themeData.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(18.0),
-                    ),
-                    child: Row(
-                      children: [
-                        UiPrimaryButton(
-                          buttonKey: const Key('add-assets-button'),
-                          onPressed: _onAddAssetsPress,
-                          text: LocaleKeys.addAssets.tr(),
-                          height: 25.0,
-                          width: 110,
-                          backgroundColor: themeData.colorScheme.onSurface,
-                          textStyle: TextStyle(
-                            color: themeData.colorScheme.secondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 3.0),
-                          child: UiPrimaryButton(
-                            buttonKey: const Key('remove-assets-button'),
-                            onPressed: _onRemoveAssetsPress,
-                            text: LocaleKeys.remove.tr(),
-                            height: 25.0,
-                            width: 80,
-                            backgroundColor: themeData.colorScheme.onSurface,
-                            textStyle: TextStyle(
-                              color: themeData.textTheme.labelLarge?.color
-                                  ?.withOpacity(0.7),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Currency',
+                style: theme.textTheme.titleLarge,
+              ),
+              Spacer(),
+              if (isAuthenticated)
+                UiPrimaryButton(
+                  buttonKey: const Key('asset-management-button'),
+                  onPressed: () => _onAddAssetsPress(context),
+                  text: 'Asset management',
+                  height: 36,
+                  width: 147,
+                  borderRadius: 10,
+                  textStyle: theme.textTheme.bodySmall,
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: WalletManagerSearchField(onChange: onSearchChange),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
             children: [
               HiddenWithoutWallet(
                 child: CoinsWithBalanceCheckbox(
@@ -191,7 +128,6 @@ class WalletManageSection extends StatelessWidget {
                   onWithBalanceChange: onWithBalanceChange,
                 ),
               ),
-              WalletManagerSearchField(onChange: onSearchChange),
             ],
           ),
         ],
@@ -199,12 +135,11 @@ class WalletManageSection extends StatelessWidget {
     );
   }
 
-  void _onAddAssetsPress() {
+  void _onAddAssetsPress(BuildContext context) {
+    context
+        .read<CoinsManagerBloc>()
+        .add(const CoinsManagerCoinsListReset(CoinsManagerAction.add));
     routingState.walletState.action = coinsManagerRouteAction.addAssets;
-  }
-
-  void _onRemoveAssetsPress() {
-    routingState.walletState.action = coinsManagerRouteAction.removeAssets;
   }
 }
 

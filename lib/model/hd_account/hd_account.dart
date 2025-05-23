@@ -1,3 +1,5 @@
+import 'package:komodo_defi_types/komodo_defi_types.dart';
+
 class HdAccount {
   HdAccount({
     required this.accountIndex,
@@ -15,6 +17,16 @@ class HdAccount {
           .map<HdAddress>((dynamic item) => HdAddress.fromJson(item))
           .toList(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'account_index': accountIndex,
+      'derivation_path': derivationPath,
+      'total_balance': totalBalance?.toJson(),
+      'addresses':
+          addresses.map((HdAddress address) => address.toJson()).toList(),
+    };
   }
 
   final int accountIndex;
@@ -40,10 +52,28 @@ class HdAddress {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'address': address,
+      'derivation_path': derivationPath,
+      'chain': chain,
+      'balance': balance.toJson(),
+    };
+  }
+
   final String address;
   final String derivationPath;
   final String chain;
   final HdBalance balance;
+
+  PubkeyInfo toPubkeyInfo() {
+    return PubkeyInfo(
+      address: address,
+      derivationPath: derivationPath,
+      chain: chain,
+      balance: BalanceInfo.fromJson(balance.toJson()),
+    );
+  }
 }
 
 class HdBalance {
@@ -78,6 +108,13 @@ class HdBalance {
       spendable: balances.spendable,
       unspendable: balances.unspendable,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'spendable': spendable,
+      'unspendable': unspendable,
+    };
   }
 
   double spendable;

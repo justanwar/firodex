@@ -3,7 +3,11 @@ import 'package:web_dex/views/settings/widgets/security_settings/change_password
 import 'package:web_dex/views/settings/widgets/security_settings/plate_seed_backup.dart';
 
 class SecuritySettingsMainPage extends StatelessWidget {
-  const SecuritySettingsMainPage({required this.onViewSeedPressed});
+  const SecuritySettingsMainPage({
+    super.key,
+    required this.onViewSeedPressed,
+  });
+
   final Function(BuildContext context) onViewSeedPressed;
 
   @override

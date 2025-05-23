@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'theme_custom_dark.dart';
 
 ThemeData get themeGlobalDark {
   const Color inputBackgroundColor = Color.fromRGBO(51, 57, 72, 1);
@@ -7,7 +8,8 @@ ThemeData get themeGlobalDark {
   SnackBarThemeData snackBarThemeLight() => const SnackBarThemeData(
         elevation: 12.0,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(4))),
+          borderRadius: BorderRadius.all(Radius.circular(4)),
+        ),
         actionTextColor: Colors.green,
         behavior: SnackBarBehavior.floating,
       );
@@ -32,24 +34,38 @@ ThemeData get themeGlobalDark {
 
   final TextTheme textTheme = TextTheme(
     headlineMedium: const TextStyle(
-        fontSize: 16, fontWeight: FontWeight.w700, color: textColor),
+      fontSize: 16,
+      fontWeight: FontWeight.w700,
+      color: textColor,
+    ),
     headlineSmall: const TextStyle(
-        fontSize: 40, fontWeight: FontWeight.w700, color: textColor),
+      fontSize: 40,
+      fontWeight: FontWeight.w700,
+      color: textColor,
+    ),
     titleLarge: const TextStyle(
-        fontSize: 26.0, color: textColor, fontWeight: FontWeight.w700),
+      fontSize: 26.0,
+      color: textColor,
+      fontWeight: FontWeight.w700,
+    ),
     titleSmall: const TextStyle(fontSize: 18.0, color: textColor),
     bodyMedium: const TextStyle(
-        fontSize: 16.0, color: textColor, fontWeight: FontWeight.w300),
+      fontSize: 16.0,
+      color: textColor,
+      fontWeight: FontWeight.w300,
+    ),
     labelLarge: const TextStyle(fontSize: 16.0, color: textColor),
-    bodyLarge: TextStyle(fontSize: 14.0, color: textColor.withOpacity(0.5)),
+    bodyLarge:
+        TextStyle(fontSize: 14.0, color: textColor.withAlpha(128)), // 0.5 * 255
     bodySmall: TextStyle(
       fontSize: 12.0,
-      color: textColor.withOpacity(0.8),
+      color: textColor.withAlpha(204), // 0.8 * 255
       fontWeight: FontWeight.w400,
     ),
   );
 
-  return ThemeData(
+  final customTheme = ThemeCustomDark();
+  final theme = ThemeData(
     useMaterial3: false,
     fontFamily: 'Manrope',
     scaffoldBackgroundColor: colorScheme.onSurface,
@@ -67,8 +83,8 @@ ThemeData get themeGlobalDark {
     iconTheme: IconThemeData(color: colorScheme.primary),
     progressIndicatorTheme:
         ProgressIndicatorThemeData(color: colorScheme.primary),
-    dialogBackgroundColor: const Color.fromRGBO(14, 16, 27, 1),
     dialogTheme: const DialogTheme(
+      backgroundColor: Color.fromRGBO(14, 16, 27, 1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
           Radius.circular(16),
@@ -80,7 +96,8 @@ ThemeData get themeGlobalDark {
     snackBarTheme: snackBarThemeLight(),
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: const Color.fromRGBO(57, 161, 238, 1),
-      selectionColor: const Color.fromRGBO(57, 161, 238, 1).withOpacity(0.3),
+      selectionColor:
+          const Color.fromRGBO(57, 161, 238, 1).withAlpha(77), // 0.3 * 255
       selectionHandleColor: const Color.fromRGBO(57, 161, 238, 1),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -96,12 +113,12 @@ ThemeData get themeGlobalDark {
       filled: true,
       contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 22),
       hintStyle: TextStyle(
-        color: textColor.withOpacity(0.58),
+        color: textColor.withAlpha(148), // 0.58 * 255
       ),
       labelStyle: TextStyle(
-        color: textColor.withOpacity(0.58),
+        color: textColor.withAlpha(148), // 0.58 * 255
       ),
-      prefixIconColor: textColor.withOpacity(0.58),
+      prefixIconColor: textColor.withAlpha(148), // 0.58 * 255
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
@@ -118,7 +135,7 @@ ThemeData get themeGlobalDark {
         backgroundColor: colorScheme.surfaceContainerLowest,
         surfaceTintColor: Colors.purple,
         selectedBackgroundColor: colorScheme.primary,
-        foregroundColor: textColor.withOpacity(0.7),
+        foregroundColor: textColor.withAlpha(179), // 0.7 * 255
         selectedForegroundColor: textColor,
         side: BorderSide(color: colorScheme.outlineVariant),
         shape: RoundedRectangleBorder(
@@ -157,8 +174,9 @@ ThemeData get themeGlobalDark {
     ),
     textTheme: textTheme,
     scrollbarTheme: ScrollbarThemeData(
-      thumbColor:
-          WidgetStateProperty.all<Color?>(colorScheme.primary.withOpacity(0.8)),
+      thumbColor: WidgetStateProperty.all<Color?>(
+        colorScheme.primary.withAlpha(204), // 0.8 * 255
+      ),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       // remove icons shift
@@ -171,5 +189,13 @@ ThemeData get themeGlobalDark {
       selectedLabelStyle:
           const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
     ),
+    extensions: [
+      customTheme,
+    ],
   );
+
+  // Initialize theme-dependent colors after theme creation
+  customTheme.initializeThemeDependentColors(theme);
+
+  return theme;
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'theme_custom_light.dart';
 
 ThemeData get themeGlobalLight {
   const Color inputBackgroundColor = Color.fromRGBO(243, 245, 246, 1);
@@ -38,15 +39,17 @@ ThemeData get themeGlobalLight {
     bodyMedium: const TextStyle(
         fontSize: 16.0, color: textColor, fontWeight: FontWeight.w300),
     labelLarge: const TextStyle(fontSize: 16.0, color: textColor),
-    bodyLarge: TextStyle(fontSize: 14.0, color: textColor.withOpacity(0.5)),
+    bodyLarge:
+        TextStyle(fontSize: 14.0, color: textColor.withAlpha(128)), // 0.5 * 255
     bodySmall: TextStyle(
       fontSize: 12.0,
-      color: textColor.withOpacity(0.8),
+      color: textColor.withAlpha(204), // 0.8 * 255
       fontWeight: FontWeight.w400,
     ),
   );
 
-  return ThemeData(
+  final customTheme = ThemeCustomLight();
+  final theme = ThemeData(
     useMaterial3: false,
     fontFamily: 'Manrope',
     scaffoldBackgroundColor: colorScheme.onSurface,
@@ -64,8 +67,8 @@ ThemeData get themeGlobalLight {
     iconTheme: IconThemeData(color: colorScheme.primary),
     progressIndicatorTheme:
         ProgressIndicatorThemeData(color: colorScheme.primary),
-    dialogBackgroundColor: const Color.fromRGBO(255, 255, 255, 1),
     dialogTheme: const DialogTheme(
+      backgroundColor: Color.fromRGBO(255, 255, 255, 1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(
           Radius.circular(16),
@@ -77,7 +80,8 @@ ThemeData get themeGlobalLight {
     snackBarTheme: snackBarThemeLight(),
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: const Color.fromRGBO(57, 161, 238, 1),
-      selectionColor: const Color.fromRGBO(57, 161, 238, 1).withOpacity(0.3),
+      selectionColor:
+          const Color.fromRGBO(57, 161, 238, 1).withAlpha(77), // 0.3 * 255
       selectionHandleColor: const Color.fromRGBO(57, 161, 238, 1),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -93,12 +97,12 @@ ThemeData get themeGlobalLight {
       filled: true,
       contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 22),
       hintStyle: TextStyle(
-        color: textColor.withOpacity(0.58),
+        color: textColor.withAlpha(148), // 0.58 * 255
       ),
       labelStyle: TextStyle(
-        color: textColor.withOpacity(0.58),
+        color: textColor.withAlpha(148), // 0.58 * 255
       ),
-      prefixIconColor: textColor.withOpacity(0.58),
+      prefixIconColor: textColor.withAlpha(148), // 0.58 * 255
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ButtonStyle(
@@ -120,8 +124,8 @@ ThemeData get themeGlobalLight {
     ),
     textTheme: textTheme,
     scrollbarTheme: ScrollbarThemeData(
-      thumbColor:
-          WidgetStateProperty.all<Color?>(colorScheme.primary.withOpacity(0.8)),
+      thumbColor: WidgetStateProperty.all<Color?>(
+          colorScheme.primary.withAlpha(204)), // 0.8 * 255
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       // remove icons shift
@@ -139,7 +143,7 @@ ThemeData get themeGlobalLight {
         backgroundColor: const Color.fromRGBO(243, 245, 246, 1),
         surfaceTintColor: Colors.purple,
         selectedBackgroundColor: colorScheme.primary,
-        foregroundColor: textColor.withOpacity(0.7),
+        foregroundColor: textColor.withAlpha(179), // 0.7 * 255
         selectedForegroundColor: Colors.white,
         side: const BorderSide(color: Color.fromRGBO(208, 214, 237, 1)),
         shape: RoundedRectangleBorder(
@@ -156,9 +160,16 @@ ThemeData get themeGlobalLight {
           color: colorScheme.primary,
         ),
         // Match the card's border radius
-        insets: const EdgeInsets.symmetric(
-            horizontal: 18),
+        insets: const EdgeInsets.symmetric(horizontal: 18),
       ),
     ),
+    extensions: [
+      customTheme,
+    ],
   );
+
+  // Initialize theme-dependent colors after theme creation
+  customTheme.initializeThemeDependentColors(theme);
+
+  return theme;
 }

@@ -1,14 +1,18 @@
 // DO NOT EDIT. This is code generated via package:easy_localization/generate.dart
 
+// ignore_for_file: constant_identifier_names
+
 abstract class  LocaleKeys {
   static const plsActivateKmd = 'plsActivateKmd';
   static const rewardClaiming = 'rewardClaiming';
   static const noKmdAddress = 'noKmdAddress';
   static const dex = 'dex';
   static const asset = 'asset';
+  static const assets = 'assets';
   static const price = 'price';
   static const volume = 'volume';
   static const history = 'history';
+  static const lastTransactions = 'lastTransactions';
   static const active = 'active';
   static const change24h = 'change24h';
   static const change24hRevert = 'change24hRevert';
@@ -48,6 +52,7 @@ abstract class  LocaleKeys {
   static const fees = 'fees';
   static const recipientAddress = 'recipientAddress';
   static const transactionHash = 'transactionHash';
+  static const transactionFailed = 'transactionFailed';
   static const hash = 'hash';
   static const fullHash = 'fullHash';
   static const coinAddress = 'coinAddress';
@@ -120,7 +125,7 @@ abstract class  LocaleKeys {
   static const walletCreationNameLengthError = 'walletCreationNameLengthError';
   static const walletCreationFormatPasswordError = 'walletCreationFormatPasswordError';
   static const walletCreationConfirmPasswordError = 'walletCreationConfirmPasswordError';
-  static const invalidPasswordError = 'invalidPasswordError';
+  static const incorrectPassword = 'incorrectPassword';
   static const importSeedEnterSeedPhraseHint = 'importSeedEnterSeedPhraseHint';
   static const passphraseCheckingTitle = 'passphraseCheckingTitle';
   static const passphraseCheckingDescription = 'passphraseCheckingDescription';
@@ -194,6 +199,7 @@ abstract class  LocaleKeys {
   static const customSeedWarningText = 'customSeedWarningText';
   static const customSeedIUnderstand = 'customSeedIUnderstand';
   static const walletCreationBip39SeedError = 'walletCreationBip39SeedError';
+  static const walletCreationHdBip39SeedError = 'walletCreationHdBip39SeedError';
   static const walletPageNoSuchAsset = 'walletPageNoSuchAsset';
   static const swapCoin = 'swapCoin';
   static const fiatBalance = 'fiatBalance';
@@ -327,6 +333,7 @@ abstract class  LocaleKeys {
   static const trezorSelectTitle = 'trezorSelectTitle';
   static const trezorSelectSubTitle = 'trezorSelectSubTitle';
   static const mixedCaseError = 'mixedCaseError';
+  static const addressConvertedToMixedCase = 'addressConvertedToMixedCase';
   static const invalidAddressChecksum = 'invalidAddressChecksum';
   static const notEnoughBalance = 'notEnoughBalance';
   static const pleaseInputData = 'pleaseInputData';
@@ -356,6 +363,16 @@ abstract class  LocaleKeys {
   static const currentPassword = 'currentPassword';
   static const walletNotFound = 'walletNotFound';
   static const passwordIsEmpty = 'passwordIsEmpty';
+  static const passwordContainsTheWordPassword = 'passwordContainsTheWordPassword';
+  static const passwordTooShort = 'passwordTooShort';
+  static const passwordMissingDigit = 'passwordMissingDigit';
+  static const passwordMissingLowercase = 'passwordMissingLowercase';
+  static const passwordMissingUppercase = 'passwordMissingUppercase';
+  static const passwordMissingSpecialCharacter = 'passwordMissingSpecialCharacter';
+  static const passwordConsecutiveCharacters = 'passwordConsecutiveCharacters';
+  static const passwordSecurity = 'passwordSecurity';
+  static const allowWeakPassword = 'allowWeakPassword';
+  static const allowWeakPasswordDescription = 'allowWeakPasswordDescription';
   static const dexBalanceNotSufficientError = 'dexBalanceNotSufficientError';
   static const dexEnterPriceError = 'dexEnterPriceError';
   static const dexZeroPriceError = 'dexZeroPriceError';
@@ -390,8 +407,19 @@ abstract class  LocaleKeys {
   static const withdrawZeroBalanceError = 'withdrawZeroBalanceError';
   static const withdrawAmountTooLowError = 'withdrawAmountTooLowError';
   static const withdrawNoSuchCoinError = 'withdrawNoSuchCoinError';
+  static const withdrawPreview = 'withdrawPreview';
+  static const withdrawPreviewError = 'withdrawPreviewError';
   static const txHistoryFetchError = 'txHistoryFetchError';
   static const txHistoryNoTransactions = 'txHistoryNoTransactions';
+  static const maxGapLimitReached = 'maxGapLimitReached';
+  static const maxAddressesReached = 'maxAddressesReached';
+  static const missingDerivationPath = 'missingDerivationPath';
+  static const protocolNotSupported = 'protocolNotSupported';
+  static const derivationModeNotSupported = 'derivationModeNotSupported';
+  static const hdWalletModeSwitchTitle = 'hdWalletModeSwitchTitle';
+  static const hdWalletModeSwitchSubtitle = 'hdWalletModeSwitchSubtitle';
+  static const hdWalletModeSwitchTooltip = 'hdWalletModeSwitchTooltip';
+  static const noActiveWallet = 'noActiveWallet';
   static const memo = 'memo';
   static const gasPriceGwei = 'gasPriceGwei';
   static const gasLimit = 'gasLimit';
@@ -430,6 +458,11 @@ abstract class  LocaleKeys {
   static const unknown = 'unknown';
   static const unableToActiveCoin = 'unableToActiveCoin';
   static const feedback = 'feedback';
+  static const feedbackViewTitle = 'feedbackViewTitle';
+  static const feedbackPageDescription = 'feedbackPageDescription';
+  static const sendFeedbackButton = 'sendFeedbackButton';
+  static const feedbackThankyou = 'feedbackThankyou';
+  static const feedbackError = 'feedbackError';
   static const selectAToken = 'selectAToken';
   static const selectToken = 'selectToken';
   static const rate = 'rate';
@@ -506,6 +539,8 @@ abstract class  LocaleKeys {
   static const collectibles = 'collectibles';
   static const sendingProcess = 'sendingProcess';
   static const ercStandardDisclaimer = 'ercStandardDisclaimer';
+  static const nftReceiveNonSwapAddressWarning = 'nftReceiveNonSwapAddressWarning';
+  static const nftReceiveNonSwapWalletDetails = 'nftReceiveNonSwapWalletDetails';
   static const nftMainLoggedOut = 'nftMainLoggedOut';
   static const confirmLogoutOnAnotherTab = 'confirmLogoutOnAnotherTab';
   static const refreshList = 'refreshList';
@@ -529,6 +564,7 @@ abstract class  LocaleKeys {
   static const errorCode = 'errorCode';
   static const errorDetails = 'errorDetails';
   static const errorMessage = 'errorMessage';
+  static const technicalDetails = 'technicalDetails';
   static const followTrezorInstructions = 'followTrezorInstructions';
   static const orderFailedTryAgain = 'orderFailedTryAgain';
   static const noOptionsToPurchase = 'noOptionsToPurchase';
@@ -551,6 +587,16 @@ abstract class  LocaleKeys {
   static const fiatCantCompleteOrder = 'fiatCantCompleteOrder';
   static const fiatPriceCanChange = 'fiatPriceCanChange';
   static const fiatConnectWallet = 'fiatConnectWallet';
+  static const fiatMinimumAmount = 'fiatMinimumAmount';
+  static const fiatMaximumAmount = 'fiatMaximumAmount';
+  static const fiatPaymentSubmittedTitle = 'fiatPaymentSubmittedTitle';
+  static const fiatPaymentSubmittedMessage = 'fiatPaymentSubmittedMessage';
+  static const fiatPaymentSuccessTitle = 'fiatPaymentSuccessTitle';
+  static const fiatPaymentSuccessMessage = 'fiatPaymentSuccessMessage';
+  static const fiatPaymentFailedTitle = 'fiatPaymentFailedTitle';
+  static const fiatPaymentFailedMessage = 'fiatPaymentFailedMessage';
+  static const fiatPaymentInProgressTitle = 'fiatPaymentInProgressTitle';
+  static const fiatPaymentInProgressMessage = 'fiatPaymentInProgressMessage';
   static const pleaseWait = 'pleaseWait';
   static const bitrefillPaymentSuccessfull = 'bitrefillPaymentSuccessfull';
   static const bitrefillPaymentSuccessfullInstruction = 'bitrefillPaymentSuccessfullInstruction';
@@ -558,7 +604,9 @@ abstract class  LocaleKeys {
   static const margin = 'margin';
   static const updateInterval = 'updateInterval';
   static const expertMode = 'expertMode';
+  static const testCoins = 'testCoins';
   static const enableTradingBot = 'enableTradingBot';
+  static const enableTestCoins = 'enableTestCoins';
   static const makeMarket = 'makeMarket';
   static const custom = 'custom';
   static const edit = 'edit';
@@ -579,6 +627,20 @@ abstract class  LocaleKeys {
   static const mmBotFirstTradePreview = 'mmBotFirstTradePreview';
   static const mmBotFirstTradeEstimate = 'mmBotFirstTradeEstimate';
   static const mmBotFirstOrderVolume = 'mmBotFirstOrderVolume';
+  static const importCustomToken = 'importCustomToken';
+  static const importTokenWarning = 'importTokenWarning';
+  static const importToken = 'importToken';
+  static const selectNetwork = 'selectNetwork';
+  static const tokenContractAddress = 'tokenContractAddress';
+  static const tokenNotFound = 'tokenNotFound';
+  static const decimals = 'decimals';
+  static const onlySendToThisAddress = 'onlySendToThisAddress';
+  static const scanTheQrCode = 'scanTheQrCode';
+  static const swapAddress = 'swapAddress';
+  static const addresses = 'addresses';
+  static const creating = 'creating';
+  static const createAddress = 'createAddress';
+  static const hideZeroBalanceAddresses = 'hideZeroBalanceAddresses';
   static const important = 'important';
   static const trend = 'trend';
   static const growth = 'growth';
@@ -588,5 +650,24 @@ abstract class  LocaleKeys {
   static const allTimeInvestment = 'allTimeInvestment';
   static const allTimeProfit = 'allTimeProfit';
   static const profitAndLoss = 'profitAndLoss';
+  static const alertDialogBitrefill = 'alertDialogBitrefill';
+  static const showNoTradingWarning = 'showNoTradingWarning';
+  static const showNoTradingWarningMessage = 'showNoTradingWarningMessage';
+  static const showNoTradingWarningButton = 'showNoTradingWarningButton';
+  static const amountFieldCheckboxListTile = 'amountFieldCheckboxListTile';
+  static const customFeeToggleTitle = 'customFeeToggleTitle';
+  static const priceChartCenterText = 'priceChartCenterText';
+  static const statistics = 'statistics';
+  static const ibcTransferFieldTitle = 'ibcTransferFieldTitle';
+  static const ibcTransferFieldSubtitle = 'ibcTransferFieldSubtitle';
+  static const successPageHeadline = 'successPageHeadline';
+  static const successPageBodySmall = 'successPageBodySmall';
+  static const withdrawErrorCardTileTitle = 'withdrawErrorCardTileTitle';
+  static const transactionSuccessful = 'transactionSuccessful';
+  static const customNetworkFee = 'customNetworkFee';
+  static const previewWithdrawal = 'previewWithdrawal';
+  static const createNewAddress = 'createNewAddress';
+  static const searchAddresses = 'searchAddresses';
+  static const chart = 'chart';
 
 }

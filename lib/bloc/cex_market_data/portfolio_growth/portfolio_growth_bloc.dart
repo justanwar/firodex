@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
+import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
+import 'package:logging/logging.dart';
 import 'package:web_dex/bloc/cex_market_data/charts.dart';
 import 'package:web_dex/bloc/cex_market_data/portfolio_growth/portfolio_growth_repository.dart';
-import 'package:web_dex/blocs/blocs.dart';
+import 'package:web_dex/bloc/cex_market_data/sdk_auth_activation_extension.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/text_error.dart';
-import 'package:web_dex/shared/utils/utils.dart';
 
 part 'portfolio_growth_event.dart';
 part 'portfolio_growth_state.dart';
@@ -18,6 +19,7 @@ class PortfolioGrowthBloc
     extends Bloc<PortfolioGrowthEvent, PortfolioGrowthState> {
   PortfolioGrowthBloc({
     required this.portfolioGrowthRepository,
+    required this.sdk,
   }) : super(const PortfolioGrowthInitial()) {
     // Use the restartable transformer for period change events to avoid
     // overlapping events if the user rapidly changes the period (i.e. faster
@@ -34,6 +36,8 @@ class PortfolioGrowthBloc
   }
 
   final PortfolioGrowthRepository portfolioGrowthRepository;
+  final KomodoDefiSdk sdk;
+  final _log = Logger('PortfolioGrowthBloc');
 
   void _onClearPortfolioGrowth(
     PortfolioGrowthClearRequested event,
@@ -46,7 +50,7 @@ class PortfolioGrowthBloc
     PortfolioGrowthPeriodChanged event,
     Emitter<PortfolioGrowthState> emit,
   ) {
-    if (state is GrowthChartLoadFailure) {
+    if (state is! PortfolioGrowthChartLoadSuccess) {
       emit(
         GrowthChartLoadFailure(
           error: (state as GrowthChartLoadFailure).error,
@@ -70,54 +74,60 @@ class PortfolioGrowthBloc
     PortfolioGrowthLoadRequested event,
     Emitter<PortfolioGrowthState> emit,
   ) async {
-    List<Coin> coins = await _removeUnsupportedCoins(event);
-    // Charts for individual coins (coin details) are parsed here as well,
-    // and should be hidden if not supported.
-    if (coins.isEmpty && event.coins.length <= 1) {
-      return emit(
-        PortfolioGrowthChartUnsupported(selectedPeriod: event.selectedPeriod),
-      );
-    }
-
-    await _loadChart(coins, event, useCache: true)
-        .then(emit.call)
-        .catchError((e, _) {
-      if (state is! PortfolioGrowthChartLoadSuccess) {
-        emit(
-          GrowthChartLoadFailure(
-            error: TextError(error: e.toString()),
-            selectedPeriod: event.selectedPeriod,
-          ),
+    try {
+      final List<Coin> coins = await _removeUnsupportedCoins(event);
+      // Charts for individual coins (coin details) are parsed here as well,
+      // and should be hidden if not supported.
+      if (coins.isEmpty && event.coins.length <= 1) {
+        return emit(
+          PortfolioGrowthChartUnsupported(selectedPeriod: event.selectedPeriod),
         );
       }
-    });
 
-    // Only remove inactivate/activating coins after an attempt to load the
-    // cached chart, as the cached chart may contain inactive coins.
-    coins = _removeInactiveCoins(coins);
-    if (coins.isNotEmpty) {
-      await _loadChart(coins, event, useCache: false)
+      await _loadChart(coins, event, useCache: true)
           .then(emit.call)
-          .catchError((_, __) {
-        // Ignore un-cached errors, as a transaction loading exception should not
-        // make the graph disappear with a load failure emit, as the cached data
-        // is already displayed. The periodic updates will still try to fetch the
-        // data and update the graph.
+          .catchError((Object error, StackTrace stackTrace) {
+        const errorMessage = 'Failed to load cached chart';
+        _log.warning(errorMessage, error, stackTrace);
+        // ignore cached errors, as the periodic refresh attempts should recover
+        // at the cost of a longer first loading time.
       });
+
+      // In case most coins are activating on wallet startup, wait for at least
+      // 50% of the coins to be enabled before attempting to load the uncached
+      // chart.
+      await sdk.waitForEnabledCoinsToPassThreshold(event.coins);
+
+      // Only remove inactivate/activating coins after an attempt to load the
+      // cached chart, as the cached chart may contain inactive coins.
+      final activeCoins = await _removeInactiveCoins(coins);
+      if (activeCoins.isNotEmpty) {
+        await _loadChart(activeCoins, event, useCache: false)
+            .then(emit.call)
+            .catchError((Object error, StackTrace stackTrace) {
+          _log.shout('Failed to load chart', error, stackTrace);
+          // Don't emit an error state here. If cached and uncached attempts
+          // both fail, the periodic refresh attempts should recovery
+          // at the cost of a longer first loading time.
+        });
+      }
+    } catch (error, stackTrace) {
+      _log.shout('Failed to load portfolio growth', error, stackTrace);
+      // Don't emit an error state here, as the periodic refresh attempts should
+      // recover at the cost of a longer first loading time.
     }
 
     await emit.forEach(
-      Stream.periodic(event.updateFrequency)
-          .asyncMap((_) async => await _fetchPortfolioGrowthChart(event)),
+      // computation is omitted, so null-valued events are emitted on a set
+      // interval.
+      Stream<Object?>.periodic(event.updateFrequency)
+          .asyncMap((_) async => _fetchPortfolioGrowthChart(event)),
       onData: (data) =>
           _handlePortfolioGrowthUpdate(data, event.selectedPeriod),
-      onError: (e, _) {
-        log(
-          'Failed to load portfolio growth: $e',
-          isError: true,
-        );
+      onError: (error, stackTrace) {
+        _log.shout('Failed to load portfolio growth', error, stackTrace);
         return GrowthChartLoadFailure(
-          error: TextError(error: e.toString()),
+          error: TextError(error: 'Failed to load portfolio growth'),
           selectedPeriod: event.selectedPeriod,
         );
       },
@@ -128,23 +138,14 @@ class PortfolioGrowthBloc
     PortfolioGrowthLoadRequested event,
   ) async {
     final List<Coin> coins = List.from(event.coins);
-    await coins.removeWhereAsync(
-      (Coin coin) async {
-        final isCoinSupported = await portfolioGrowthRepository
-            .isCoinChartSupported(coin.abbr, event.fiatCoinId);
-        return !isCoinSupported;
-      },
-    );
+    for (final coin in event.coins) {
+      final isCoinSupported = await portfolioGrowthRepository
+          .isCoinChartSupported(coin.id, event.fiatCoinId);
+      if (!isCoinSupported) {
+        coins.remove(coin);
+      }
+    }
     return coins;
-  }
-
-  List<Coin> _removeInactiveCoins(List<Coin> coins) {
-    final List<Coin> coinsCopy = List.from(coins)
-      ..removeWhere((coin) {
-        final updatedCoin = coinsBlocRepository.getCoin(coin.abbr)!;
-        return updatedCoin.isActivating || !updatedCoin.isActive;
-      });
-    return coinsCopy;
   }
 
   Future<PortfolioGrowthState> _loadChart(
@@ -174,23 +175,31 @@ class PortfolioGrowthBloc
     PortfolioGrowthLoadRequested event,
   ) async {
     // Do not let transaction loading exceptions stop the periodic updates
-    final coins = _removeInactiveCoins(await _removeUnsupportedCoins(event));
     try {
+      final supportedCoins = await _removeUnsupportedCoins(event);
+      final coins = await _removeInactiveCoins(supportedCoins);
       return await portfolioGrowthRepository.getPortfolioGrowthChart(
         coins,
         fiatCoinId: event.fiatCoinId,
         walletId: event.walletId,
         useCache: false,
       );
-    } catch (e, s) {
-      log(
-        'Empty growth chart on periodic update: $e',
-        isError: true,
-        trace: s,
-        path: 'PortfolioGrowthBloc',
-      );
+    } catch (error, stackTrace) {
+      _log.shout('Empty growth chart on periodic update', error, stackTrace);
       return ChartData.empty();
     }
+  }
+
+  Future<List<Coin>> _removeInactiveCoins(List<Coin> coins) async {
+    final coinsCopy = List<Coin>.of(coins);
+    final activeCoins = await sdk.assets.getActivatedAssets();
+    final activeCoinsMap = activeCoins.map((e) => e.id).toSet();
+    for (final coin in coins) {
+      if (!activeCoinsMap.contains(coin.id)) {
+        coinsCopy.remove(coin);
+      }
+    }
+    return coinsCopy;
   }
 
   PortfolioGrowthState _handlePortfolioGrowthUpdate(

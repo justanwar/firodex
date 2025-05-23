@@ -1,10 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:get_it/get_it.dart';
+import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
 import 'package:rational/rational.dart';
 import 'package:web_dex/bloc/bridge_form/bridge_bloc.dart';
 import 'package:web_dex/bloc/bridge_form/bridge_event.dart';
 import 'package:web_dex/bloc/bridge_form/bridge_state.dart';
+import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
 import 'package:web_dex/bloc/dex_repository.dart';
-import 'package:web_dex/blocs/coins_bloc.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/best_orders/best_orders.dart';
@@ -22,7 +24,7 @@ import 'package:web_dex/views/dex/simple/form/error_list/dex_form_error_with_act
 class BridgeValidator {
   BridgeValidator({
     required BridgeBloc bloc,
-    required CoinsBloc coinsRepository,
+    required CoinsRepo coinsRepository,
     required DexRepository dexRepository,
   })  : _bloc = bloc,
         _coinsRepo = coinsRepository,
@@ -30,7 +32,7 @@ class BridgeValidator {
         _add = bloc.add;
 
   final BridgeBloc _bloc;
-  final CoinsBloc _coinsRepo;
+  final CoinsRepo _coinsRepo;
   final DexRepository _dexRepo;
 
   final Function(BridgeEvent) _add;
@@ -226,7 +228,7 @@ class BridgeValidator {
   }
 
   bool _validateCoinAndParent(String abbr) {
-    final Coin? coin = _coinsRepo.getKnownCoin(abbr);
+    final Coin? coin = _coinsRepo.getCoin(abbr);
 
     if (coin == null) {
       _add(BridgeSetError(_unknownCoinError(abbr)));
@@ -269,7 +271,7 @@ class BridgeValidator {
     final coin = _coinsRepo.getCoin(selectedOrder.coin);
     final ownAddress = coin?.address;
 
-    if (selectedOrderAddress == ownAddress) {
+    if (selectedOrderAddress.addressData == ownAddress) {
       _add(BridgeSetError(_tradingWithSelfError()));
       return true;
     }
@@ -370,6 +372,9 @@ class BridgeValidator {
   bool get _isOrderSelected => _state.bestOrder != null;
 
   bool get canRequestPreimage {
+    // used to fetch the coin balance via the new balance function
+    final sdk = GetIt.I<KomodoDefiSdk>();
+
     final Coin? sellCoin = _state.sellCoin;
     if (sellCoin == null) return false;
     if (sellCoin.enabledType == null) return false;
@@ -387,7 +392,7 @@ class BridgeValidator {
     if (parentSell != null) {
       if (parentSell.enabledType == null) return false;
       if (parentSell.isSuspended) return false;
-      if (parentSell.balance == 0.00) return false;
+      if (parentSell.balance(sdk) == 0.00) return false;
     }
 
     final BestOrder? bestOrder = _state.bestOrder;
@@ -400,7 +405,8 @@ class BridgeValidator {
     if (parentBuy != null) {
       if (parentBuy.enabledType == null) return false;
       if (parentBuy.isSuspended) return false;
-      if (parentBuy.balance == 0.00) return false;
+
+      if (parentBuy.balance(sdk) == 0.00) return false;
     }
 
     return true;

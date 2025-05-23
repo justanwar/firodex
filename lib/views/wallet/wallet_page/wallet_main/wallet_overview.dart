@@ -1,15 +1,18 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:komodo_ui/komodo_ui.dart';
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
 import 'package:web_dex/bloc/assets_overview/bloc/asset_overview_bloc.dart';
-import 'package:web_dex/blocs/blocs.dart';
+import 'package:web_dex/bloc/coins_bloc/coins_bloc.dart';
+import 'package:web_dex/bloc/analytics/analytics_bloc.dart';
+import 'package:web_dex/analytics/events/portfolio_events.dart';
 import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
-import 'package:web_dex/model/coin.dart';
 
-class WalletOverview extends StatelessWidget {
+class WalletOverview extends StatefulWidget {
   const WalletOverview({
+    super.key,
     this.onPortfolioGrowthPressed,
     this.onPortfolioProfitLossPressed,
   });
@@ -18,23 +21,35 @@ class WalletOverview extends StatelessWidget {
   final VoidCallback? onPortfolioProfitLossPressed;
 
   @override
+  State<WalletOverview> createState() => _WalletOverviewState();
+}
+
+class _WalletOverviewState extends State<WalletOverview> {
+  bool _logged = false;
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<Coin>>(
-      initialData: coinsBloc.walletCoinsMap.values.toList(),
-      stream: coinsBloc.outWalletCoins,
-      builder: (context, snapshot) {
-        final List<Coin>? coins = snapshot.data;
-        if (!snapshot.hasData || coins == null) return _buildSpinner();
+    return BlocBuilder<CoinsBloc, CoinsState>(
+      builder: (context, state) {
+        if (state.coins.isEmpty) return _buildSpinner();
 
         final portfolioAssetsOverviewBloc = context.watch<AssetOverviewBloc>();
-
-        int assetCount = coins.length;
-
+        final int assetCount = state.walletCoins.length;
         final stateWithData = portfolioAssetsOverviewBloc.state
                 is PortfolioAssetsOverviewLoadSuccess
             ? portfolioAssetsOverviewBloc.state
                 as PortfolioAssetsOverviewLoadSuccess
             : null;
+
+        if (!_logged && stateWithData != null) {
+          context.read<AnalyticsBloc>().logEvent(
+                PortfolioViewedEventData(
+                  totalCoins: assetCount,
+                  totalValueUsd: stateWithData.totalValue.value,
+                ),
+              );
+          _logged = true;
+        }
 
         return Wrap(
           runSpacing: 16,
@@ -42,10 +57,11 @@ class WalletOverview extends StatelessWidget {
             FractionallySizedBox(
               widthFactor: isMobile ? 1 : 0.5,
               child: StatisticCard(
+                key: const Key('overview-total-balance'),
                 caption: Text(LocaleKeys.allTimeInvestment.tr()),
                 value: stateWithData?.totalInvestment.value ?? 0,
                 actionIcon: const Icon(CustomIcons.fiatIconCircle),
-                onPressed: onPortfolioGrowthPressed,
+                onPressed: widget.onPortfolioGrowthPressed,
                 footer: Container(
                   height: 28,
                   decoration: BoxDecoration(
@@ -61,7 +77,7 @@ class WalletOverview extends StatelessWidget {
                         size: 16,
                       ),
                       const SizedBox(width: 4),
-                      Text('$assetCount ${LocaleKeys.asset.tr()}'),
+                      Text('$assetCount ${LocaleKeys.assets.tr()}'),
                     ],
                   ),
                 ),
@@ -73,11 +89,10 @@ class WalletOverview extends StatelessWidget {
                 caption: Text(LocaleKeys.allTimeProfit.tr()),
                 value: stateWithData?.profitAmount.value ?? 0,
                 footer: TrendPercentageText(
-                  investmentReturnPercentage:
-                      stateWithData?.profitIncreasePercentage ?? 0,
+                  percentage: stateWithData?.profitIncreasePercentage ?? 0,
                 ),
                 actionIcon: const Icon(Icons.trending_up),
-                onPressed: onPortfolioProfitLossPressed,
+                onPressed: widget.onPortfolioProfitLossPressed,
               ),
             ),
           ],
