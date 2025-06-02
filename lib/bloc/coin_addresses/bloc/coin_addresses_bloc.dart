@@ -1,14 +1,18 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
+import 'package:web_dex/bloc/analytics/analytics_bloc.dart';
+import 'package:web_dex/bloc/analytics/analytics_event.dart';
 import 'package:web_dex/bloc/coin_addresses/bloc/coin_addresses_event.dart';
 import 'package:web_dex/bloc/coin_addresses/bloc/coin_addresses_state.dart';
 import 'package:web_dex/bloc/coins_bloc/asset_coin_extension.dart';
+import 'package:web_dex/analytics/events.dart';
 
 class CoinAddressesBloc extends Bloc<CoinAddressesEvent, CoinAddressesState> {
   final KomodoDefiSdk sdk;
   final String assetId;
+  final AnalyticsBloc analyticsBloc;
 
-  CoinAddressesBloc(this.sdk, this.assetId)
+  CoinAddressesBloc(this.sdk, this.assetId, this.analyticsBloc)
       : super(const CoinAddressesState()) {
     on<SubmitCreateAddressEvent>(_onSubmitCreateAddress);
     on<LoadAddressesEvent>(_onLoadAddresses);
@@ -21,24 +25,52 @@ class CoinAddressesBloc extends Bloc<CoinAddressesEvent, CoinAddressesState> {
   ) async {
     emit(state.copyWith(createAddressStatus: () => FormStatus.submitting));
 
-    try {
-      await sdk.pubkeys.createNewPubkey(getSdkAsset(sdk, assetId));
+    const maxAttempts = 3;
+    int attempts = 0;
+    Exception? lastException;
 
-      add(const LoadAddressesEvent());
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        final newKey =
+            await sdk.pubkeys.createNewPubkey(getSdkAsset(sdk, assetId));
 
-      emit(
-        state.copyWith(
-          createAddressStatus: () => FormStatus.success,
-        ),
-      );
-    } catch (e) {
-      emit(
-        state.copyWith(
-          createAddressStatus: () => FormStatus.failure,
-          errorMessage: () => e.toString(),
-        ),
-      );
+        final derivation = (newKey as dynamic).derivationPath as String?;
+        if (derivation != null) {
+          final parsed = parseDerivationPath(derivation);
+          analyticsBloc.logEvent(
+            HdAddressGeneratedEventData(
+              accountIndex: parsed.accountIndex,
+              addressIndex: parsed.addressIndex,
+              assetSymbol: assetId,
+            ),
+          );
+        }
+
+        add(const LoadAddressesEvent());
+
+        emit(
+          state.copyWith(
+            createAddressStatus: () => FormStatus.success,
+          ),
+        );
+        return;
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+        if (attempts >= maxAttempts) {
+          break;
+        }
+        await Future.delayed(Duration(milliseconds: 500 * attempts));
+      }
     }
+
+    emit(
+      state.copyWith(
+        createAddressStatus: () => FormStatus.failure,
+        errorMessage: () =>
+            'Failed after $attempts attempts: ${lastException.toString()}',
+      ),
+    );
   }
 
   Future<void> _onLoadAddresses(

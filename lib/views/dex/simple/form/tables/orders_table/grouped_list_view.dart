@@ -9,19 +9,17 @@ import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/best_orders/best_orders.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/views/dex/simple/form/tables/coins_table/coins_table_item.dart';
-import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
-import 'package:get_it/get_it.dart';
 
 class GroupedListView<T> extends StatelessWidget {
   const GroupedListView({
-    super.key,
     required this.items,
     required this.onSelect,
     required this.maxHeight,
+    super.key,
   });
 
   final List<T> items;
-  final Function(T) onSelect;
+  final void Function(T) onSelect;
   final double maxHeight;
 
   @override
@@ -37,7 +35,7 @@ class GroupedListView<T> extends StatelessWidget {
             .isNotEmpty;
     final rightPadding = areGroupedItemsPresent
         ? const EdgeInsets.only(right: 52)
-        : const EdgeInsets.all(0);
+        : EdgeInsets.zero;
 
     return Flexible(
       child: ConstrainedBox(
@@ -85,8 +83,8 @@ class GroupedListView<T> extends StatelessWidget {
   Widget buildItem(
     BuildContext context,
     T item,
-    dynamic onSelect, {
-    EdgeInsets padding = const EdgeInsets.all(0),
+    void Function(T) onSelect, {
+    EdgeInsets padding = EdgeInsets.zero,
   }) {
     return Padding(
       padding: padding,
@@ -100,14 +98,6 @@ class GroupedListView<T> extends StatelessWidget {
 
   Coin _createHeaderCoinData(BuildContext context, List<T> list) {
     final firstCoin = getCoin(context, list.first);
-    final KomodoDefiSdk sdk = GetIt.I<KomodoDefiSdk>();
-
-    double totalBalance = list.fold(0.0, (sum, item) {
-      final coin = getCoin(context, item);
-      final coinBalance =
-          sdk.balances.lastKnown(coin.id)?.spendable.toDouble() ?? 0.0;
-      return sum + coinBalance;
-    });
 
     final coin = firstCoin.dummyCopyWithoutProtocolData();
     // Since we can't use 'balance' property directly anymore, we need to
@@ -116,7 +106,7 @@ class GroupedListView<T> extends StatelessWidget {
   }
 
   Map<String, List<T>> _groupList(BuildContext context, List<T> list) {
-    Map<String, List<T>> grouped = {};
+    final Map<String, List<T>> grouped = {};
     for (final item in list) {
       final coin = getCoin(context, item);
       grouped.putIfAbsent(coin.name, () => []).add(item);

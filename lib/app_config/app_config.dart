@@ -8,6 +8,7 @@ final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 const double maxScreenWidth = 1273;
 const double mainLayoutPadding = 29;
 const double appBarHeight = 70;
+const int scaleOnInfinitePrecision = 20; // ETH has 18 decimals, so use more
 const String allWalletsStorageKey = 'all-wallets';
 const String defaultDexCoin = 'KMD';
 const List<Locale> localeList = [Locale('en')];
@@ -57,7 +58,9 @@ Map<String, int> priorityCoinsAbbrMap = {
   'MOVR': 10,
 };
 
-const List<String> excludedAssetList = [
+/// List of coins that are excluded from the list of coins displayed on the
+/// coin lists (e.g. wallet page, coin selection dropdowns, etc.)
+const Set<String> excludedAssetList = {
   'ADEXBSCT',
   'ADEXBSC',
   'BRC',
@@ -70,6 +73,8 @@ const List<String> excludedAssetList = [
   'FENIX',
   'AWR',
   'BOT',
+  // Pirate activation params are not yet implemented, so we need to
+  // exclude it from the list of coins for now.
   'ARRR',
   'ZOMBIE',
   'SMTF-v2',
@@ -78,15 +83,14 @@ const List<String> excludedAssetList = [
   'RICK',
   'MORTY',
 
-  // NFT v2 coins: https://github.com/KomodoPlatform/coins/pull/1061
-  // NFT upgrade is not merged yet, and the coins will likely be used in the
-  // background, so users do not need to see them.
+  // NFT v2 coins: https://github.com/KomodoPlatform/coins/pull/1061 will be
+  // used in the background, so users do not need to see them.
   'NFT_ETH',
   'NFT_AVAX',
   'NFT_BNB',
   'NFT_FTM',
   'NFT_MATIC',
-];
+};
 
 const List<String> excludedAssetListTrezor = [
   // https://github.com/KomodoPlatform/atomicDEX-API/issues/1510
@@ -95,6 +99,24 @@ const List<String> excludedAssetListTrezor = [
   // Can't use modified config directly, since it includes features,
   // not implemented on webdex side yet (e.g. 0.4.2 doesn't have segwit)
   'VAL',
+];
+
+/// Some coins returned by the Banxa API are returning errors when attempting
+/// to create an order. This is a temporary workaround to filter out those coins
+/// until the issue is resolved.
+const banxaUnsupportedCoinsList = [
+  'APE', // chain not configured for APE
+  'AVAX', // avax & bep20 - invalid wallet address error
+  'DOT', // bep20 - invalid wallet address error
+  'FIL', // bep20 - invalid wallet address error
+  'ONE', // invalid wallet address error (one**** (native) format expected)
+  'TON', // erc20 - invalid wallet address error
+  'TRX', // bep20 - invalid wallet address error
+  'XML', // invalid wallet address error
+];
+
+const rampUnsupportedCoinsList = [
+  'ONE', // invalid wallet address error (one**** format expected)
 ];
 
 // Assets in wallet-only mode on app level,
@@ -113,6 +135,8 @@ const List<String> appWalletOnlyAssetList = [
   'SUPERNET',
 ];
 
+/// Coins that are enabled by default on restore from seed or registration.
+/// This will not affect existing wallets.
 List<String> get enabledByDefaultCoins => [
       'BTC-segwit',
       'KMD',
