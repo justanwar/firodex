@@ -22,6 +22,7 @@ class CoinItemSubtitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isNativeCoin = isNativeErcType(coin!);
     return amount != null
         ? CoinAmount(
             amount: amount!,
@@ -31,7 +32,7 @@ class CoinItemSubtitle extends StatelessWidget {
             ? SegwitIcon(height: size.segwitIconSize)
             : CoinProtocolName(
                 text: text?.isEmpty == false 
-                ? text : isNativeErcType(coin!)
+                ? text : isNativeCoin
                 ? "Native" : coin?.typeNameWithTestnet,
                 upperCase: text == null,
                 size: size,
