@@ -57,4 +57,13 @@ extension KdfAuthMetadataExtension on KomodoDefiSdk {
   Future<void> setWalletType(WalletType type) async {
     await auth.setOrRemoveActiveUserKeyValue('type', type.name);
   }
+
+  Future<bool> hasAcceptedHdWarning() async {
+    final user = await auth.currentUser;
+    return user?.metadata.valueOrNull<bool>('hd_warning_accepted') ?? false;
+  }
+
+  Future<void> setHdWarningAccepted({bool accepted = true}) async {
+    await auth.setOrRemoveActiveUserKeyValue('hd_warning_accepted', accepted);
+  }
 }

@@ -36,6 +36,7 @@ import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
 import 'package:web_dex/bloc/coins_manager/coins_manager_bloc.dart';
 import 'package:web_dex/bloc/dex_repository.dart';
 import 'package:web_dex/bloc/faucet_button/faucet_button_bloc.dart';
+import 'package:web_dex/bloc/hd_wallet_dialog/hd_wallet_dialog.dart';
 import 'package:web_dex/bloc/market_maker_bot/market_maker_bot/market_maker_bot_bloc.dart';
 import 'package:web_dex/bloc/market_maker_bot/market_maker_bot/market_maker_bot_repository.dart';
 import 'package:web_dex/bloc/market_maker_bot/market_maker_order_list/market_maker_bot_order_list_repository.dart';
@@ -65,6 +66,7 @@ import 'package:web_dex/router/navigators/app_router_delegate.dart';
 import 'package:web_dex/router/navigators/back_dispatcher.dart';
 import 'package:web_dex/router/parsers/root_route_parser.dart';
 import 'package:web_dex/router/state/routing_state.dart';
+import 'package:web_dex/services/hd_wallet_dialog_repository.dart';
 import 'package:web_dex/services/orders_service/my_orders_service.dart';
 import 'package:web_dex/shared/utils/debug_utils.dart';
 import 'package:web_dex/shared/utils/utils.dart';
@@ -162,6 +164,7 @@ class AppBlocRoot extends StatelessWidget {
             coinsRepo: coinsRepository,
           ),
         ),
+        RepositoryProvider(create: (_) => HdWalletDialogRepository()),
         RepositoryProvider(create: (_) => tradingEntitiesBloc),
         RepositoryProvider(create: (_) => dexRepository),
         RepositoryProvider(
@@ -308,7 +311,12 @@ class AppBlocRoot extends StatelessWidget {
           BlocProvider<FaucetBloc>(
             create: (context) =>
                 FaucetBloc(kdfSdk: context.read<KomodoDefiSdk>()),
-          )
+          ),
+          BlocProvider<HdWalletDialogBloc>(
+            create: (context) => HdWalletDialogBloc(
+              repository: context.read<HdWalletDialogRepository>(),
+            ),
+          ),
         ],
         child: _MyAppView(),
       ),

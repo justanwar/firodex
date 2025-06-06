@@ -419,6 +419,27 @@ abstract class  LocaleKeys {
   static const hdWalletModeSwitchTitle = 'hdWalletModeSwitchTitle';
   static const hdWalletModeSwitchSubtitle = 'hdWalletModeSwitchSubtitle';
   static const hdWalletModeSwitchTooltip = 'hdWalletModeSwitchTooltip';
+  static const hdWalletLegacyOfferTitle = 'hdWalletLegacyOfferTitle';
+  static const hdWalletLegacyOfferDescription = 'hdWalletLegacyOfferDescription';
+  static const hdWalletLegacyOfferSkip = 'hdWalletLegacyOfferSkip';
+  static const hdWalletLegacyOfferChange = 'hdWalletLegacyOfferChange';
+  static const hdWalletHdWarningTitle = 'hdWalletHdWarningTitle';
+  static const hdWalletHdWarningDescription = 'hdWalletHdWarningDescription';
+  static const hdWalletHdWarningRevert = 'hdWalletHdWarningRevert';
+  static const hdWalletHdWarningContinue = 'hdWalletHdWarningContinue';
+  static const hdWalletBenefitsTitle = 'hdWalletBenefitsTitle';
+  static const hdWalletBenefitsDescription = 'hdWalletBenefitsDescription';
+  static const hdWalletBenefitPrivacy = 'hdWalletBenefitPrivacy';
+  static const hdWalletBenefitHistory = 'hdWalletBenefitHistory';
+  static const hdWalletBenefitSecurity = 'hdWalletBenefitSecurity';
+  static const hdWalletBenefitSwitching = 'hdWalletBenefitSwitching';
+  static const hdWalletFundsSafetyNote = 'hdWalletFundsSafetyNote';
+  static const hdWalletWarningFundsSafety = 'hdWalletWarningFundsSafety';
+  static const hdWalletTechnicalDetails = 'hdWalletTechnicalDetails';
+  static const hdWalletTechnicalDetailsDescription = 'hdWalletTechnicalDetailsDescription';
+  static const hdWalletSimplifiedDescription = 'hdWalletSimplifiedDescription';
+  static const showTechnicalDetails = 'showTechnicalDetails';
+  static const hideTechnicalDetails = 'hideTechnicalDetails';
   static const noActiveWallet = 'noActiveWallet';
   static const memo = 'memo';
   static const gasPriceGwei = 'gasPriceGwei';
@@ -673,5 +694,9 @@ abstract class  LocaleKeys {
   static const createNewAddress = 'createNewAddress';
   static const searchAddresses = 'searchAddresses';
   static const chart = 'chart';
+  static const hdModeWarningTitle = 'hdModeWarningTitle';
+  static const hdModeWarningMessage = 'hdModeWarningMessage';
+  static const hdModeWarningNote = 'hdModeWarningNote';
+  static const hdModeWarningConfirm = 'hdModeWarningConfirm';
 
 }

@@ -1,7 +1,9 @@
 import 'package:app_theme/app_theme.dart';
 import 'package:flutter/material.dart';
 
+@Deprecated('Use UiPrimaryButton from komodo_ui_kit instead')
 class UiPrimaryButton extends StatelessWidget {
+  @Deprecated('Use UiPrimaryButton from komodo_ui_kit instead')
   const UiPrimaryButton({
     Key? key,
     this.buttonKey,
