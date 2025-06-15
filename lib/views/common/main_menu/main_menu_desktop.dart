@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
+import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_bloc.dart';
 import 'package:web_dex/bloc/auth_bloc/auth_bloc.dart';
 import 'package:web_dex/bloc/settings/settings_bloc.dart';
@@ -71,7 +72,7 @@ class _MainMenuDesktopState extends State<MainMenuDesktop> {
                           : LocaleKeys.tradingDisabledTooltip.tr(),
                       child: DesktopMenuDesktopItem(
                         key: const Key('main-menu-dex'),
-                        enabled: tradingEnabled && currentWallet?.isHW != true,
+                        enabled: currentWallet?.isHW != true,
                         menu: MainMenuValue.dex,
                         onTap: onTapItem,
                         isSelected: _checkSelectedItem(MainMenuValue.dex),
@@ -83,7 +84,7 @@ class _MainMenuDesktopState extends State<MainMenuDesktop> {
                           : LocaleKeys.tradingDisabledTooltip.tr(),
                       child: DesktopMenuDesktopItem(
                         key: const Key('main-menu-bridge'),
-                        enabled: tradingEnabled && currentWallet?.isHW != true,
+                        enabled: currentWallet?.isHW != true,
                         menu: MainMenuValue.bridge,
                         onTap: onTapItem,
                         isSelected: _checkSelectedItem(MainMenuValue.bridge),
@@ -96,8 +97,7 @@ class _MainMenuDesktopState extends State<MainMenuDesktop> {
                             : LocaleKeys.tradingDisabledTooltip.tr(),
                         child: DesktopMenuDesktopItem(
                           key: const Key('main-menu-market-maker-bot'),
-                          enabled:
-                              tradingEnabled && currentWallet?.isHW != true,
+                          enabled: currentWallet?.isHW != true,
                           menu: MainMenuValue.marketMakerBot,
                           onTap: onTapItem,
                           isSelected:
