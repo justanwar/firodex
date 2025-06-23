@@ -1,5 +1,7 @@
 import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:web_dex/generated/codegen_loader.g.dart';
 
 /// A data type holding user feedback consisting of a feedback type and free-form text
 class CustomFeedback {
@@ -71,9 +73,9 @@ class CustomFeedbackForm extends StatefulWidget {
 
   static FeedbackBuilder get feedbackBuilder =>
       (context, onSubmit, scrollController) => CustomFeedbackForm(
-            onSubmit: onSubmit,
-            scrollController: scrollController,
-          );
+        onSubmit: onSubmit,
+        scrollController: scrollController,
+      );
 
   @override
   State<CustomFeedbackForm> createState() => _CustomFeedbackFormState();
@@ -92,13 +94,21 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
     // Contact details validation: if either contact method or details is provided,
     // then both must be provided
     bool hasContactMethod = _customFeedback.contactMethod != null;
-    bool hasContactDetails = _customFeedback.contactDetails != null &&
-        _customFeedback.contactDetails!.isNotEmpty;
+    bool hasContactDetails =
+        _customFeedback.contactDetails != null &&
+        _customFeedback.contactDetails!.trim().isNotEmpty;
 
-    // If one is provided but not the other, the form is invalid
-    if ((hasContactMethod && !hasContactDetails) ||
-        (!hasContactMethod && hasContactDetails)) {
-      isValid = false;
+    // If support is selected, contact method and details are required
+    if (_customFeedback.feedbackType == FeedbackType.support) {
+      if (!hasContactMethod || !hasContactDetails) {
+        isValid = false;
+      }
+    } else {
+      // If one is provided but not the other, the form is invalid
+      if ((hasContactMethod && !hasContactDetails) ||
+          (!hasContactMethod && hasContactDetails)) {
+        isValid = false;
+      }
     }
 
     return isValid;
@@ -118,7 +128,11 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
               ListView(
                 controller: widget.scrollController,
                 padding: EdgeInsets.fromLTRB(
-                    16, widget.scrollController != null ? 20 : 16, 16, 0),
+                  16,
+                  widget.scrollController != null ? 20 : 16,
+                  16,
+                  0,
+                ),
                 children: [
                   Text(
                     'What kind of feedback do you want to give?',
@@ -132,8 +146,8 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                         .map(
                           (type) => DropdownMenuItem<FeedbackType>(
                             value: type,
-                            // TODO: l10n
 
+                            // TODO: l10n
                             child: Text(type.description),
                           ),
                         )
@@ -141,7 +155,8 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                     onChanged: _isLoading
                         ? null
                         : (feedbackType) => setState(
-                            () => _customFeedback.feedbackType = feedbackType),
+                            () => _customFeedback.feedbackType = feedbackType,
+                          ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -191,9 +206,10 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                               .toList(),
                           onChanged: _isLoading
                               ? null
-                              : (contactMethod) => setState(() =>
-                                  _customFeedback.contactMethod =
-                                      contactMethod),
+                              : (contactMethod) => setState(
+                                  () => _customFeedback.contactMethod =
+                                      contactMethod,
+                                ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -204,8 +220,9 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            hintText:
-                                _getContactHint(_customFeedback.contactMethod),
+                            hintText: _getContactHint(
+                              _customFeedback.contactMethod,
+                            ),
                           ),
                           onChanged: (newContactDetails) {
                             setState(() {
@@ -253,6 +270,13 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
   }
 
   void _submitFeedback() {
+    if (!isFormValid()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(LocaleKeys.contactRequiredError.tr())),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -260,22 +284,23 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
     // Call the onSubmit callback provided by BetterFeedback
     widget
         .onSubmit(
-      _customFeedback.feedbackText ?? '',
-      extras: _customFeedback.toMap(),
-    )
+          _customFeedback.feedbackText ?? '',
+          extras: _customFeedback.toMap(),
+        )
         .then((_) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        })
+        .catchError((error) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
         });
-      }
-    }).catchError((error) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    });
   }
 
   String _getContactHint(ContactMethod? method) {
