@@ -84,6 +84,7 @@ class CustomFeedbackForm extends StatefulWidget {
 // TODO: Refactor into a bloc and show validation errors.
 class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
   final CustomFeedback _customFeedback = CustomFeedback();
+  String? _contactError;
   bool _isLoading = false;
 
   /// Determines if the feedback form is valid and can be submitted
@@ -98,17 +99,25 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
         _customFeedback.contactDetails != null &&
         _customFeedback.contactDetails!.trim().isNotEmpty;
 
-    // If support is selected, contact method and details are required
+    _contactError = null;
     if (_customFeedback.feedbackType == FeedbackType.support) {
       if (!hasContactMethod || !hasContactDetails) {
         isValid = false;
+        _contactError = LocaleKeys.contactRequiredError.tr();
       }
     } else {
-      // If one is provided but not the other, the form is invalid
       if ((hasContactMethod && !hasContactDetails) ||
           (!hasContactMethod && hasContactDetails)) {
         isValid = false;
+        _contactError = LocaleKeys.contactRequiredError.tr();
       }
+    }
+    if (isValid &&
+        _customFeedback.contactMethod == ContactMethod.email &&
+        hasContactDetails &&
+        !_isValidEmail(_customFeedback.contactDetails!.trim())) {
+      isValid = false;
+      _contactError = LocaleKeys.emailValidatorError.tr();
     }
 
     return isValid;
@@ -117,6 +126,7 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final formValid = isFormValid();
 
     return Column(
       children: [
@@ -178,7 +188,9 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'How can we contact you? (Optional)',
+                    _customFeedback.feedbackType == FeedbackType.support
+                        ? "How can we contact you?"
+                        : "How can we contact you? (Optional)",
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -234,6 +246,16 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                       ),
                     ],
                   ),
+                  if (_contactError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        _contactError!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -259,7 +281,7 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                   ),
                 ),
               TextButton(
-                onPressed: isFormValid() ? () => _submitFeedback() : null,
+                onPressed: formValid ? () => _submitFeedback() : null,
                 child: const Text('SUBMIT'),
               ),
             ],
@@ -301,6 +323,11 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
             });
           }
         });
+  }
+
+  bool _isValidEmail(String email) {
+    final emailRegExp = RegExp(r'^[^@\\s]+@[^@\\s]+\\.[^@\\s]+\$');
+    return emailRegExp.hasMatch(email);
   }
 
   String _getContactHint(ContactMethod? method) {
