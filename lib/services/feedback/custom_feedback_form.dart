@@ -2,6 +2,7 @@ import 'package:feedback/feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
+import 'package:web_dex/shared/constants.dart';
 
 /// A data type holding user feedback consisting of a feedback type and free-form text
 class CustomFeedback {
@@ -326,7 +327,6 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
   }
 
   bool _isValidEmail(String email) {
-    final emailRegExp = RegExp(r'^[^@\\s]+@[^@\\s]+\\.[^@\\s]+\$');
     return emailRegExp.hasMatch(email);
   }
 
