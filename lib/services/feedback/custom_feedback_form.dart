@@ -74,9 +74,9 @@ class CustomFeedbackForm extends StatefulWidget {
 
   static FeedbackBuilder get feedbackBuilder =>
       (context, onSubmit, scrollController) => CustomFeedbackForm(
-        onSubmit: onSubmit,
-        scrollController: scrollController,
-      );
+            onSubmit: onSubmit,
+            scrollController: scrollController,
+          );
 
   @override
   State<CustomFeedbackForm> createState() => _CustomFeedbackFormState();
@@ -96,8 +96,7 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
     // Contact details validation: if either contact method or details is provided,
     // then both must be provided
     bool hasContactMethod = _customFeedback.contactMethod != null;
-    bool hasContactDetails =
-        _customFeedback.contactDetails != null &&
+    bool hasContactDetails = _customFeedback.contactDetails != null &&
         _customFeedback.contactDetails!.trim().isNotEmpty;
 
     _contactError = null;
@@ -166,8 +165,8 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                     onChanged: _isLoading
                         ? null
                         : (feedbackType) => setState(
-                            () => _customFeedback.feedbackType = feedbackType,
-                          ),
+                              () => _customFeedback.feedbackType = feedbackType,
+                            ),
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -220,9 +219,9 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                           onChanged: _isLoading
                               ? null
                               : (contactMethod) => setState(
-                                  () => _customFeedback.contactMethod =
-                                      contactMethod,
-                                ),
+                                    () => _customFeedback.contactMethod =
+                                        contactMethod,
+                                  ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -307,27 +306,26 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
     // Call the onSubmit callback provided by BetterFeedback
     widget
         .onSubmit(
-          _customFeedback.feedbackText ?? '',
-          extras: _customFeedback.toMap(),
-        )
+      _customFeedback.feedbackText ?? '',
+      extras: _customFeedback.toMap(),
+    )
         .then((_) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
-        })
-        .catchError((error) {
-          if (mounted) {
-            setState(() {
-              _isLoading = false;
-            });
-          }
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
         });
+      }
+    }).catchError((error) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
   }
 
   bool _isValidEmail(String email) {
-    return emailRegExp.hasMatch(email);
+    return emailRegex.hasMatch(email);
   }
 
   String _getContactHint(ContactMethod? method) {
