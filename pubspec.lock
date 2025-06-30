@@ -664,16 +664,25 @@ packages:
     description:
       path: "packages/komodo_cex_market_data"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.0.1"
+  komodo_coin_updates:
+    dependency: transitive
+    description:
+      path: "packages/komodo_coin_updates"
+      ref: dev
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
+      url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
+    source: git
+    version: "1.0.0"
   komodo_coins:
     dependency: transitive
     description:
       path: "packages/komodo_coins"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.2.0+0"
@@ -682,7 +691,7 @@ packages:
     description:
       path: "packages/komodo_defi_framework"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.2.0"
@@ -691,7 +700,7 @@ packages:
     description:
       path: "packages/komodo_defi_local_auth"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.2.0+0"
@@ -700,7 +709,7 @@ packages:
     description:
       path: "packages/komodo_defi_rpc_methods"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.2.0+0"
@@ -709,7 +718,7 @@ packages:
     description:
       path: "packages/komodo_defi_sdk"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.2.0+0"
@@ -718,7 +727,7 @@ packages:
     description:
       path: "packages/komodo_defi_types"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.2.0+0"
@@ -734,7 +743,7 @@ packages:
     description:
       path: "packages/komodo_ui"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.2.0+0"
@@ -750,7 +759,7 @@ packages:
     description:
       path: "packages/komodo_wallet_build_transformer"
       ref: dev
-      resolved-ref: e2561b308636eb1abea884590d332ebd85f418c3
+      resolved-ref: "7dfe68bae615b444240f18c3912bdbaba813ab2d"
       url: "https://github.com/KomodoPlatform/komodo-defi-sdk-flutter.git"
     source: git
     version: "0.2.0+0"
@@ -1439,6 +1448,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
+  very_good_analysis:
+    dependency: transitive
+    description:
+      name: very_good_analysis
+      sha256: c529563be4cbba1137386f2720fb7ed69e942012a28b13398d8a5e3e6ef551a7
+      url: "https://pub.dev"
+    source: hosted
+    version: "8.0.0"
   video_player:
     dependency: "direct main"
     description:
@@ -1539,18 +1556,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: "329edf97fdd893e0f1e3b9e88d6a0e627128cc17cc316a8d67fda8f1451178ba"
+      sha256: "66814138c3562338d05613a6e368ed8cfb237ad6d64a9e9334be3f309acfca03"
       url: "https://pub.dev"
     source: hosted
-    version: "5.13.0"
-  win32_registry:
-    dependency: transitive
-    description:
-      name: win32_registry
-      sha256: "6f1b564492d0147b330dd794fee8f512cec4977957f310f9951b5f9d83618dae"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
+    version: "5.14.0"
   window_size:
     dependency: "direct main"
     description:
@@ -1585,5 +1594,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.7.0 <4.0.0"
-  flutter: ">=3.32.0"
+  dart: ">=3.8.0 <4.0.0"
+  flutter: ">=3.32.5"
