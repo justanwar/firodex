@@ -122,9 +122,9 @@ class WalletManageSection extends StatelessWidget {
                     ),
                     const Spacer(),
                     UiPrimaryButton(
-                      buttonKey: const Key('asset-management-button'),
+                      buttonKey: const Key('add-assets-button'),
                       onPressed: () => _onAddAssetsPress(context),
-                      text: 'Add assets',
+                      text: LocaleKeys.addAssets.tr(),
                       height: 36,
                       width: 147,
                       borderRadius: 10,

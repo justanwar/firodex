@@ -435,7 +435,7 @@ class _SliverSearchBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   double get minExtent =>
-      isMobile ? (mode == AuthorizeMode.logIn ? 64 : 64) : 68;
+      isMobile ? 64 : 68;
   @override
   double get maxExtent =>
       isMobile ? (mode == AuthorizeMode.logIn ? 112 : 64) : 106;
