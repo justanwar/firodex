@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 
 import 'package:app_theme/app_theme.dart';
@@ -115,9 +114,8 @@ class _WalletMainState extends State<WalletMain>
 
             return PageLayout(
               noBackground: true,
-              header: isMobile
-                  ? PageHeader(title: LocaleKeys.wallet.tr())
-                  : null,
+              header:
+                  isMobile ? PageHeader(title: LocaleKeys.wallet.tr()) : null,
               content: Expanded(
                 child: Listener(
                   onPointerSignal: _onPointerSignal,
@@ -325,11 +323,11 @@ class _WalletMainState extends State<WalletMain>
       _walletHalfLogged = true;
       final coinsCount = context.read<CoinsBloc>().state.walletCoins.length;
       context.read<AnalyticsBloc>().logEvent(
-        WalletListHalfViewportReachedEventData(
-          timeToHalfMs: _walletListStopwatch.elapsedMilliseconds,
-          walletSize: coinsCount,
-        ),
-      );
+            WalletListHalfViewportReachedEventData(
+              timeToHalfMs: _walletListStopwatch.elapsedMilliseconds,
+              walletSize: coinsCount,
+            ),
+          );
     }
   }
 
@@ -342,11 +340,11 @@ class _WalletMainState extends State<WalletMain>
 
     if (newOffset == _scrollController.offset) {
       context.read<AnalyticsBloc>().logEvent(
-        ScrollAttemptOutsideContentEventData(
-          screenContext: 'wallet_page',
-          scrollDelta: event.scrollDelta.dy,
-        ),
-      );
+            ScrollAttemptOutsideContentEventData(
+              screenContext: 'wallet_page',
+              scrollDelta: event.scrollDelta.dy,
+            ),
+          );
       return;
     }
 
@@ -415,8 +413,8 @@ class CoinListView extends StatelessWidget {
           searchPhrase: searchPhrase,
           onAssetItemTap: (assetId) => onAssetItemTap(
             context.read<CoinsBloc>().state.coins.values.firstWhere(
-              (coin) => coin.assetId == assetId,
-            ),
+                  (coin) => coin.assetId == assetId,
+                ),
           ),
         );
     }
@@ -436,9 +434,11 @@ class _SliverSearchBarDelegate extends SliverPersistentHeaderDelegate {
   final AuthorizeMode mode;
 
   @override
-  final double minExtent = 132;
+  double get minExtent =>
+      isMobile ? (mode == AuthorizeMode.logIn ? 64 : 64) : 68;
   @override
-  final double maxExtent = 155;
+  double get maxExtent =>
+      isMobile ? (mode == AuthorizeMode.logIn ? 112 : 64) : 106;
 
   @override
   Widget build(
@@ -446,14 +446,20 @@ class _SliverSearchBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    // return SizedBox.expand();
+    // Apply collapse progress on both mobile and desktop
+    final collapseProgress =
+        (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
 
-    return WalletManageSection(
-      withBalance: withBalance,
-      onSearchChange: onSearchChange,
-      onWithBalanceChange: onWithBalanceChange,
-      mode: mode,
-      pinned: shrinkOffset > 0,
+    return SizedBox(
+      height: (maxExtent - shrinkOffset).clamp(minExtent, maxExtent),
+      child: WalletManageSection(
+        withBalance: withBalance,
+        onSearchChange: onSearchChange,
+        onWithBalanceChange: onWithBalanceChange,
+        mode: mode,
+        pinned: shrinkOffset > 0,
+        collapseProgress: collapseProgress,
+      ),
     );
   }
 
