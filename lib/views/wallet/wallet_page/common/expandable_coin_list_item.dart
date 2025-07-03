@@ -5,7 +5,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
 import 'package:komodo_ui/komodo_ui.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_bloc.dart';
 import 'package:web_dex/bloc/coins_bloc/coins_bloc.dart';
@@ -16,8 +15,7 @@ import 'package:web_dex/shared/widgets/coin_balance.dart';
 import 'package:web_dex/shared/widgets/coin_fiat_balance.dart';
 import 'package:web_dex/shared/widgets/coin_item/coin_item.dart';
 import 'package:web_dex/shared/widgets/coin_item/coin_item_size.dart';
-import 'package:web_dex/views/wallet/common/wallet_helper.dart';
-import 'package:get_it/get_it.dart';
+import 'package:web_dex/shared/utils/extensions/sdk_extensions.dart';
 
 /// Widget for showing an authenticated user's balance and anddresses for a
 /// given coin
@@ -171,15 +169,17 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  TrendPercentageText(
-                    percentage: getTotal24Change(
-                          [widget.coin],
-                          context.sdk,
-                        ) ??
-                        0,
-                    iconSize: 16,
-                    spacing: 4,
-                    textStyle: theme.textTheme.bodyMedium,
+                  BlocBuilder<CoinsBloc, CoinsState>(
+                    builder: (context, state) {
+                      final change24hPercent =
+                          state.get24hChangeForAsset(widget.coin.id);
+                      return TrendPercentageText(
+                        percentage: change24hPercent ?? 0.0,
+                        iconSize: 16,
+                        spacing: 4,
+                        textStyle: theme.textTheme.bodyMedium,
+                      );
+                    },
                   ),
                 ],
               ),
@@ -209,15 +209,27 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
               child: CoinBalance(coin: widget.coin),
             ),
           ),
-          TrendPercentageText(
-            percentage: getTotal24Change(
-                  [widget.coin],
-                  GetIt.I<KomodoDefiSdk>(),
-                ) ??
-                0,
-            iconSize: 16,
-            spacing: 4,
-            textStyle: theme.textTheme.bodyMedium,
+          BlocBuilder<CoinsBloc, CoinsState>(
+            builder: (context, state) {
+              final usdBalance =
+                  widget.coin.lastKnownUsdBalance(context.sdk) ?? 0.0;
+
+              final change24hPercent = usdBalance == 0.0
+                  ? 0.0
+                  : state.get24hChangeForAsset(widget.coin.id);
+
+              // Calculate the 24h USD change value
+              final change24hValue = change24hPercent != null && usdBalance > 0
+                  ? (change24hPercent * usdBalance / 100)
+                  : 0.0;
+
+              return TrendPercentageText(
+                percentage: change24hPercent,
+                value: change24hValue,
+                valueFormatter: (value) =>
+                    NumberFormat.currency(symbol: '\$').format(value),
+              );
+            },
           ),
           const Spacer(),
         ],

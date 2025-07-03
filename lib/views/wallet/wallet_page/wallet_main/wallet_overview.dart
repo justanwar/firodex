@@ -19,6 +19,12 @@ import 'package:web_dex/shared/utils/utils.dart';
 // the wallet overview. It may be better to split this into a separate bloc
 // instead of the changes we've made to the existing PortfolioGrowthBloc since
 // that bloc is primarily focused on chart data.
+//
+// IMPLEMENTATION NOTES:
+// - Current Balance: Uses PortfolioGrowthBloc.totalBalance with fallback to calculated balance
+// - 24h Change: Uses PortfolioGrowthBloc.percentageChange24h and totalChange24h
+// - All-time Investment: Uses AssetOverviewBloc.totalInvestment
+// - All-time Profit: Uses AssetOverviewBloc.profitAmount and profitIncreasePercentage
 class WalletOverview extends StatefulWidget {
   const WalletOverview({
     super.key,
@@ -50,17 +56,20 @@ class _WalletOverviewState extends State<WalletOverview> {
         final portfolioGrowthBloc = context.watch<PortfolioGrowthBloc>();
         final portfolioGrowthState = portfolioGrowthBloc.state;
 
-        // Get total balance from the PortfolioGrowthBloc if available, otherwise calculate
-        final double totalBalance =
-            portfolioGrowthState is PortfolioGrowthChartLoadSuccess
-                ? portfolioGrowthState.totalBalance
-                : _getTotalBalance(state.walletCoins.values, context);
-
+        // Get asset overview state data
         final stateWithData = portfolioAssetsOverviewBloc.state
                 is PortfolioAssetsOverviewLoadSuccess
             ? portfolioAssetsOverviewBloc.state
                 as PortfolioAssetsOverviewLoadSuccess
             : null;
+
+        // Get total balance from the PortfolioGrowthBloc if available, otherwise calculate
+        final double totalBalance =
+            portfolioGrowthState is PortfolioGrowthChartLoadSuccess
+                ? portfolioGrowthState.totalBalance
+                : stateWithData?.totalValue.value ??
+                    _getTotalBalance(state.walletCoins.values, context);
+
         if (!_logged && stateWithData != null) {
           context.read<AnalyticsBloc>().logEvent(
                 PortfolioViewedEventData(
@@ -77,29 +86,26 @@ class _WalletOverviewState extends State<WalletOverview> {
             key: const Key('overview-current-value'),
             caption: Text(LocaleKeys.yourBalance.tr()),
             value: totalBalance,
-            actionIcon: const Icon(Icons.copy),
             onPressed: () {
               final formattedValue =
                   NumberFormat.currency(symbol: '\$').format(totalBalance);
               copyToClipBoard(context, formattedValue);
             },
-            footer: BlocBuilder<PortfolioGrowthBloc, PortfolioGrowthState>(
+            trendWidget: BlocBuilder<PortfolioGrowthBloc, PortfolioGrowthState>(
               builder: (context, state) {
                 final double totalChange =
                     state is PortfolioGrowthChartLoadSuccess
                         ? state.percentageChange24h
                         : 0.0;
+                final double totalChange24h =
+                    state is PortfolioGrowthChartLoadSuccess
+                        ? state.totalChange24h
+                        : 0.0;
 
-                return Chip(
-                  visualDensity: const VisualDensity(vertical: -4),
-                  label: TrendPercentageText(
-                    percentage: totalChange,
-                    suffix: Text(TimePeriod.oneDay.formatted()),
-                    precision: 2,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                return TrendPercentageText(
+                  percentage: totalChange,
+                  value: totalChange24h,
+                  valueFormatter: NumberFormat.currency(symbol: '\$').format,
                 );
               },
             ),
@@ -108,20 +114,20 @@ class _WalletOverviewState extends State<WalletOverview> {
             key: const Key('overview-all-time-investment'),
             caption: Text(LocaleKeys.allTimeInvestment.tr()),
             value: stateWithData?.totalInvestment.value ?? 0,
-            actionIcon: const Icon(CustomIcons.fiatIconCircle),
             onPressed: widget.onPortfolioGrowthPressed,
-            footer: ActionChip(
+            trendWidget: ActionChip(
               avatar: Icon(
                 Icons.pie_chart,
+                size: 16,
               ),
               onPressed: widget.onAssetsPressed,
               visualDensity: const VisualDensity(vertical: -4),
               label: Text(
                 LocaleKeys.assetNumber.plural(assetCount),
-                style: Theme.of(context).textTheme.bodyLarge,
+                style: Theme.of(context).textTheme.bodySmall,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),
@@ -129,17 +135,15 @@ class _WalletOverviewState extends State<WalletOverview> {
             key: const Key('overview-all-time-profit'),
             caption: Text(LocaleKeys.allTimeProfit.tr()),
             value: stateWithData?.profitAmount.value ?? 0,
-            footer: Chip(
-              visualDensity: const VisualDensity(vertical: -4),
-              label: TrendPercentageText(
-                percentage: stateWithData?.profitIncreasePercentage ?? 0,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            actionIcon: const Icon(Icons.trending_up),
             onPressed: widget.onPortfolioProfitLossPressed,
+            trendWidget: stateWithData != null
+                ? TrendPercentageText(
+                    percentage: stateWithData.profitIncreasePercentage,
+                    // Show the total profit amount as the value
+                    value: stateWithData.profitAmount.value,
+                    valueFormatter: NumberFormat.currency(symbol: '\$').format,
+                  )
+                : const SizedBox.shrink(),
           ),
         ];
 

@@ -78,13 +78,13 @@ class WalletManageSection extends StatelessWidget {
             ],
           ),
           // Collapse the column headers on desktop
-          if (collapseProgress < 1.0) ...[
-            SizedBox(height: (1.0 - collapseProgress) * 8),
-            Opacity(
-              opacity: 1.0 - collapseProgress,
-              child: CoinsListHeader(isAuth: mode == AuthorizeMode.logIn),
-            ),
-          ],
+          //! TODO.c if (collapseProgress < 1.0) ...[
+          //   SizedBox(height: (1.0 - collapseProgress) * 8),
+          //   Opacity(
+          //     opacity: 1.0 - collapseProgress,
+          //     child: CoinsListHeader(isAuth: mode == AuthorizeMode.logIn),
+          //   ),
+          // ],
         ],
       ),
     );

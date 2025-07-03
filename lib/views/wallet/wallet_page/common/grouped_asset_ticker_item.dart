@@ -116,23 +116,26 @@ class _GroupedAssetTickerItemState extends State<GroupedAssetTickerItem> {
                       flex: 2,
                       child: BlocBuilder<CoinsBloc, CoinsState>(
                         builder: (context, state) {
-                          return InkWell(
-                            onTap: () => widget.onStatisticsTap?.call(
-                              _primaryAsset,
-                              const Duration(days: 1),
-                            ),
-                            child: TrendPercentageText(
-                              textStyle: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
-                              percentage:
-                                  state.get24hChangeForAsset(_primaryAsset) ??
-                                      0,
-                              showIcon: true,
-                              iconSize: 16,
-                              precision: 2,
-                            ),
-                          );
+                          final change24hPercent =
+                              state.get24hChangeForAsset(_primaryAsset);
+                          return change24hPercent == null
+                              ? const SizedBox.shrink()
+                              : InkWell(
+                                  onTap: () => widget.onStatisticsTap?.call(
+                                    _primaryAsset,
+                                    const Duration(days: 1),
+                                  ),
+                                  child: TrendPercentageText(
+                                    textStyle:
+                                        theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    percentage: change24hPercent,
+                                    showIcon: true,
+                                    iconSize: 16,
+                                    percentagePrecision: 2,
+                                  ),
+                                );
                         },
                       ),
                     ),

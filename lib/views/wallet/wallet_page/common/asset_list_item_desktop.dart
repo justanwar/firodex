@@ -56,7 +56,6 @@ class AssetListItemDesktop extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Spacer(),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -66,10 +65,10 @@ class AssetListItemDesktop extends StatelessWidget {
                         const Duration(days: 1),
                       ),
                       child: TrendPercentageText(
-                        percentage: priceChangePercentage24h ?? 0,
-                        showIcon: true,
-                        iconSize: 16,
-                        precision: 2,
+                        percentage: 23,
+                        value: 50,
+                        valueFormatter: (value) =>
+                            NumberFormat.currency(symbol: '\$').format(value),
                       ),
                     ),
                   ),
