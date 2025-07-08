@@ -289,6 +289,9 @@ Future<void> log(
   try {
     await logger.write(message, path);
 
+    // TODO: Add a `.dispose()` method to the logger library and call it before
+    // the app is disposed.
+
     performance.logTimeWritingLogs(timer.elapsedMilliseconds);
   } catch (e) {
     // TODO: replace below with crashlytics reporting or show UI the printed
