@@ -233,7 +233,10 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
       // duplicates in the wallet list
       if (event.wallet.isLegacyWallet) {
         await _kdfSdk.addActivatedCoins(event.wallet.config.activatedCoins);
-        await _walletsRepository.deleteWallet(event.wallet);
+        await _walletsRepository.deleteWallet(
+          event.wallet,
+          password: event.password,
+        );
       }
 
       _listenToAuthStateChanges();
