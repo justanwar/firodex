@@ -14,7 +14,6 @@ import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/coin_type.dart';
-import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/performance_analytics/performance_analytics.dart';
 import 'package:web_dex/services/logger/get_logger.dart';
 import 'package:web_dex/shared/constants.dart';
@@ -25,25 +24,52 @@ export 'package:web_dex/shared/utils/extensions/legacy_coin_migration_extensions
 export 'package:web_dex/shared/utils/extensions/sdk_extensions.dart';
 export 'package:web_dex/shared/utils/prominent_colors.dart';
 
-void copyToClipBoard(BuildContext context, String str) {
+// TODO: Refactor this (and all its references) to remove the context dependency
+// and/or make it optional, and then use the global `scaffoldKey` instead.
+Future<void> copyToClipBoard(
+  BuildContext context,
+  String payload, [
+  String? message,
+]) async {
+  if (!context.mounted) return;
   final themeData = Theme.of(context);
+
   try {
-    ScaffoldMessenger.of(context).showSnackBar(
+    await Clipboard.setData(ClipboardData(text: payload));
+
+    if (!context.mounted) return;
+    final scaffoldMessenger = ScaffoldMessenger.maybeOf(context) ??
+        ScaffoldMessenger.of(scaffoldKey.currentContext!);
+    scaffoldMessenger.showSnackBar(
       SnackBar(
-        duration: const Duration(seconds: 2),
-        content: Text(
-          LocaleKeys.clipBoard.tr(),
-          style: themeData.textTheme.bodyLarge!.copyWith(
-            color: themeData.brightness == Brightness.dark
-                ? themeData.hintColor
-                : themeData.primaryColor,
-          ),
+        width: isMobile ? null : 400.0,
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: themeData.colorScheme.onPrimaryContainer,
+            ),
+            const SizedBox(width: 12.0),
+            Text(
+              message ?? LocaleKeys.clipBoard.tr(),
+            ),
+          ],
         ),
+        duration: const Duration(seconds: 2),
       ),
     );
-  } catch (_) {}
-
-  Clipboard.setData(ClipboardData(text: str));
+  } catch (e) {
+    log('Error copyToClipBoard: $e', isError: true);
+    if (!context.mounted) return; // Show error feedback using SnackBar
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Failed to copy to clipboard'),
+        backgroundColor: themeData.colorScheme.error,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
 }
 
 /// Converts a double value [dv] to a string representation with specified decimal places [fractions].
@@ -162,7 +188,10 @@ String getTxExplorerUrl(Coin coin, String txHash) {
   final String explorerTxUrl = coin.explorerTxUrl;
   if (explorerUrl.isEmpty) return '';
 
-  final hash = coin.type == CoinType.iris ? txHash.toUpperCase() : txHash;
+  final hash =
+      coin.type == CoinType.tendermint || coin.type == CoinType.tendermintToken
+          ? txHash.toUpperCase()
+          : txHash;
 
   return coin.need0xPrefixForTxHash && !hash.startsWith('0x')
       ? '$explorerUrl${explorerTxUrl}0x$hash'
@@ -215,10 +244,7 @@ Future<void> openUrl(Uri uri, {bool? inSeparateTab}) async {
   );
 }
 
-Future<void> launchURLString(
-  String url, {
-  bool? inSeparateTab,
-}) async {
+Future<void> launchURLString(String url, {bool? inSeparateTab}) async {
   final uri = Uri.parse(url);
 
   if (await canLaunchUrl(uri)) {
@@ -262,6 +288,9 @@ Future<void> log(
 
   try {
     await logger.write(message, path);
+
+    // TODO: Add a `.dispose()` method to the logger library and call it before
+    // the app is disposed.
 
     performance.logTimeWritingLogs(timer.elapsedMilliseconds);
   } catch (e) {
@@ -479,8 +508,8 @@ String? getErcTransactionHistoryUrl(Coin coin) {
         contractAddress,
         coin.isTestCoin,
       ); // KCS
-    case CoinType.cosmos:
-    case CoinType.iris:
+    case CoinType.tendermint:
+    case CoinType.tendermintToken:
     case CoinType.qrc20:
     case CoinType.smartChain:
     case CoinType.utxo:
@@ -537,9 +566,9 @@ Color getProtocolColor(CoinType type) {
       return const Color.fromRGBO(0, 234, 144, 1);
     case CoinType.krc20:
       return const Color.fromRGBO(66, 229, 174, 1);
-    case CoinType.cosmos:
+    case CoinType.tendermintToken:
       return const Color.fromRGBO(60, 60, 85, 1);
-    case CoinType.iris:
+    case CoinType.tendermint:
       return const Color.fromRGBO(136, 87, 138, 1);
     case CoinType.slp:
       return const Color.fromRGBO(134, 184, 124, 1);
@@ -547,17 +576,14 @@ Color getProtocolColor(CoinType type) {
 }
 
 bool hasTxHistorySupport(Coin coin) {
-  if (coin.enabledType == WalletType.trezor) {
-    return true;
-  }
   switch (coin.type) {
     case CoinType.sbch:
     case CoinType.ubiq:
     case CoinType.hrc20:
       return false;
     case CoinType.krc20:
-    case CoinType.cosmos:
-    case CoinType.iris:
+    case CoinType.tendermint:
+    case CoinType.tendermintToken:
     case CoinType.utxo:
     case CoinType.erc20:
     case CoinType.smartChain:
@@ -577,14 +603,15 @@ bool hasTxHistorySupport(Coin coin) {
 
 String getNativeExplorerUrlByCoin(Coin coin, String? address) {
   final bool hasSupport = hasTxHistorySupport(coin);
+  final coinAddress = address ?? coin.address;
   assert(!hasSupport);
 
   switch (coin.type) {
     case CoinType.sbch:
-    case CoinType.iris:
-      return '${coin.explorerUrl}address/${coin.address}';
-    case CoinType.cosmos:
-      return '${coin.explorerUrl}account/${coin.address}';
+    case CoinType.tendermint:
+      return '${coin.explorerUrl}address/$coinAddress';
+    case CoinType.tendermintToken:
+      return '${coin.explorerUrl}account/$coinAddress';
 
     case CoinType.utxo:
     case CoinType.smartChain:
@@ -602,7 +629,7 @@ String getNativeExplorerUrlByCoin(Coin coin, String? address) {
     case CoinType.ubiq:
     case CoinType.krc20:
     case CoinType.slp:
-      return '${coin.explorerUrl}address/${address ?? coin.address}';
+      return '${coin.explorerUrl}address/$coinAddress';
   }
 }
 
@@ -678,7 +705,4 @@ Future<void> pauseWhile(
   }
 }
 
-enum HashExplorerType {
-  address,
-  tx,
-}
+enum HashExplorerType { address, tx }
