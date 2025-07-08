@@ -35,6 +35,11 @@ const String txByHashUrl = '$ercTxHistoryUrl/v1/transactions_by_hash';
 const String updateCheckerEndpoint = 'https://komodo.earth/adexwebversion';
 final Uri feedbackUrl = Uri.parse('https://komodo.earth:8181/webform/');
 const int feedbackMaxLength = 1000;
+const int contactDetailsMaxLength = 100;
+final RegExp discordUsernameRegex = RegExp(r'^[a-zA-Z0-9._]{2,32}$');
+final RegExp telegramUsernameRegex = RegExp(r'^[a-zA-Z0-9_]{5,32}$');
+final RegExp matrixIdRegex =
+    RegExp(r'^@[a-zA-Z0-9._=-]+:[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
 final Uri pricesUrlV3 = Uri.parse(
   'https://defi-stats.komodo.earth/api/v3/prices/tickers_v2?expire_at=60',
 );
