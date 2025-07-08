@@ -80,7 +80,8 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
       sdk: _kdfSdk,
     );
 
-    _authorizationSubscription = _kdfSdk.auth.authStateChanges.listen((event) {
+    _authorizationSubscription =
+        _kdfSdk.auth.watchCurrentUser().listen((event) {
       _isLoggedIn = event != null;
       if (!_isLoggedIn) add(const BridgeLogout());
     });
