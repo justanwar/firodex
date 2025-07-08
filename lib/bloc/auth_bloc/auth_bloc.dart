@@ -33,6 +33,7 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
     on<AuthRestoreRequested>(_onRestore);
     on<AuthSeedBackupConfirmed>(_onSeedBackupConfirmed);
     on<AuthWalletDownloadRequested>(_onWalletDownloadRequested);
+    on<AuthStateRestoreRequested>(_onStateRestoreRequested);
     on<AuthLifecycleCheckRequested>(_onLifecycleCheckRequested);
     setupTrezorEventHandlers();
   }
@@ -300,6 +301,24 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
       );
     } catch (e, s) {
       _log.shout('Failed to download wallet data', e, s);
+    }
+  }
+
+  Future<void> _onStateRestoreRequested(
+    AuthStateRestoreRequested event,
+    Emitter<AuthBlocState> emit,
+  ) async {
+    final bool signedIn = await _kdfSdk.auth.isSignedIn();
+    final KdfUser? user = signedIn ? await _kdfSdk.auth.currentUser : null;
+    emit(
+      AuthBlocState(
+        mode: signedIn ? AuthorizeMode.logIn : AuthorizeMode.noLogin,
+        currentUser: user,
+      ),
+    );
+
+    if (signedIn) {
+      _listenToAuthStateChanges();
     }
   }
 
