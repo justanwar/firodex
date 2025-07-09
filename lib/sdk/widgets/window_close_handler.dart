@@ -1,3 +1,5 @@
+import 'dart:ui' show AppExitResponse;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:web_dex/app_config/app_config.dart';
@@ -37,8 +39,13 @@ class _WindowCloseHandlerState extends State<WindowCloseHandler> {
   @override
   void initState() {
     super.initState();
+    if (kIsWeb) {
+      showMessageBeforeUnload(
+          'This will close Komodo Wallet and stop all trading activities.');
+    }
     _lifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
+        print('Window close handler: exit requested');
         final shouldExit = await _handleWindowClose();
         return shouldExit ? AppExitResponse.exit : AppExitResponse.cancel;
       },
@@ -48,10 +55,7 @@ class _WindowCloseHandlerState extends State<WindowCloseHandler> {
         }
       },
     );
-    if (kIsWeb) {
-      showMessageBeforeUnload(
-          'This will close Komodo Wallet and stop all trading activities.');
-    }
+    return;
   }
 
   /// Handles the window close event.
