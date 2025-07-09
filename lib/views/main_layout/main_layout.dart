@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
 import 'package:web_dex/app_config/app_config.dart';
+import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -57,20 +58,19 @@ class _MainLayoutState extends State<MainLayout> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final  isMobileLayout = constraints.maxWidth < 768;
 
           return Scaffold(
             key: scaffoldKey,
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-            appBar: isMobileLayout
+            appBar: isMobile
                 ? null
                 : const PreferredSize(
                     preferredSize: Size.fromHeight(appBarHeight),
                     child: AppHeader(),
                   ),
             body: SafeArea(child: MainLayoutRouter()),
-            bottomNavigationBar: isMobileLayout ? MainMenuBarMobile() : null,
-            floatingActionButton: MainLayoutFab(isMobile: isMobileLayout),
+            bottomNavigationBar: isMobile ? MainMenuBarMobile() : null,
+            floatingActionButton: MainLayoutFab(isMobile: isMobile),
           );
         },
       ),
