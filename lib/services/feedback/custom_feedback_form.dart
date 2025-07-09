@@ -42,13 +42,14 @@ class CustomFeedback {
   /// Creates a properly formatted description for agent review
   String toFormattedDescription() {
     final buffer = StringBuffer();
-    
+
     // Header with feedback type
     buffer.writeln('═══════════════════════════════════════');
-    buffer.writeln('📋 ${feedbackType?.description ?? 'Unknown'}'.toUpperCase());
+    buffer
+        .writeln('📋 ${feedbackType?.description ?? 'Unknown'}'.toUpperCase());
     buffer.writeln('═══════════════════════════════════════');
     buffer.writeln();
-    
+
     // User feedback content
     buffer.writeln('💬 USER FEEDBACK:');
     buffer.writeln('─' * 40);
@@ -66,13 +67,13 @@ class CustomFeedback {
       buffer.writeln('   [No feedback text provided]');
     }
     buffer.writeln();
-    
+
     // Contact information section
     buffer.writeln('📞 CONTACT INFORMATION:');
     buffer.writeln('─' * 40);
     if (contactMethod != null && contactDetails?.trim().isNotEmpty == true) {
       final contact = contactDetails!.trim();
-      
+
       switch (contactMethod!) {
         case ContactMethod.email:
           buffer.writeln('   📧 Email: $contact');
@@ -81,24 +82,27 @@ class CustomFeedback {
           buffer.writeln('   🎮 Discord: $contact');
           break;
         case ContactMethod.telegram:
-          buffer.writeln('   📱 Telegram: ${contact.startsWith('@') ? contact : '@$contact'}');
+          buffer.writeln(
+              '   📱 Telegram: ${contact.startsWith('@') ? contact : '@$contact'}');
           break;
         case ContactMethod.matrix:
           buffer.writeln('   🔗 Matrix: $contact');
           break;
       }
-      
+
       // Add priority indicator for support requests
       if (feedbackType == FeedbackType.support) {
-        buffer.writeln('   ⚠️  PRIORITY: Contact details provided for support request');
+        buffer.writeln(
+            '   ⚠️  PRIORITY: Contact details provided for support request');
       }
     } else {
       buffer.writeln('   ❌ No contact information provided');
       if (feedbackType == FeedbackType.support) {
-        buffer.writeln('   ⚠️  WARNING: Support request without contact details!');
+        buffer.writeln(
+            '   ⚠️  WARNING: Support request without contact details!');
       }
     }
-    
+
     return buffer.toString();
   }
 }
@@ -151,16 +155,7 @@ class CustomFeedbackForm extends StatefulWidget {
 class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final CustomFeedback _customFeedback = CustomFeedback();
-  final TextEditingController _feedbackController = TextEditingController();
-  final TextEditingController _contactController = TextEditingController();
   bool _isLoading = false;
-
-  @override
-  void dispose() {
-    _feedbackController.dispose();
-    _contactController.dispose();
-    super.dispose();
-  }
 
   /// Validates feedback text
   String? _validateFeedbackText(String? value) {
@@ -202,7 +197,7 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
 
     // Check maximum length
     if (trimmedValue.length > contactDetailsMaxLength) {
-      return 'Contact details must be ${contactDetailsMaxLength} characters or less';
+      return 'Contact details must be $contactDetailsMaxLength characters or less';
     }
 
     // Validate based on contact method
@@ -254,18 +249,19 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
   }
 
   /// Determines if the feedback form is valid and can be submitted
-  bool isFormValid() {
-    // Use form validation instead of manual checks
+  bool get _isFormValid {
+    // Always validate the current state to ensure we have the latest validation results
     return _formKey.currentState?.validate() ?? false;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final formValid = _customFeedback.feedbackType != null && !_isLoading;
+    final formValid = _isFormValid && !_isLoading;
 
     return Form(
       key: _formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         children: [
           Expanded(
@@ -287,9 +283,20 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                       style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    DropdownButton<FeedbackType>(
+                    DropdownButtonFormField<FeedbackType>(
                       isExpanded: true,
                       value: _customFeedback.feedbackType,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Please select a feedback type';
+                        }
+                        return null;
+                      },
                       items: FeedbackType.values
                           .map(
                             (type) => DropdownMenuItem<FeedbackType>(
@@ -302,10 +309,16 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                           .toList(),
                       onChanged: _isLoading
                           ? null
-                          : (feedbackType) => setState(
-                                () =>
-                                    _customFeedback.feedbackType = feedbackType,
-                              ),
+                          : (feedbackType) {
+                              setState(() {
+                                _customFeedback.feedbackType = feedbackType;
+                              });
+                              // Revalidate the form when feedback type changes
+                              // This is important because contact requirements change based on feedback type
+                              Future.microtask(() {
+                                _formKey.currentState?.validate();
+                              });
+                            },
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -314,8 +327,7 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                     ),
                     const SizedBox(height: 8),
                     UiTextFormField(
-                      controller: _feedbackController,
-                      maxLines: 3,
+                      // maxLines: 3,
                       maxLength: feedbackMaxLength,
                       maxLengthEnforcement: MaxLengthEnforcement.enforced,
                       enabled: !_isLoading,
@@ -325,6 +337,7 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                       onChanged: (value) {
                         _customFeedback.feedbackText =
                             _sanitizeInput(value ?? '');
+                        setState(() {});
                       },
                     ),
                     const SizedBox(height: 16),
@@ -365,14 +378,15 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                                           contactMethod;
                                     });
                                     // Revalidate contact details when method changes
-                                    _formKey.currentState?.validate();
+                                    Future.microtask(() {
+                                      _formKey.currentState?.validate();
+                                    });
                                   },
                           ),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: UiTextFormField(
-                            controller: _contactController,
                             enabled: !_isLoading,
                             maxLength: contactDetailsMaxLength,
                             maxLengthEnforcement: MaxLengthEnforcement.enforced,
@@ -384,6 +398,7 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
                             onChanged: (value) {
                               _customFeedback.contactDetails =
                                   _sanitizeInput(value ?? '');
+                              setState(() {});
                             },
                           ),
                         ),
@@ -426,8 +441,8 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
   }
 
   void _submitFeedback() {
-    // Validate the form first
-    if (!isFormValid()) {
+    // Force validation of the entire form before submission
+    if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
@@ -447,12 +462,12 @@ class _CustomFeedbackFormState extends State<CustomFeedbackForm> {
       feedbackText: sanitizedFeedback,
       contactMethod: _customFeedback.contactMethod,
       contactDetails: sanitizedContactDetails,
-    );    // Call the onSubmit callback provided by BetterFeedback
+    ); // Call the onSubmit callback provided by BetterFeedback
     widget
         .onSubmit(
-          submissionData.toFormattedDescription(),
-          extras: submissionData.toMap(),
-        )
+      submissionData.toFormattedDescription(),
+      extras: submissionData.toMap(),
+    )
         .then((_) {
       if (mounted) {
         setState(() {
