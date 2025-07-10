@@ -73,6 +73,61 @@
 
 <body>
     <script src="flutter_bootstrap.js" async></script><!-- Background -->
+    <script>
+        document.getElementById("swUpdateModal").style.display = "none";
+        document.getElementById("swRefresh").addEventListener("click", function () {
+            window.location.reload();
+        }); 
+        if ("serviceWorker" in navigator) {
+  let newWorker;
+  window.addEventListener("load", () => {
+    // Register the service worker
+    navigator.serviceWorker.register("flutter_service_worker.js").then((reg) => {
+      reg.addEventListener("updatefound", () => {
+        newWorker = reg.installing;
+        newWorker.addEventListener("statechange", () => {
+          switch (newWorker.state) {
+            case "installed":
+              if (navigator.serviceWorker.controller) {
+                document
+                  .getElementById("swUpdateModal").style.display = "block";
+              }
+              newWorker.postMessage({ type: "SKIP_WAITING" });
+              break;
+          }
+        });
+      });
+      let swWaiting = reg.waiting;
+      if (swWaiting) {
+        document
+        .getElementById("swUpdateModal").style.display = "block";
+      }
+      swWaiting.postMessage({ type: "SKIP_WAITING" });
+    });
+
+    async function handleSwUpdate() {
+      let refreshing;
+      const oldSw = await navigator.serviceWorker.getRegistration();
+      const oldSwState = oldSw && oldSw.active ? oldSw.active.state : null;
+      // The event listener that is fired when the service worker updates
+      // Here we reload the page
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        async function () {
+          if (refreshing) return;
+          const newSw = await navigator.serviceWorker.getRegistration();
+          const newSwState = newSw && newSw.active ? newSw.active.state : null;
+          if (oldSwState === "activated" && newSwState === "activating") {
+            refreshing = true;
+            window.location.reload();
+          }
+        }
+      );
+    }
+    handleSwUpdate();
+  });
+}
+    </script>
     <style>
         body.light {
             background-color: #e6ebeb
@@ -144,6 +199,13 @@
     <!-- App -->
     <div id="main-content" style="position:absolute;width:100%;height:100%;display:none">
         <!-- Flutter app will be injected here -->
+    </div>
+    <div id="swUpdateModal" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.5);z-index:1000;">
+        <div style="background-color:white;padding:20px;border-radius:10px;width:300px;margin:auto;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);">
+            <h1>Update available to {{flutter_service_worker_version}}</h1>
+            <p>A new version of the app is available. Please click the button below to update.</p>
+            <button id="swRefresh" style="background-color:blue;color:white;padding:10px;border-radius:5px;cursor:pointer;">Refresh</button>
+        </div>
     </div>
 </body>
 

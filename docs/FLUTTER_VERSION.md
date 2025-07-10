@@ -22,6 +22,7 @@ If you still choose to use this method, you can run:
 
 ```bash
 cd ~/flutter
+git pull
 git checkout 3.32.5
 flutter doctor
 ```
