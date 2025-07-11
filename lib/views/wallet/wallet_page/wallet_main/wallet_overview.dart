@@ -1,3 +1,5 @@
+import 'package:app_theme/src/dark/theme_custom_dark.dart';
+import 'package:app_theme/src/light/theme_custom_light.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -135,6 +137,20 @@ class _WalletOverviewState extends State<WalletOverview> {
 
                   return TrendPercentageText(
                     percentage: totalChange,
+                    upColor: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context)
+                            .extension<ThemeCustomDark>()!
+                            .increaseColor
+                        : Theme.of(context)
+                            .extension<ThemeCustomLight>()!
+                            .increaseColor,
+                    downColor: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context)
+                            .extension<ThemeCustomDark>()!
+                            .decreaseColor
+                        : Theme.of(context)
+                            .extension<ThemeCustomLight>()!
+                            .decreaseColor,
                     value: totalChange24h,
                     valueFormatter: NumberFormat.currency(symbol: '\$').format,
                   );
@@ -181,6 +197,20 @@ class _WalletOverviewState extends State<WalletOverview> {
             trendWidget: stateWithData != null
                 ? TrendPercentageText(
                     percentage: stateWithData.profitIncreasePercentage,
+                    upColor: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context)
+                            .extension<ThemeCustomDark>()!
+                            .increaseColor
+                        : Theme.of(context)
+                            .extension<ThemeCustomLight>()!
+                            .increaseColor,
+                    downColor: Theme.of(context).brightness == Brightness.dark
+                        ? Theme.of(context)
+                            .extension<ThemeCustomDark>()!
+                            .decreaseColor
+                        : Theme.of(context)
+                            .extension<ThemeCustomLight>()!
+                            .decreaseColor,
                     // Show the total profit amount as the value
                     value: stateWithData.profitAmount.value,
                     valueFormatter: NumberFormat.currency(symbol: '\$').format,
@@ -189,17 +219,13 @@ class _WalletOverviewState extends State<WalletOverview> {
           ),
         ];
 
-        // Use carousel for mobile and wrap for desktop
-        // TODO: `Wrap` is currently redundant. Enforce a minimum width for
-        // the cards instead.
         if (isMobile) {
           return StatisticsCarousel(cards: statisticCards);
         } else {
-          return Wrap(
-            runSpacing: 16,
+          return Row(
+            spacing: 24,
             children: statisticCards.map((card) {
-              return FractionallySizedBox(
-                widthFactor: 1 / 3,
+              return Expanded(
                 child: card,
               );
             }).toList(),

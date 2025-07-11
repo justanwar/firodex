@@ -15,6 +15,8 @@ import 'package:web_dex/shared/widgets/coin_balance.dart';
 import 'package:web_dex/shared/widgets/coin_fiat_balance.dart';
 import 'package:web_dex/shared/widgets/coin_item/coin_item.dart';
 import 'package:web_dex/shared/widgets/coin_item/coin_item_size.dart';
+import 'package:app_theme/src/dark/theme_custom_dark.dart';
+import 'package:app_theme/src/light/theme_custom_light.dart';
 
 /// Widget for showing an authenticated user's balance and anddresses for a
 /// given coin
@@ -74,9 +76,12 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
           ..sort((a, b) => b.balance.spendable.compareTo(a.balance.spendable)))
         : null;
 
-    final horizontalPadding = isMobile ? 16.0 : 18.0;
-    final verticalPadding = isMobile ? 12.0 : 12.0;
+    // Match GroupedAssetTickerItem: 16 horizontal, 16 vertical for both (mobile)
+    // For desktop, set vertical padding to achieve 78px height
+    final horizontalPadding = 16.0;
+    final verticalPadding = isMobile ? 16.0 : 22.0; // 34 (icon) + 22*2 = 78
 
+    // TODO! Change rotation of the icon in contracted state
     return CollapsibleCard(
       key: PageStorageKey('coin_${widget.coin.abbr}'),
       borderRadius: BorderRadius.circular(12),
@@ -128,13 +133,12 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          AssetIcon.ofTicker(
-            widget.coin.abbr,
-            size: 36,
+          // Use CoinItem with large size for mobile, matching GroupedAssetTickerItem
+          CoinItem(
+            coin: widget.coin,
+            size: CoinItemSize.large,
           ),
-
           const SizedBox(width: 8),
-
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -143,7 +147,6 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
                 widget.coin.name,
                 style: theme.textTheme.headlineMedium,
               ),
-
               // Crypto balance - using bodySmall for 12px secondary text
               Text(
                 '${doubleToString(widget.coin.balance(context.sdk) ?? 0)} ${widget.coin.abbr}',
@@ -151,7 +154,6 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
               ),
             ],
           ),
-
           const Spacer(),
           // Right side: Price and trend info
           Column(
@@ -163,25 +165,27 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
                 style: theme.textTheme.headlineMedium,
               ),
               const SizedBox(height: 2),
-
               // Trend percentage
               BlocBuilder<CoinsBloc, CoinsState>(
                 builder: (context, state) {
                   final usdBalance =
                       widget.coin.lastKnownUsdBalance(context.sdk) ?? 0.0;
-
                   final change24hPercent = usdBalance == 0.0
                       ? 0.0
                       : state.get24hChangeForAsset(widget.coin.id);
-
                   // Calculate the 24h USD change value
                   final change24hValue =
                       change24hPercent != null && usdBalance > 0
                           ? (change24hPercent * usdBalance / 100)
                           : 0.0;
-
+                  final themeCustom =
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).extension<ThemeCustomDark>()!
+                          : Theme.of(context).extension<ThemeCustomLight>()!;
                   return TrendPercentageText(
                     percentage: change24hPercent ?? 0.0,
+                    upColor: themeCustom.increaseColor,
+                    downColor: themeCustom.decreaseColor,
                     value: change24hValue,
                     valueFormatter: (value) =>
                         NumberFormat.currency(symbol: '\$').format(value),
@@ -210,13 +214,7 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
             child: CoinItem(coin: widget.coin, size: CoinItemSize.large),
           ),
           const Spacer(),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: CoinBalance(coin: widget.coin),
-            ),
-          ),
+          CoinBalance(coin: widget.coin),
           BlocBuilder<CoinsBloc, CoinsState>(
             builder: (context, state) {
               final usdBalance =
@@ -231,15 +229,21 @@ class _ExpandableCoinListItemState extends State<ExpandableCoinListItem> {
                   ? (change24hPercent * usdBalance / 100)
                   : 0.0;
 
+              final themeCustom =
+                  Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).extension<ThemeCustomDark>()!
+                      : Theme.of(context).extension<ThemeCustomLight>()!;
               return TrendPercentageText(
                 percentage: change24hPercent,
+                upColor: themeCustom.increaseColor,
+                downColor: themeCustom.decreaseColor,
                 value: change24hValue,
                 valueFormatter: (value) =>
                     NumberFormat.currency(symbol: '\$').format(value),
               );
             },
           ),
-          const Spacer(),
+          // const Spacer(),
         ],
       ),
     );

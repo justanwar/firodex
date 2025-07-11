@@ -28,11 +28,7 @@ class NftPage extends StatelessWidget {
     return BlocBuilder<SettingsBloc, SettingsState>(
       builder: (context, state) {
         final isLightTheme = state.themeMode == ThemeMode.light;
-        final data = isLightTheme
-            ? newThemeLight
-            : state.ultraDark
-                ? newThemeUltraDark
-                : newThemeDark;
+        final data = isLightTheme ? newThemeLight : newThemeDark;
         return Theme(
           data: data,
           child: MultiRepositoryProvider(

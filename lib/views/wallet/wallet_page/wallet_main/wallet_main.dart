@@ -134,6 +134,8 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
               noBackground: true,
               header:
                   isMobile ? PageHeader(title: LocaleKeys.wallet.tr()) : null,
+              padding: EdgeInsets.zero,
+              // Removed page padding here
               content: Expanded(
                 child: Listener(
                   onPointerSignal: _onPointerSignal,
@@ -141,7 +143,9 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
                     key: const Key('wallet-page-scroll-view'),
                     controller: _scrollController,
                     slivers: [
+                      // Add a SizedBox at the top of the sliver list for spacing
                       if (authStateMode == AuthorizeMode.logIn) ...[
+                        const SliverToBoxAdapter(child: SizedBox(height: 32)),
                         SliverToBoxAdapter(
                           child: WalletOverview(
                             key: const Key('wallet-overview'),
@@ -152,7 +156,7 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
                             onAssetsPressed: () => _tabController.animateTo(0),
                           ),
                         ),
-                        const SliverToBoxAdapter(child: Gap(8)),
+                        const SliverToBoxAdapter(child: Gap(24)),
                       ],
                       SliverPersistentHeader(
                         pinned: true,
@@ -171,6 +175,7 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
                           ),
                         ),
                       ),
+                      SliverToBoxAdapter(child: Gap(24)),
                       ..._buildTabSlivers(authStateMode, walletCoinsFiltered),
                     ],
                   ),
@@ -287,7 +292,7 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
               mode: mode,
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 8)),
+          const SliverToBoxAdapter(child: SizedBox(height: 22)),
           CoinListView(
             mode: mode,
             searchPhrase: _searchKey,
@@ -447,10 +452,10 @@ class _SliverSearchBarDelegate extends SliverPersistentHeaderDelegate {
   final AuthorizeMode mode;
 
   @override
-  double get minExtent => isMobile ? 64 : 68;
+  double get minExtent => isMobile ? 64 : 46;
   @override
   double get maxExtent =>
-      isMobile ? (mode == AuthorizeMode.logIn ? 112 : 64) : 68;
+      isMobile ? (mode == AuthorizeMode.logIn ? 112 : 64) : 46;
 
   @override
   Widget build(
@@ -501,7 +506,14 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: const EdgeInsets.only(bottom: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+          topLeft: Radius.circular(0),
+          topRight: Radius.circular(0),
+        ),
+      ),
       child: tabBar,
     );
   }
