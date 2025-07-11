@@ -4,6 +4,8 @@ import 'package:komodo_ui/komodo_ui.dart';
 import 'package:web_dex/shared/widgets/asset_item/asset_item.dart';
 import 'package:web_dex/shared/widgets/asset_item/asset_item_size.dart';
 import 'package:web_dex/views/wallet/coin_details/coin_details_info/charts/coin_sparkline.dart';
+import 'package:app_theme/src/dark/theme_custom_dark.dart';
+import 'package:app_theme/src/light/theme_custom_light.dart';
 
 /// A widget that displays an asset in a list item format optimized for desktop devices.
 ///
@@ -66,6 +68,21 @@ class AssetListItemDesktop extends StatelessWidget {
                       ),
                       child: TrendPercentageText(
                         percentage: 23,
+                        upColor: Theme.of(context).brightness == Brightness.dark
+                            ? Theme.of(context)
+                                .extension<ThemeCustomDark>()!
+                                .increaseColor
+                            : Theme.of(context)
+                                .extension<ThemeCustomLight>()!
+                                .increaseColor,
+                        downColor:
+                            Theme.of(context).brightness == Brightness.dark
+                                ? Theme.of(context)
+                                    .extension<ThemeCustomDark>()!
+                                    .decreaseColor
+                                : Theme.of(context)
+                                    .extension<ThemeCustomLight>()!
+                                    .decreaseColor,
                         value: 50,
                         valueFormatter: (value) =>
                             NumberFormat.currency(symbol: '\$').format(value),

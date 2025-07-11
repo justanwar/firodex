@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:komodo_ui/komodo_ui.dart';
 import 'package:komodo_defi_types/komodo_defi_types.dart';
+import 'package:app_theme/src/dark/theme_custom_dark.dart';
+import 'package:app_theme/src/light/theme_custom_light.dart';
 
 class SelectedCoinGraphControl extends StatelessWidget {
   const SelectedCoinGraphControl({
@@ -96,8 +98,18 @@ class SelectedCoinGraphControl extends StatelessWidget {
           ),
           Row(
             children: [
-              TrendPercentageText(
-                percentage: percentageIncrease,
+              Builder(
+                builder: (context) {
+                  final themeCustom =
+                      Theme.of(context).brightness == Brightness.dark
+                          ? Theme.of(context).extension<ThemeCustomDark>()!
+                          : Theme.of(context).extension<ThemeCustomLight>()!;
+                  return TrendPercentageText(
+                    percentage: percentageIncrease,
+                    upColor: themeCustom.increaseColor,
+                    downColor: themeCustom.decreaseColor,
+                  );
+                },
               ),
               if (onCoinSelected != null) ...[
                 const SizedBox(width: 2),

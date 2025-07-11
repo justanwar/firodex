@@ -17,7 +17,6 @@ import 'package:web_dex/services/feedback/feedback_service.dart';
 import 'package:web_dex/bloc/coins_manager/coins_manager_bloc.dart';
 import 'package:web_dex/router/state/wallet_state.dart';
 import 'package:web_dex/model/main_menu_value.dart';
-import 'package:web_dex/views/common/header/app_header.dart';
 import 'package:web_dex/views/common/main_menu/main_menu_bar_mobile.dart';
 
 class MainLayout extends StatefulWidget {
@@ -58,19 +57,20 @@ class _MainLayoutState extends State<MainLayout> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-
           return Scaffold(
             key: scaffoldKey,
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-            appBar: isMobile
-                ? null
-                : const PreferredSize(
-                    preferredSize: Size.fromHeight(appBarHeight),
-                    child: AppHeader(),
-                  ),
+            appBar: null,
             body: SafeArea(child: MainLayoutRouter()),
             bottomNavigationBar: isMobile ? MainMenuBarMobile() : null,
-            floatingActionButton: MainLayoutFab(isMobile: isMobile),
+            floatingActionButton: MainLayoutFab(
+              showAddCoinButton: routingState.selectedMenu ==
+                      MainMenuValue.wallet &&
+                  routingState.walletState.selectedCoin.isEmpty &&
+                  routingState.walletState.action.isEmpty &&
+                  context.watch<AuthBloc>().state.mode == AuthorizeMode.logIn,
+              isMini: isMobile,
+            ),
           );
         },
       ),
@@ -114,33 +114,19 @@ class _MainLayoutState extends State<MainLayout> {
 }
 
 class MainLayoutFab extends StatelessWidget {
-  const MainLayoutFab({super.key, required this.isMobile});
+  const MainLayoutFab(
+      {super.key, required this.showAddCoinButton, required this.isMini});
 
-  final bool isMobile;
+  final bool showAddCoinButton;
+  final bool isMini;
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthBloc>().state;
-    final bool showAddAssetsFab = isMobile &&
-        routingState.selectedMenu == MainMenuValue.wallet &&
-        routingState.walletState.selectedCoin.isEmpty &&
-        routingState.walletState.action.isEmpty &&
-        authState.mode == AuthorizeMode.logIn;
-
-    final Widget? feedbackFab = context.isFeedbackAvailable
-        ? FloatingActionButton(
-            onPressed: () => context.showFeedback(),
-            tooltip: 'Report a bug or feedback',
-            mini: isMobile,
-            child: const Icon(Icons.bug_report),
-          )
-        : null;
-
-    final Widget? addAssetsFab = showAddAssetsFab
+    final Widget? addAssetsFab = showAddCoinButton
         ? Tooltip(
             message: LocaleKeys.addAssets.tr(),
             child: SizedBox.square(
-              dimension: isMobile ? 56.0 : 48.0,
+              dimension: isMini ? 56.0 : 64.0,
               child: UiGradientButton(
                 onPressed: () {
                   context.read<CoinsManagerBloc>().add(
@@ -149,11 +135,20 @@ class MainLayoutFab extends StatelessWidget {
                       coinsManagerRouteAction.addAssets;
                 },
                 child: const Icon(
-                  Icons.add,
-                  size: 28,
+                  Icons.add_rounded,
+                  size: 36,
                 ),
               ),
             ),
+          )
+        : null;
+
+    final Widget? feedbackFab = context.isFeedbackAvailable
+        ? FloatingActionButton(
+            onPressed: () => context.showFeedback(),
+            tooltip: 'Report a bug or feedback',
+            mini: isMini,
+            child: const Icon(Icons.bug_report),
           )
         : null;
 

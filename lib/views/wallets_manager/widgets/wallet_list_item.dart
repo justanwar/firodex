@@ -12,9 +12,19 @@ class WalletListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return UiPrimaryButton(
+      text: wallet.name,
+      prefix: DecoratedBox(
+        decoration: const BoxDecoration(shape: BoxShape.circle),
+        child: Icon(
+          Icons.person,
+          size: 21,
+          color: Theme.of(context).textTheme.labelLarge?.color,
+        ),
+      ),
       height: 40,
-      backgroundColor: Theme.of(context).colorScheme.onSurface,
+      // backgroundColor: Theme.of(context).colorScheme.onSurface,
       onPressed: () => onClick(wallet, WalletsManagerExistWalletAction.logIn),
+      
       child: Row(
         mainAxisSize: MainAxisSize.max,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -29,12 +39,12 @@ class WalletListItem extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: AutoScrollText(
-              text: wallet.name,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
+            child: Text(
+              wallet.name,
+              // style: DefaultTextStyle.of(context).style.copyWith(
+              //       fontWeight: FontWeight.w500,
+              //       fontSize: 14,
+              //     ),
             ),
           ),
           IconButton(

@@ -65,9 +65,10 @@ class AssetsList extends StatelessWidget {
     return SliverList.separated(
       itemBuilder: (BuildContext context, int index) {
         final group = groups[index];
-        final Color backgroundColor = index.isEven
-            ? Theme.of(context).colorScheme.surface
-            : Theme.of(context).colorScheme.onSurface;
+        // final Color backgroundColor = index.isEven
+        //     ? Theme.of(context).colorScheme.surface
+        //     : Theme.of(context).colorScheme.;
+        final Color backgroundColor = Theme.of(context).cardColor;
 
         return GroupedAssetTickerItem(
           key: Key(group.key),
@@ -78,7 +79,7 @@ class AssetsList extends StatelessWidget {
         );
       },
       separatorBuilder: (BuildContext context, int index) {
-        return const SizedBox(height: 4);
+        return const SizedBox(height: 10);
       },
       itemCount: groups.length,
     );

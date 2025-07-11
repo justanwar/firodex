@@ -68,7 +68,7 @@ class ActiveCoinsList extends StatelessWidget {
             }
 
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
+              padding: EdgeInsets.only(bottom: 10),
               child: ExpandableCoinListItem(
                 // Changed from ExpandableCoinListItem
                 key: Key('coin-list-item-${coin.abbr.toLowerCase()}'),

@@ -1,8 +1,6 @@
 import 'package:app_theme/app_theme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:web_dex/bloc/settings/settings_bloc.dart';
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 
@@ -58,13 +56,10 @@ class _DexListFilterTypeDesktop<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = context.watch<SettingsBloc>().state;
     return Theme(
       data: Theme.of(context).brightness == Brightness.light
           ? newThemeLight
-          : settings.ultraDark
-              ? newThemeUltraDark
-              : newThemeDark,
+          : newThemeDark,
       child: Builder(builder: (context) {
         final ext = Theme.of(context).extension<ColorSchemeExtension>();
         return MultiSelectDropdownButton<T>(
