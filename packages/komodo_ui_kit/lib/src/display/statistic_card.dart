@@ -36,11 +36,13 @@ class StatisticCard extends StatelessWidget {
 
   // TODO! Refactor to theme and/or re-usable widget
   static LinearGradient containerGradient(ThemeData theme) {
+    final cardColor = theme.cardColor;
+
     return LinearGradient(
       begin: Alignment.topRight,
       end: Alignment.bottomLeft,
       colors: (theme.brightness == Brightness.light)
-          ? [theme.cardColor]
+          ? [cardColor, cardColor]
           : [
               Color.fromRGBO(23, 24, 28, 1),
               theme.cardColor,
