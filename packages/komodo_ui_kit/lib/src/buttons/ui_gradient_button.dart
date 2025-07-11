@@ -10,6 +10,7 @@ class UiGradientButton extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
   final double borderRadius;
   final Gradient? gradient;
+  final bool isMini;
 
   const UiGradientButton({
     super.key,
@@ -18,6 +19,7 @@ class UiGradientButton extends StatelessWidget {
     this.padding,
     this.borderRadius = 16,
     this.gradient,
+    this.isMini = false,
   });
 
   @override
@@ -36,9 +38,11 @@ class UiGradientButton extends StatelessWidget {
       );
     }
 
+    final double size = isMini ? 48.0 : 56.0;
+
     return LimitedBox(
-      maxWidth: 56,
-      maxHeight: 56,
+      maxWidth: size,
+      maxHeight: size,
       child: Container(
         decoration: BoxDecoration(
           gradient: effectiveGradient,

@@ -56,20 +56,22 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthBlocState>(
-      listener: (context, state) {
-        if (state.mode == AuthorizeMode.noLogin) {
-          routingState.resetOnLogOut();
-        }
-      },
-      child: LayoutBuilder(
+    return BlocConsumer<AuthBloc, AuthBlocState>(listener: (context, state) {
+      if (state.mode == AuthorizeMode.noLogin) {
+        routingState.resetOnLogOut();
+      }
+    }, builder: (context, state) {
+      final isAuthenticated = state.mode == AuthorizeMode.logIn;
+
+      return LayoutBuilder(
         builder: (context, constraints) {
           return Scaffold(
             key: scaffoldKey,
             floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
             appBar: null,
             body: SafeArea(child: MainLayoutRouter()),
-            bottomNavigationBar: isMobile ? MainMenuBarMobile() : null,
+            bottomNavigationBar:
+                isMobile? MainMenuBarMobile() : null,
             floatingActionButton: MainLayoutFab(
               showAddCoinButton: routingState.selectedMenu ==
                       MainMenuValue.wallet &&
@@ -80,8 +82,8 @@ class _MainLayoutState extends State<MainLayout> {
             ),
           );
         },
-      ),
-    );
+      );
+    });
   }
 
   // Method to show an alert dialog with an option to agree if the app is in
@@ -151,11 +153,20 @@ class MainLayoutFab extends StatelessWidget {
         : null;
 
     final Widget? feedbackFab = context.isFeedbackAvailable
-        ? FloatingActionButton(
-            onPressed: () => context.showFeedback(),
-            tooltip: 'Report a bug or feedback',
-            mini: isMini,
-            child: const Icon(Icons.bug_report),
+        ? Tooltip(
+            message: 'Report a bug or feedback',
+            child: SizedBox.square(
+              dimension: isMini ? 48 : 58,
+              child: UiGradientButton(
+                isMini: isMini,
+                gradient: LinearGradient(colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).primaryColor
+                ]),
+                onPressed: () => context.showFeedback(),
+                child: const Icon(Icons.bug_report, size: 24),
+              ),
+            ),
           )
         : null;
 

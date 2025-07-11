@@ -126,14 +126,17 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
         final authStateMode = authState.currentUser == null
             ? AuthorizeMode.noLogin
             : AuthorizeMode.logIn;
+        final isLoggedIn = authStateMode == AuthorizeMode.logIn;
+
         return BlocBuilder<CoinsBloc, CoinsState>(
           builder: (context, state) {
             final walletCoinsFiltered = state.walletCoins.values.toList();
 
             return PageLayout(
               noBackground: true,
-              header:
-                  isMobile ? PageHeader(title: LocaleKeys.wallet.tr()) : null,
+              header: (isMobile && !isLoggedIn)
+                  ? PageHeader(title: LocaleKeys.wallet.tr())
+                  : null,
               padding: EdgeInsets.zero,
               // Removed page padding here
               content: Expanded(
@@ -144,8 +147,9 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
                     controller: _scrollController,
                     slivers: [
                       // Add a SizedBox at the top of the sliver list for spacing
-                      if (authStateMode == AuthorizeMode.logIn) ...[
-                        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+                      if (isLoggedIn) ...[
+                        if (!isMobile)
+                          const SliverToBoxAdapter(child: SizedBox(height: 32)),
                         SliverToBoxAdapter(
                           child: WalletOverview(
                             key: const Key('wallet-overview'),
@@ -165,17 +169,17 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
                             controller: _tabController,
                             tabs: [
                               Tab(text: LocaleKeys.assets.tr()),
-                              if (authStateMode == AuthorizeMode.logIn)
+                              if (isLoggedIn)
                                 Tab(text: LocaleKeys.portfolioGrowth.tr())
                               else
                                 Tab(text: LocaleKeys.statistics.tr()),
-                              if (authStateMode == AuthorizeMode.logIn)
+                              if (isLoggedIn)
                                 Tab(text: LocaleKeys.profitAndLoss.tr()),
                             ],
                           ),
                         ),
                       ),
-                      SliverToBoxAdapter(child: Gap(24)),
+                      if (!isMobile) SliverToBoxAdapter(child: Gap(24)),
                       ..._buildTabSlivers(authStateMode, walletCoinsFiltered),
                     ],
                   ),
@@ -292,7 +296,7 @@ class _WalletMainState extends State<WalletMain> with TickerProviderStateMixin {
               mode: mode,
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 22)),
+          if (!isMobile) const SliverToBoxAdapter(child: SizedBox(height: 22)),
           CoinListView(
             mode: mode,
             searchPhrase: _searchKey,
