@@ -56,26 +56,34 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthBlocState>(
-      listener: (context, state) {
-        if (state.mode == AuthorizeMode.noLogin) {
-          routingState.resetOnLogOut();
-        }
-      },
-      child: Scaffold(
-        key: scaffoldKey,
-        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-        appBar: isMobile
-            ? null
-            : const PreferredSize(
-                preferredSize: Size.fromHeight(appBarHeight),
-                child: AppHeader(),
-              ),
-        body: SafeArea(child: MainLayoutRouter()),
-        bottomNavigationBar: !isDesktop ? MainMenuBarMobile() : null,
-        floatingActionButton: const MainLayoutFab(),
-      ),
-    );
+    return BlocConsumer<AuthBloc, AuthBlocState>(listener: (context, state) {
+      if (state.mode == AuthorizeMode.noLogin) {
+        routingState.resetOnLogOut();
+      }
+    }, builder: (context, state) {
+      final isAuthenticated = state.mode == AuthorizeMode.logIn;
+
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          return Scaffold(
+            key: scaffoldKey,
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            appBar: null,
+            body: SafeArea(child: MainLayoutRouter()),
+            bottomNavigationBar:
+                isMobile? MainMenuBarMobile() : null,
+            floatingActionButton: MainLayoutFab(
+              showAddCoinButton: routingState.selectedMenu ==
+                      MainMenuValue.wallet &&
+                  routingState.walletState.selectedCoin.isEmpty &&
+                  routingState.walletState.action.isEmpty &&
+                  context.watch<AuthBloc>().state.mode == AuthorizeMode.logIn,
+              isMini: isMobile,
+            ),
+          );
+        },
+      );
+    });
   }
 
   // Method to show an alert dialog with an option to agree if the app is in
@@ -115,31 +123,19 @@ class _MainLayoutState extends State<MainLayout> {
 }
 
 class MainLayoutFab extends StatelessWidget {
-  const MainLayoutFab({super.key});
+  const MainLayoutFab(
+      {super.key, required this.showAddCoinButton, required this.isMini});
+
+  final bool showAddCoinButton;
+  final bool isMini;
 
   @override
   Widget build(BuildContext context) {
-    final authState = context.watch<AuthBloc>().state;
-    final bool showAddAssetsFab = isMobile &&
-        routingState.selectedMenu == MainMenuValue.wallet &&
-        routingState.walletState.selectedCoin.isEmpty &&
-        routingState.walletState.action.isEmpty &&
-        authState.mode == AuthorizeMode.logIn;
-
-    final Widget? feedbackFab = context.isFeedbackAvailable
-        ? FloatingActionButton(
-            onPressed: () => context.showFeedback(),
-            tooltip: 'Report a bug or feedback',
-            mini: isMobile,
-            child: const Icon(Icons.bug_report),
-          )
-        : null;
-
-    final Widget? addAssetsFab = showAddAssetsFab
+    final Widget? addAssetsFab = showAddCoinButton
         ? Tooltip(
             message: LocaleKeys.addAssets.tr(),
             child: SizedBox.square(
-              dimension: isMobile ? 56.0 : 48.0,
+              dimension: isMini ? 56.0 : 64.0,
               child: UiGradientButton(
                 onPressed: () {
                   context.read<CoinsManagerBloc>().add(
@@ -148,9 +144,27 @@ class MainLayoutFab extends StatelessWidget {
                       coinsManagerRouteAction.addAssets;
                 },
                 child: const Icon(
-                  Icons.add,
-                  size: 28,
+                  Icons.add_rounded,
+                  size: 36,
                 ),
+              ),
+            ),
+          )
+        : null;
+
+    final Widget? feedbackFab = context.isFeedbackAvailable
+        ? Tooltip(
+            message: 'Report a bug or feedback',
+            child: SizedBox.square(
+              dimension: isMini ? 48 : 58,
+              child: UiGradientButton(
+                isMini: isMini,
+                gradient: LinearGradient(colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).primaryColor
+                ]),
+                onPressed: () => context.showFeedback(),
+                child: const Icon(Icons.bug_report, size: 24),
               ),
             ),
           )

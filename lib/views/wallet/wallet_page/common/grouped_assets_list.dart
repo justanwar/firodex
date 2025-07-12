@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:komodo_defi_types/komodo_defi_type_utils.dart';
 import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:web_dex/views/wallet/wallet_page/common/grouped_asset_ticker_item.dart';
 
@@ -32,15 +33,16 @@ class GroupedAssetsList extends StatelessWidget {
 
     return SliverList.separated(
       separatorBuilder: (BuildContext context, int index) {
-        return const SizedBox(height: 8);
+        return const SizedBox(height: 16);
       },
       itemBuilder: (BuildContext context, int index) {
         final ticker = groupedAssets.keys.elementAt(index);
         final assetGroup = groupedAssets[ticker]!;
 
-        final Color backgroundColor = index.isEven
-            ? Theme.of(context).colorScheme.surface
-            : Theme.of(context).colorScheme.onSurface;
+        // final Color backgroundColor = index.isEven
+        //     ? Theme.of(context).colorScheme.surface
+        //     : Theme.of(context).colorScheme.onSurface;
+        final backgroundColor = Theme.of(context).cardTheme.color!;
 
         return GroupedAssetTickerItem(
           key: Key(ticker),
@@ -68,17 +70,17 @@ class GroupedAssetsList extends StatelessWidget {
   }
 
   /// Filters assets based on search phrase
-  List<AssetId> _filterAssets() {
+  Iterable<AssetId> _filterAssets() {
     if (searchPhrase.isEmpty) {
       return assets;
     }
 
     return assets.where((asset) {
-      final name = asset.name.toLowerCase();
-      final symbol = asset.symbol.configSymbol.toLowerCase();
       final searchLower = searchPhrase.toLowerCase();
+      final isFound =
+          asset.toJson().toJsonString().toLowerCase().contains(searchLower);
 
-      return name.contains(searchLower) || symbol.contains(searchLower);
-    }).toList();
+      return isFound;
+    });
   }
 }

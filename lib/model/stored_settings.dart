@@ -10,7 +10,6 @@ class StoredSettings {
     required this.marketMakerBotSettings,
     required this.testCoinsEnabled,
     required this.weakPasswordsAllowed,
-    required this.ultraDark,
   });
 
   final ThemeMode mode;
@@ -18,7 +17,6 @@ class StoredSettings {
   final MarketMakerBotSettings marketMakerBotSettings;
   final bool testCoinsEnabled;
   final bool weakPasswordsAllowed;
-  final bool ultraDark;
 
   static StoredSettings initial() {
     return StoredSettings(
@@ -27,7 +25,6 @@ class StoredSettings {
       marketMakerBotSettings: MarketMakerBotSettings.initial(),
       testCoinsEnabled: true,
       weakPasswordsAllowed: false,
-      ultraDark: false,
     );
   }
 
@@ -42,7 +39,6 @@ class StoredSettings {
       ),
       testCoinsEnabled: json['testCoinsEnabled'] ?? true,
       weakPasswordsAllowed: json['weakPasswordsAllowed'] ?? false,
-      ultraDark: json['ultraDark'] ?? false,
     );
   }
 
@@ -53,7 +49,6 @@ class StoredSettings {
       storedMarketMakerSettingsKey: marketMakerBotSettings.toJson(),
       'testCoinsEnabled': testCoinsEnabled,
       'weakPasswordsAllowed': weakPasswordsAllowed,
-      'ultraDark': ultraDark,
     };
   }
 
@@ -63,7 +58,6 @@ class StoredSettings {
     MarketMakerBotSettings? marketMakerBotSettings,
     bool? testCoinsEnabled,
     bool? weakPasswordsAllowed,
-    bool? ultraDark,
   }) {
     return StoredSettings(
       mode: mode ?? this.mode,
@@ -72,7 +66,6 @@ class StoredSettings {
           marketMakerBotSettings ?? this.marketMakerBotSettings,
       testCoinsEnabled: testCoinsEnabled ?? this.testCoinsEnabled,
       weakPasswordsAllowed: weakPasswordsAllowed ?? this.weakPasswordsAllowed,
-      ultraDark: ultraDark ?? this.ultraDark,
     );
   }
 }

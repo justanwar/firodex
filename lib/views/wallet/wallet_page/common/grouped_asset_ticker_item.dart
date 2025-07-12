@@ -1,5 +1,7 @@
 import 'dart:math' show min;
 
+import 'package:app_theme/src/dark/theme_custom_dark.dart';
+import 'package:app_theme/src/light/theme_custom_light.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -80,10 +82,17 @@ class _GroupedAssetTickerItemState extends State<GroupedAssetTickerItem> {
     return Opacity(
       opacity: widget.isActivating ? 0.3 : 1,
       child: Material(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(
+            color: theme.dividerColor,
+            width: 1,
+          ),
+        ),
         color: widget.backgroundColor,
-        borderRadius: BorderRadius.circular(10),
         clipBehavior: Clip.hardEdge,
         type: MaterialType.card,
+        borderOnForeground: true,
         child: InkWell(
           onTap:
               widget.onTap == null ? null : () => widget.onTap!(_primaryAsset),
@@ -129,16 +138,31 @@ class _GroupedAssetTickerItemState extends State<GroupedAssetTickerItem> {
                           return change24hPercent == null
                               ? const SizedBox.shrink()
                               : Tooltip(
-                                message: LocaleKeys.change24h.tr(),
-                                child: InkWell(
+                                  message: LocaleKeys.change24h.tr(),
+                                  child: InkWell(
                                     onTap: () => widget.onStatisticsTap?.call(
                                       _primaryAsset,
                                       const Duration(days: 1),
                                     ),
                                     child: TrendPercentageText(
                                       percentage: change24hPercent,
+                                      upColor: Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Theme.of(context)
+                                              .extension<ThemeCustomDark>()!
+                                              .increaseColor
+                                          : Theme.of(context)
+                                              .extension<ThemeCustomLight>()!
+                                              .increaseColor,
+                                      downColor: Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Theme.of(context)
+                                              .extension<ThemeCustomDark>()!
+                                              .decreaseColor
+                                          : Theme.of(context)
+                                              .extension<ThemeCustomLight>()!
+                                              .decreaseColor,
                                       iconSize: 16,
-                                      
                                       percentagePrecision: 2,
                                       value: isMobile ? price?.price : null,
                                       valueFormatter: (price?.price != null)
@@ -147,7 +171,7 @@ class _GroupedAssetTickerItemState extends State<GroupedAssetTickerItem> {
                                           : null,
                                     ),
                                   ),
-                              );
+                                );
                         },
                       ),
                     ),
@@ -266,7 +290,7 @@ class _AssetIconItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = isMobile ? 50.0 : 70.0;
+    final size = isMobile ? 50.0 : 66.0;
     final theme = Theme.of(context);
 
     return Tooltip(

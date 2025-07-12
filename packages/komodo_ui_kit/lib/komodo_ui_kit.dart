@@ -27,6 +27,7 @@ export 'src/buttons/upload_button.dart';
 // Containers
 // Container widgets for organizing and displaying other widgets.
 export 'src/containers/chart_tooltip_container.dart';
+export 'src/containers/gradient_container.dart';
 // Controls
 // Widgets that handle user interaction and control other parts of the UI.
 export 'src/controls/market_chart_header_controls.dart';

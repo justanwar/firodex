@@ -14,10 +14,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         super(SettingsState.fromStored(stored)) {
     _storedSettings = stored;
     theme.mode = state.themeMode;
-    theme.isUltraDarkModeEnabled = state.ultraDark;
 
     on<ThemeModeChanged>(_onThemeModeChanged);
-    on<UltraDarkChanged>(_onUltraDarkChanged);
     on<MarketMakerBotSettingsChanged>(_onMarketMakerBotSettingsChanged);
     on<TestCoinsEnabledChanged>(_onTestCoinsEnabledChanged);
     on<WeakPasswordsAllowedChanged>(_onWeakPasswordsAllowedChanged);
@@ -65,20 +63,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     Emitter<SettingsState> emitter,
   ) async {
     await _settingsRepo.updateSettings(
-      _storedSettings.copyWith(weakPasswordsAllowed: event.weakPasswordsAllowed),
+      _storedSettings.copyWith(
+          weakPasswordsAllowed: event.weakPasswordsAllowed),
     );
     emitter(state.copyWith(weakPasswordsAllowed: event.weakPasswordsAllowed));
-  }
-
-  Future<void> _onUltraDarkChanged(
-    UltraDarkChanged event,
-    Emitter<SettingsState> emitter,
-  ) async {
-    await _settingsRepo.updateSettings(
-      _storedSettings.copyWith(ultraDark: event.enabled),
-    );
-    theme.isUltraDarkModeEnabled = event.enabled;
-    emitter(state.copyWith(ultraDark: event.enabled));
-    rebuildAll(null);
   }
 }

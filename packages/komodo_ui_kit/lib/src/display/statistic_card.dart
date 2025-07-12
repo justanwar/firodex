@@ -34,18 +34,40 @@ class StatisticCard extends StatelessWidget {
     this.onLongPress,
   }) : _valueFormatter = valueFormatter ?? NumberFormat.currency(symbol: '\$');
 
+  // TODO! Refactor to theme and/or re-usable widget
+  static LinearGradient containerGradient(ThemeData theme) {
+    final cardColor = theme.cardColor;
+
+    return LinearGradient(
+      begin: Alignment.topRight,
+      end: Alignment.bottomLeft,
+      colors: (theme.brightness == Brightness.light)
+          ? [cardColor, cardColor]
+          : [
+              Color.fromRGBO(23, 24, 28, 1),
+              theme.cardColor,
+            ],
+      stops: const [0.0, 1.0],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Card(
-      elevation: 0,
-      color: isDarkMode ? Colors.black : Theme.of(context).cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: containerGradient(Theme.of(context)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).dividerColor,
+          width: 1,
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16.0),
           child: Row(
