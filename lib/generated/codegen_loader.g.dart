@@ -324,6 +324,11 @@ abstract class LocaleKeys {
   static const feedbackFormThanksDescription = 'feedbackFormThanksDescription';
   static const email = 'email';
   static const emailValidatorError = 'emailValidatorError';
+  static const contactRequiredError = 'contactRequiredError';
+  static const contactDetailsMaxLengthError = 'contactDetailsMaxLengthError';
+  static const discordUsernameValidatorError = 'discordUsernameValidatorError';
+  static const telegramUsernameValidatorError = 'telegramUsernameValidatorError';
+  static const matrixIdValidatorError = 'matrixIdValidatorError';
   static const feedbackValidatorEmptyError = 'feedbackValidatorEmptyError';
   static const feedbackValidatorMaxLengthError =
       'feedbackValidatorMaxLengthError';
@@ -622,7 +627,7 @@ abstract class LocaleKeys {
   static const komodoWallet = 'komodoWallet';
   static const loadingNfts = 'loadingNfts';
   static const coinAssets = 'coinAssets';
-  static const commit = 'Commit';
+  static const commit = 'commit';
   static const bundled = 'bundled';
   static const updated = 'updated';
   static const notUpdated = 'notUpdated';
