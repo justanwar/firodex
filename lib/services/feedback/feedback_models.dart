@@ -1,3 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:web_dex/generated/codegen_loader.g.dart';
+
 class CustomFeedback {
   CustomFeedback({
     this.feedbackType,
@@ -84,10 +87,10 @@ class CustomFeedback {
 }
 
 enum FeedbackType {
+  missingCoins,
   bugReport,
   featureRequest,
   support,
-  missingCoins,
   other;
 }
 
@@ -101,7 +104,7 @@ extension FeedbackTypeDescription on FeedbackType {
       case FeedbackType.support:
         return 'Support Request';
       case FeedbackType.missingCoins:
-        return 'My coins missing';
+        return LocaleKeys.myCoinsMissing.tr();
       case FeedbackType.other:
         return 'Other';
     }
@@ -125,7 +128,7 @@ extension ContactMethodLabel on ContactMethod {
       case ContactMethod.telegram:
         return 'Telegram';
       case ContactMethod.email:
-        return 'Email';
+        return LocaleKeys.email.tr();
     }
   }
 }
