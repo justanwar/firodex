@@ -11,10 +11,10 @@ import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
 import 'package:komodo_ui/komodo_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:web_dex/analytics/events.dart';
 import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/bloc/analytics/analytics_bloc.dart';
 import 'package:web_dex/bloc/analytics/analytics_repo.dart';
-import 'package:web_dex/analytics/events.dart';
 import 'package:web_dex/bloc/assets_overview/bloc/asset_overview_bloc.dart';
 import 'package:web_dex/bloc/assets_overview/investment_repository.dart';
 import 'package:web_dex/bloc/auth_bloc/auth_bloc.dart';
@@ -44,8 +44,8 @@ import 'package:web_dex/bloc/settings/settings_bloc.dart';
 import 'package:web_dex/bloc/settings/settings_repository.dart';
 import 'package:web_dex/bloc/system_health/system_clock_repository.dart';
 import 'package:web_dex/bloc/system_health/system_health_bloc.dart';
-import 'package:web_dex/bloc/trading_status/trading_status_bloc.dart';
 import 'package:web_dex/bloc/taker_form/taker_bloc.dart';
+import 'package:web_dex/bloc/trading_status/trading_status_bloc.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_repository.dart';
 import 'package:web_dex/bloc/transaction_history/transaction_history_bloc.dart';
 import 'package:web_dex/bloc/transaction_history/transaction_history_repo.dart';
@@ -406,7 +406,9 @@ class _MyAppViewState extends State<_MyAppView> {
 
     try {
       final stopwatch = Stopwatch()..start();
-      final availableAssetIds = sdk.assets.available.keys;
+      final availableAssetIds = sdk.assets.available.keys.where(
+        (assetId) => !excludedAssetList.contains(assetId.symbol.configSymbol),
+      );
 
       await for (final assetId in Stream.fromIterable(availableAssetIds)) {
         // TODO: Test if necessary to complete prematurely with error if build
