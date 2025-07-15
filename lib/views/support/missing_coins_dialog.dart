@@ -7,9 +7,12 @@ import 'package:web_dex/bloc/coins_bloc/coins_bloc.dart';
 import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/dispatchers/popup_dispatcher.dart';
-import 'package:web_dex/views/wallets_manager/widgets/wallets_manager_wrapper.dart';
 import 'package:web_dex/model/authorize_mode.dart';
+import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/shared/widgets/html_parser.dart';
+import 'package:web_dex/views/wallets_manager/wallets_manager_events_factory.dart';
+import 'package:web_dex/views/wallets_manager/wallets_manager_wrapper.dart';
+import 'package:app_theme/app_theme.dart';
 
 Future<void> showMissingCoinsDialog(BuildContext context) {
   return showDialog(
@@ -50,11 +53,11 @@ Future<void> _signInSingleAddressMode(BuildContext context) async {
       .stream
       .firstWhere((s) => s.mode == AuthorizeMode.noLogin);
   if (!context.mounted) return;
-  final theme = Theme.of(context);
+  final materialTheme = Theme.of(context);
   PopupDispatcher(
     context: scaffoldKey.currentContext ?? context,
     width: 320,
-    barrierColor: isMobile ? theme.colorScheme.onSurface : null,
+    barrierColor: isMobile ? materialTheme.colorScheme.onSurface : null,
     borderColor: theme.custom.specificButtonBorderColor,
     popupContent: WalletsManagerWrapper(
       eventType: WalletsManagerEventType.header,
