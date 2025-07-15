@@ -66,13 +66,15 @@ class CustomFeedback {
           buffer.writeln('   🔗 Matrix: $contact');
           break;
       }
-      if (feedbackType == FeedbackType.support) {
+      if (feedbackType == FeedbackType.support ||
+          feedbackType == FeedbackType.missingCoins) {
         buffer.writeln(
             '   ⚠️  PRIORITY: Contact details provided for support request');
       }
     } else {
       buffer.writeln('   ❌ No contact information provided');
-      if (feedbackType == FeedbackType.support) {
+      if (feedbackType == FeedbackType.support ||
+          feedbackType == FeedbackType.missingCoins) {
         buffer.writeln(
             '   ⚠️  WARNING: Support request without contact details!');
       }
@@ -85,6 +87,7 @@ enum FeedbackType {
   bugReport,
   featureRequest,
   support,
+  missingCoins,
   other;
 }
 
@@ -97,6 +100,8 @@ extension FeedbackTypeDescription on FeedbackType {
         return 'Feature Request';
       case FeedbackType.support:
         return 'Support Request';
+      case FeedbackType.missingCoins:
+        return 'My coins missing';
       case FeedbackType.other:
         return 'Other';
     }
