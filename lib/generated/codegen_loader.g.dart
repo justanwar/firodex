@@ -279,6 +279,8 @@ abstract class LocaleKeys {
   static const supportInfoContent9 = 'supportInfoContent9';
   static const supportInfoTitle10 = 'supportInfoTitle10';
   static const supportInfoContent10 = 'supportInfoContent10';
+  static const supportInfoTitle11 = 'supportInfoTitle11';
+  static const supportInfoContent11 = 'supportInfoContent11';
   static const supportDiscordButton = 'supportDiscordButton';
   static const supportAskSpan = 'supportAskSpan';
   static const fiat = 'fiat';
@@ -306,7 +308,6 @@ abstract class LocaleKeys {
   static const darkMode = 'darkMode';
   static const light = 'light';
   static const lightMode = 'lightMode';
-  static const ultraDark = 'ultraDark';
   static const defaultText = 'defaultText';
   static const clear = 'clear';
   static const remove = 'remove';
@@ -327,8 +328,16 @@ abstract class LocaleKeys {
   static const contactRequiredError = 'contactRequiredError';
   static const contactDetailsMaxLengthError = 'contactDetailsMaxLengthError';
   static const discordUsernameValidatorError = 'discordUsernameValidatorError';
-  static const telegramUsernameValidatorError = 'telegramUsernameValidatorError';
+  static const telegramUsernameValidatorError =
+      'telegramUsernameValidatorError';
   static const matrixIdValidatorError = 'matrixIdValidatorError';
+  static const myCoinsMissing = 'myCoinsMissing';
+  static const myCoinsMissingReassurance = 'myCoinsMissingReassurance';
+  static const myCoinsMissingToRecover = 'myCoinsMissingToRecover';
+  static const myCoinsMissingSteps = 'myCoinsMissingSteps';
+  static const myCoinsMissingMoreInfo = 'myCoinsMissingMoreInfo';
+  static const myCoinsMissingHelp = 'myCoinsMissingHelp';
+  static const myCoinsMissingSignIn = 'myCoinsMissingSignIn';
   static const feedbackValidatorEmptyError = 'feedbackValidatorEmptyError';
   static const feedbackValidatorMaxLengthError =
       'feedbackValidatorMaxLengthError';
