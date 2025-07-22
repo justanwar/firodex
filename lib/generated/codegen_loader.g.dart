@@ -349,7 +349,6 @@ abstract class LocaleKeys {
   static const exchange = 'exchange';
   static const connectSomething = 'connectSomething';
   static const hardwareWallet = 'hardwareWallet';
-  static const komodoWalletSeed = 'komodoWalletSeed';
   static const metamask = 'metamask';
   static const comingSoon = 'comingSoon';
   static const walletsTypeListTitle = 'walletsTypeListTitle';
@@ -536,7 +535,7 @@ abstract class LocaleKeys {
       'enterPassphraseHiddenWalletDescription';
   static const skip = 'skip';
   static const activateToSeeFunds = 'activateToSeeFunds';
-  static const allowCustomFee = 'allowCustomFee';
+  static const useCustomSeedOrWif = 'useCustomSeedOrWif';
   static const cancelOrder = 'cancelOrder';
   static const version = 'version';
   static const copyAddressToClipboard = 'copyAddressToClipboard';
