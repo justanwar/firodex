@@ -21,6 +21,11 @@ environment:
   sdk: ">=3.8.1 <4.0.0"
   flutter: ">=3.35.2 <4.0.0"
 
+workspace:
+  - packages/komodo_ui_kit
+  - packages/komodo_persistence_layer
+  - app_theme
+
 dependencies:
   ## ---- Flutter SDK
 
@@ -195,21 +200,6 @@ dev_dependencies:
 dependency_overrides:
   # Temporary until Flutter's pinned version is updated
   intl: ^0.20.2
-
-  # Force all komodo_ packages to use local path versions
-  # Internal SDK interdependencies are hosted versions
-  komodo_cex_market_data:
-    path: sdk/packages/komodo_cex_market_data
-  dragon_logs:
-    path: sdk/packages/dragon_logs
-  dragon_charts_flutter:
-    path: sdk/packages/dragon_charts_flutter
-  komodo_defi_sdk:
-    path: sdk/packages/komodo_defi_sdk
-  komodo_defi_types:
-    path: sdk/packages/komodo_defi_types
-  komodo_ui:
-    path: sdk/packages/komodo_ui
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
