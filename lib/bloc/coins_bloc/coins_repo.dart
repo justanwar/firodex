@@ -4,6 +4,7 @@ import 'dart:math' show min;
 import 'package:collection/collection.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart' show NetworkImage;
+
 import 'package:komodo_defi_rpc_methods/komodo_defi_rpc_methods.dart'
     as kdf_rpc;
 import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
@@ -27,17 +28,19 @@ import 'package:web_dex/model/cex_price.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/kdf_auth_metadata_extension.dart';
 import 'package:web_dex/model/text_error.dart';
-import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/model/withdraw_details/withdraw_details.dart';
+import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
 
 class CoinsRepo {
   CoinsRepo({
     required KomodoDefiSdk kdfSdk,
     required MM2 mm2,
     required TradingStatusService tradingStatusService,
+    required ArrrActivationService arrrActivationService,
   }) : _kdfSdk = kdfSdk,
        _mm2 = mm2,
-       _tradingStatusService = tradingStatusService {
+       _tradingStatusService = tradingStatusService,
+       _arrrActivationService = arrrActivationService {
     enabledAssetsChanges = StreamController<Coin>.broadcast(
       onListen: () => _enabledAssetListenerCount += 1,
       onCancel: () => _enabledAssetListenerCount -= 1,
@@ -47,6 +50,7 @@ class CoinsRepo {
   final KomodoDefiSdk _kdfSdk;
   final MM2 _mm2;
   final TradingStatusService _tradingStatusService;
+  final ArrrActivationService _arrrActivationService;
 
   final _log = Logger('CoinsRepo');
 
@@ -89,7 +93,7 @@ class CoinsRepo {
   BalanceInfo? lastKnownBalance(AssetId id) => _kdfSdk.balances.lastKnown(id);
 
   /// Subscribe to balance updates for an asset using the SDK's balance manager
-  void _subscribeToBalanceUpdates(Asset asset, Coin coin) {
+  void _subscribeToBalanceUpdates(Asset asset) {
     // Cancel any existing subscription for this asset
     _balanceWatchers[asset.id]?.cancel();
 
@@ -194,29 +198,7 @@ class CoinsRepo {
     'Wallet [KdfUser].wallet extension instead.',
   )
   Future<List<Coin>> getWalletCoins() async {
-    final currentUser = await _kdfSdk.auth.currentUser;
-    if (currentUser == null) {
-      return [];
-    }
-
-    final walletAssets = currentUser.wallet.config.activatedCoins
-        .map((coinId) {
-          final assets = _kdfSdk.assets.findAssetsByConfigId(coinId);
-          if (assets.isEmpty) {
-            _log.warning('No assets found for coinId: $coinId');
-            return null;
-          }
-          if (assets.length > 1) {
-            _log.shout(
-              'Multiple assets found for coinId: $coinId (${assets.length} assets). '
-              'Selecting the first asset: ${assets.first.id.id}',
-            );
-          }
-          return assets.single;
-        })
-        .whereType<Asset>()
-        .toList();
-
+    final walletAssets = await _kdfSdk.getWalletAssets();
     return _tradingStatusService
         .filterAllowedAssets(walletAssets)
         .map(_assetToCoinWithoutAddress)
@@ -268,14 +250,14 @@ class CoinsRepo {
   /// exponential backoff for up to the specified duration.
   ///
   /// **Retry Configuration:**
-  /// - Default: 500ms → 1s → 2s → 4s → 8s → 10s → 10s... (30 attempts ≈ 3 minutes)
+  /// - Default: 500ms → 1s → 2s → 4s → 8s → 10s → 10s... (15 attempts ≈ 105 seconds)
   /// - Configurable via [maxRetryAttempts], [initialRetryDelay], and [maxRetryDelay]
   ///
   /// **Parameters:**
   /// - [assets]: List of assets to activate
   /// - [notifyListeners]: Whether to broadcast state changes to listeners (default: true)
   /// - [addToWalletMetadata]: Whether to add assets to wallet metadata (default: true)
-  /// - [maxRetryAttempts]: Maximum number of retry attempts (default: 30)
+  /// - [maxRetryAttempts]: Maximum number of retry attempts (default: 15)
   /// - [initialRetryDelay]: Initial delay between retries (default: 500ms)
   /// - [maxRetryDelay]: Maximum delay between retries (default: 10s)
   ///
@@ -292,7 +274,7 @@ class CoinsRepo {
     List<Asset> assets, {
     bool notifyListeners = true,
     bool addToWalletMetadata = true,
-    int maxRetryAttempts = 30,
+    int maxRetryAttempts = 15,
     Duration initialRetryDelay = const Duration(milliseconds: 500),
     Duration maxRetryDelay = const Duration(seconds: 10),
   }) async {
@@ -302,6 +284,30 @@ class CoinsRepo {
       _log.warning('No wallet signed in. Skipping activation of [$coinIdList]');
       return;
     }
+
+    // Separate ZHTLC and regular assets
+    final zhtlcAssets = assets
+        .where((asset) => asset.id.subClass == CoinSubClass.zhtlc)
+        .toList();
+    final regularAssets = assets
+        .where((asset) => asset.id.subClass != CoinSubClass.zhtlc)
+        .toList();
+
+    // Process ZHTLC assets separately
+    if (zhtlcAssets.isNotEmpty) {
+      await _activateZhtlcAssets(
+        zhtlcAssets,
+        zhtlcAssets.map((asset) => _assetToCoinWithoutAddress(asset)).toList(),
+        notifyListeners: notifyListeners,
+        addToWalletMetadata: addToWalletMetadata,
+      );
+    }
+
+    // Continue with regular asset processing for non-ZHTLC assets
+    if (regularAssets.isEmpty) return;
+
+    // Update assets list to only include regular assets for remaining processing
+    assets = regularAssets;
 
     if (addToWalletMetadata) {
       // Ensure the wallet metadata is updated with the assets before activation
@@ -356,13 +362,13 @@ class CoinsRepo {
             _broadcastAsset(parentCoin.copyWith(state: CoinState.active));
           }
         }
-        _subscribeToBalanceUpdates(asset, coin);
+        _subscribeToBalanceUpdates(asset);
         if (coin.id.parentId != null) {
           final parentAsset = _kdfSdk.assets.available[coin.id.parentId];
           if (parentAsset == null) {
             _log.warning('Parent asset not found: ${coin.id.parentId}');
           } else {
-            _subscribeToBalanceUpdates(parentAsset, coin);
+            _subscribeToBalanceUpdates(parentAsset);
           }
         }
       } catch (e, s) {
@@ -414,14 +420,14 @@ class CoinsRepo {
   /// activated coins and retry failed activations with exponential backoff.
   ///
   /// **Retry Configuration:**
-  /// - Default: 500ms → 1s → 2s → 4s → 8s → 10s → 10s... (30 attempts ≈ 3 minutes)
+  /// - Default: 500ms → 1s → 2s → 4s → 8s → 10s → 10s... (15 attempts ≈ 105 seconds)
   /// - Configurable via [maxRetryAttempts], [initialRetryDelay], and [maxRetryDelay]
   ///
   /// **Parameters:**
   /// - [coins]: List of coins to activate
   /// - [notify]: Whether to broadcast state changes to listeners (default: true)
   /// - [addToWalletMetadata]: Whether to add assets to wallet metadata (default: true)
-  /// - [maxRetryAttempts]: Maximum number of retry attempts (default: 30)
+  /// - [maxRetryAttempts]: Maximum number of retry attempts (default: 15)
   /// - [initialRetryDelay]: Initial delay between retries (default: 500ms)
   /// - [maxRetryDelay]: Maximum delay between retries (default: 10s)
   ///
@@ -441,7 +447,7 @@ class CoinsRepo {
     List<Coin> coins, {
     bool notify = true,
     bool addToWalletMetadata = true,
-    int maxRetryAttempts = 30,
+    int maxRetryAttempts = 15,
     Duration initialRetryDelay = const Duration(milliseconds: 500),
     Duration maxRetryDelay = const Duration(seconds: 10),
   }) async {
@@ -542,7 +548,23 @@ class CoinsRepo {
     'select from the available options.',
   )
   Future<String?> getFirstPubkey(String coinId) async {
-    final asset = _kdfSdk.assets.findAssetsByConfigId(coinId).single;
+    final assets = _kdfSdk.assets.findAssetsByConfigId(coinId);
+    if (assets.isEmpty) {
+      _log.warning(
+        'Unable to fetch pubkey for coinId $coinId because the asset is no longer available.',
+      );
+      return null;
+    }
+
+    if (assets.length > 1) {
+      final assetIds = assets.map((asset) => asset.id.id).join(', ');
+      final message =
+          'Multiple assets found for coinId $coinId while fetching pubkey: $assetIds';
+      _log.shout(message);
+      throw StateError(message);
+    }
+
+    final asset = assets.single;
     final pubkeys = await _kdfSdk.pubkeys.getPubkeys(asset);
     if (pubkeys.keys.isEmpty) {
       return null;
@@ -575,12 +597,7 @@ class CoinsRepo {
     // will hit rate limits and have reduced market metrics functionality.
     // This will happen regardless of chunk size. The rate limits are per IP
     // per hour.
-    final coinIds = await _kdfSdk.getWalletCoinIds();
-    final activatedAssets = coinIds
-        .map((coinId) => _kdfSdk.assets.findAssetsByConfigId(coinId))
-        .where((assets) => assets.isNotEmpty)
-        .map((assets) => assets.single)
-        .toList();
+    final activatedAssets = await _kdfSdk.getWalletAssets();
     final Iterable<Asset> targetAssets = activatedAssets.isNotEmpty
         ? activatedAssets
         : _kdfSdk.assets.available.values;
@@ -731,5 +748,122 @@ class CoinsRepo {
     );
 
     return BlocResponse(result: withdrawDetails);
+  }
+
+  Future<void> _activateZhtlcAssets(
+    List<Asset> assets,
+    List<Coin> coins, {
+    bool notifyListeners = true,
+    bool addToWalletMetadata = true,
+  }) async {
+    final inactiveAssets = await assets.removeActiveAssets(_kdfSdk);
+    for (final asset in inactiveAssets) {
+      final coin = coins.firstWhere((coin) => coin.id == asset.id);
+      await _activateZhtlcAsset(
+        asset,
+        coin,
+        notifyListeners: notifyListeners,
+        addToWalletMetadata: addToWalletMetadata,
+      );
+    }
+  }
+
+  /// Activates a ZHTLC asset using ArrrActivationService
+  /// This will wait for user configuration if needed before proceeding with activation
+  /// Mirrors the notify and addToWalletMetadata functionality of activateAssetsSync
+  Future<void> _activateZhtlcAsset(
+    Asset asset,
+    Coin coin, {
+    bool notifyListeners = true,
+    bool addToWalletMetadata = true,
+  }) async {
+    try {
+      _log.info('Starting ZHTLC activation for ${asset.id.id}');
+
+      // Use the service's future-based activation which will handle configuration
+      // The service will emit to its stream for UI to handle, and this future will
+      // complete only after configuration is provided and activation succeeds.
+      // This ensures CoinsRepo waits for user inputs for config params from the dialog
+      // before proceeding with activation, and doesn't broadcast activation status
+      // until config parameters are received and (desktop) params files downloaded.
+      final result = await _arrrActivationService.activateArrr(asset);
+      result.when(
+        success: (progress) async {
+          _log.info('ZHTLC asset activated successfully: ${asset.id.id}');
+
+          // Add assets after activation regardless of success or failure
+          if (addToWalletMetadata) {
+            await _addAssetsToWalletMetdata([asset.id]);
+          }
+
+          if (notifyListeners) {
+            _broadcastAsset(coin.copyWith(state: CoinState.activating));
+          }
+
+          if (notifyListeners) {
+            _broadcastAsset(coin.copyWith(state: CoinState.active));
+            if (coin.id.parentId != null) {
+              final parentCoin = _assetToCoinWithoutAddress(
+                _kdfSdk.assets.available[coin.id.parentId]!,
+              );
+              _broadcastAsset(parentCoin.copyWith(state: CoinState.active));
+            }
+          }
+
+          _subscribeToBalanceUpdates(asset);
+          if (coin.id.parentId != null) {
+            final parentAsset = _kdfSdk.assets.available[coin.id.parentId];
+            if (parentAsset == null) {
+              _log.warning('Parent asset not found: ${coin.id.parentId}');
+            } else {
+              _subscribeToBalanceUpdates(parentAsset);
+            }
+          }
+
+          if (coin.logoImageUrl?.isNotEmpty ?? false) {
+            AssetIcon.registerCustomIcon(
+              coin.id,
+              NetworkImage(coin.logoImageUrl!),
+            );
+          }
+        },
+        error: (message) {
+          _log.severe(
+            'ZHTLC asset activation failed: ${asset.id.id} - $message',
+          );
+
+          if (notifyListeners) {
+            _broadcastAsset(coin.copyWith(state: CoinState.suspended));
+          }
+
+          throw Exception('ZHTLC activation failed: $message');
+        },
+        needsConfiguration: (coinId, requiredSettings) {
+          _log.severe(
+            'ZHTLC activation should not return needsConfiguration in future-based call',
+          );
+          _log.severe(
+            'Unexpected needsConfiguration result for ${asset.id.id}',
+          );
+
+          if (notifyListeners) {
+            _broadcastAsset(coin.copyWith(state: CoinState.suspended));
+          }
+
+          throw Exception(
+            'ZHTLC activation configuration not handled properly',
+          );
+        },
+      );
+    } catch (e, s) {
+      _log.severe('Error activating ZHTLC asset ${asset.id.id}', e, s);
+
+      // Broadcast suspended state if requested
+      if (notifyListeners) {
+        _broadcastAsset(coin.copyWith(state: CoinState.suspended));
+      }
+
+      rethrow;
+    }
   }
 }

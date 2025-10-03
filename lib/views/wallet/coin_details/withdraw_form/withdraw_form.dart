@@ -16,6 +16,7 @@ import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/shared/utils/utils.dart';
+import 'package:web_dex/shared/widgets/copied_text.dart' show CopiedTextV2;
 import 'package:web_dex/views/wallet/coin_details/withdraw_form/widgets/fill_form/fields/fill_form_memo.dart';
 import 'package:web_dex/views/wallet/coin_details/withdraw_form/widgets/fill_form/fields/fields.dart';
 import 'package:web_dex/views/wallet/coin_details/withdraw_form/widgets/withdraw_form_header.dart';
@@ -251,12 +252,49 @@ class PreviewWithdrawButton extends StatelessWidget {
       child: UiPrimaryButton(
         onPressed: onPressed,
         child: isSending
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                ),
               )
             : Text(LocaleKeys.withdrawPreview.tr()),
+      ),
+    );
+  }
+}
+
+class ZhtlcPreviewDelayNote extends StatelessWidget {
+  const ZhtlcPreviewDelayNote({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final backgroundColor = theme.colorScheme.secondaryContainer;
+    final foregroundColor = theme.colorScheme.onSecondaryContainer;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline, color: foregroundColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              LocaleKeys.withdrawPreviewZhtlcNote.tr(),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: foregroundColor,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -275,23 +313,51 @@ class WithdrawPreviewDetails extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildRow(
+            _buildTextRow(
               LocaleKeys.amount.tr(),
               preview.balanceChanges.netChange.toString(),
             ),
             const SizedBox(height: 8),
-            _buildRow(LocaleKeys.fee.tr(), preview.fee.formatTotal()),
-            // Add more preview details as needed
+            _buildTextRow(LocaleKeys.fee.tr(), preview.fee.formatTotal()),
+            const SizedBox(height: 8),
+            _buildRow(
+              LocaleKeys.recipientAddress.tr(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final recipient in preview.to)
+                    CopiedTextV2(copiedValue: recipient, fontSize: 14),
+                ],
+              ),
+            ),
+            if (preview.memo != null) ...[
+              const SizedBox(height: 8),
+              _buildTextRow(LocaleKeys.memo.tr(), preview.memo!),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRow(String label, String value) {
+  Widget _buildTextRow(String label, String value) {
+    return _buildRow(
+      label,
+      AutoScrollText(text: value, textAlign: TextAlign.right),
+    );
+  }
+
+  Widget _buildRow(String label, Widget value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [Text(label), Text(value)],
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Align(alignment: Alignment.centerRight, child: value),
+        ),
+      ],
     );
   }
 }
@@ -469,6 +535,11 @@ class WithdrawFormFillSection extends StatelessWidget {
                     },
               isSending: state.isSending,
             ),
+            if (state.asset.id.subClass == CoinSubClass.zhtlc &&
+                state.isSending) ...[
+              const SizedBox(height: 12),
+              const ZhtlcPreviewDelayNote(),
+            ],
           ],
         );
       },

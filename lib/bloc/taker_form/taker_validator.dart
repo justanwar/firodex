@@ -32,7 +32,7 @@ class TakerValidator {
         _coinsRepo = coinsRepo,
         _dexRepo = dexRepo,
         _sdk = sdk,
-        add = bloc.add;
+       add = bloc.add;
 
   final TakerBloc _bloc;
   final CoinsRepo _coinsRepo;
@@ -316,7 +316,7 @@ class TakerValidator {
   }
 
   DexFormError _coinNotActiveError(String abbr) {
-    return DexFormError(error: '$abbr is not active.');
+    return DexFormError(error: LocaleKeys.coinIsNotActive.tr(args: [abbr]));
   }
 
   DexFormError _selectSellCoinError() =>

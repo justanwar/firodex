@@ -9,6 +9,7 @@ import 'package:web_dex/bloc/cex_market_data/profit_loss/models/fiat_value.dart'
 import 'package:web_dex/bloc/cex_market_data/profit_loss/models/profit_loss.dart';
 import 'package:web_dex/bloc/cex_market_data/profit_loss/profit_loss_repository.dart';
 import 'package:web_dex/bloc/cex_market_data/sdk_auth_activation_extension.dart';
+import 'package:web_dex/bloc/coins_bloc/asset_coin_extension.dart';
 import 'package:web_dex/model/coin.dart';
 
 part 'asset_overview_event.dart';
@@ -93,9 +94,21 @@ class AssetOverviewBloc extends Bloc<AssetOverviewEvent, AssetOverviewState> {
         return;
       }
 
-      await _sdk.waitForEnabledCoinsToPassThreshold(event.coins);
+      final supportedCoins = await event.coins.filterSupportedCoins();
+      if (supportedCoins.isEmpty) {
+        _log.warning('No supported coins to load portfolio overview for');
+        return;
+      }
 
-      final profitLossesFutures = event.coins.map((coin) async {
+      await _sdk.waitForEnabledCoinsToPassThreshold(supportedCoins);
+
+      final activeCoins = await supportedCoins.removeInactiveCoins(_sdk);
+      if (activeCoins.isEmpty) {
+        _log.warning('No active coins to load portfolio overview for');
+        return;
+      }
+
+      final profitLossesFutures = activeCoins.map((coin) async {
         // Catch errors that occur for single coins and exclude them from the
         // total so that transaction fetching errors for a single coin do not
         // affect the total investment calculation.
@@ -114,7 +127,7 @@ class AssetOverviewBloc extends Bloc<AssetOverviewEvent, AssetOverviewState> {
       final profitLosses = await Future.wait(profitLossesFutures);
 
       final totalInvestment = await _investmentRepository
-          .calculateTotalInvestment(event.walletId, event.coins);
+          .calculateTotalInvestment(event.walletId, activeCoins);
 
       final profitAmount = profitLosses.fold(0.0, (sum, item) {
         return sum + (item.lastOrNull?.profitLoss ?? 0.0);
@@ -130,7 +143,7 @@ class AssetOverviewBloc extends Bloc<AssetOverviewEvent, AssetOverviewState> {
 
       emit(
         PortfolioAssetsOverviewLoadSuccess(
-          selectedAssetIds: event.coins.map((coin) => coin.id.id).toList(),
+          selectedAssetIds: activeCoins.map((coin) => coin.id.id).toList(),
           assetPortionPercentages: assetPortionPercentages,
           totalInvestment: totalInvestment,
           totalValue: FiatValue.usd(profitAmount),

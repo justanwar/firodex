@@ -38,7 +38,7 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
     required AnalyticsBloc analyticsBloc,
   }) : _dexRepo = dexRepository,
        _coinsRepo = coinsRepository,
-       _kdfSdk = kdfSdk,
+       _sdk = kdfSdk,
        _analyticsBloc = analyticsBloc,
        super(TakerState.initial()) {
     _validator = TakerValidator(
@@ -81,13 +81,17 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
       if (event != null && state.step == TakerStep.confirm) {
         add(TakerBackButtonClick());
       }
+      if (event == null) {
+        add(TakerClear());
+        add(TakerSetDefaults());
+      }
       _isLoggedIn = event != null;
     });
   }
 
   final DexRepository _dexRepo;
   final CoinsRepo _coinsRepo;
-  final KomodoDefiSdk _kdfSdk;
+  final KomodoDefiSdk _sdk;
   final AnalyticsBloc _analyticsBloc;
   Timer? _maxSellAmountTimer;
   bool _activatingAssets = false;
@@ -119,7 +123,7 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
 
       // Log swap failure analytics event for immediate RPC errors
       final walletType =
-          (await _kdfSdk.auth.currentUser)?.wallet.config.type.name ??
+          (await _sdk.auth.currentUser)?.wallet.config.type.name ??
           'unknown';
       _analyticsBloc.logEvent(
         SwapFailedEventData(
@@ -260,8 +264,14 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
     );
 
     // Auto-fill the exact maker amount when an order is selected
-    if (event.order != null) {
-      add(TakerSetSellAmount(event.order!.maxVolume));
+    final hasUserSetSellAmount =
+        (state.sellAmount ?? Rational.zero) > Rational.zero;
+    if (event.order != null && !hasUserSetSellAmount) {
+      final maxSellAmount = state.maxSellAmount ?? Rational.zero;
+      final desiredSellAmount = event.order!.maxVolume < maxSellAmount
+          ? event.order!.maxVolume
+          : maxSellAmount;
+      add(TakerSetSellAmount(desiredSellAmount));
     }
 
     if (!state.autovalidate) add(TakerVerifyOrderVolume());
@@ -437,6 +447,25 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
       );
     }
 
+    // Required here because of the manual RPC calls that bypass the sdk
+    final activeAssets = await _sdk.assets.getActivatedAssets();
+    final isAssetActive = activeAssets.any(
+      (asset) => asset.id == state.sellCoin!.id,
+    );
+    if (!isAssetActive) {
+      // Intentionally leave the state as loading so that a spinner is shown
+      // instead of a "0.00" balance hinting that the asset is active when it
+      // is not.
+      if (state.availableBalanceState != AvailableBalanceState.loading) {
+        emitter(
+          state.copyWith(
+            availableBalanceState: () => AvailableBalanceState.loading,
+          ),
+        );
+      }
+      return;
+    }
+
     if (!_isLoggedIn) {
       emitter(
         state.copyWith(
@@ -475,11 +504,10 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
     try {
       return await retry(
         () => _dexRepo.getMaxTakerVolume(abbr),
-        maxAttempts: 5,
+        maxAttempts: 3,
         backoffStrategy: LinearBackoff(
-          initialDelay: const Duration(seconds: 2),
-          increment: const Duration(seconds: 2),
-          maxDelay: const Duration(seconds: 10),
+          initialDelay: const Duration(milliseconds: 500),
+          maxDelay: const Duration(seconds: 2),
         ),
       );
     } catch (_) {

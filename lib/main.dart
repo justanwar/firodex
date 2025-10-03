@@ -30,11 +30,12 @@ import 'package:web_dex/mm2/mm2_api/mm2_api.dart';
 import 'package:web_dex/model/stored_settings.dart';
 import 'package:web_dex/performance_analytics/performance_analytics.dart';
 import 'package:web_dex/sdk/widgets/window_close_handler.dart';
+import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
 import 'package:web_dex/services/feedback/app_feedback_wrapper.dart';
 import 'package:web_dex/services/logger/get_logger.dart';
-import 'package:web_dex/shared/screenshot/screenshot_sensitivity.dart';
 import 'package:web_dex/services/storage/get_storage.dart';
 import 'package:web_dex/shared/constants.dart';
+import 'package:web_dex/shared/screenshot/screenshot_sensitivity.dart';
 import 'package:web_dex/shared/utils/platform_tuner.dart';
 import 'package:web_dex/shared/utils/utils.dart';
 
@@ -73,11 +74,13 @@ Future<void> main() async {
     final tradingStatusRepository = TradingStatusRepository(komodoDefiSdk);
     final tradingStatusService = TradingStatusService(tradingStatusRepository);
     await tradingStatusService.initialize();
+    final arrrActivationService = ArrrActivationService(komodoDefiSdk);
 
     final coinsRepo = CoinsRepo(
       kdfSdk: komodoDefiSdk,
       mm2: mm2,
       tradingStatusService: tradingStatusService,
+      arrrActivationService: arrrActivationService,
     );
     final walletsRepository = WalletsRepository(
       komodoDefiSdk,
@@ -96,6 +99,7 @@ Future<void> main() async {
           providers: [
             RepositoryProvider.value(value: komodoDefiSdk),
             RepositoryProvider.value(value: mm2Api),
+            RepositoryProvider.value(value: arrrActivationService),
             RepositoryProvider.value(value: coinsRepo),
             RepositoryProvider.value(value: walletsRepository),
             RepositoryProvider.value(value: sparklineRepository),

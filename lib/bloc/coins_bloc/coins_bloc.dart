@@ -8,11 +8,11 @@ import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
 import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:logging/logging.dart';
 import 'package:web_dex/app_config/app_config.dart';
+import 'package:web_dex/bloc/cex_market_data/sdk_auth_activation_extension.dart';
 import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_service.dart';
 import 'package:web_dex/model/cex_price.dart';
 import 'package:web_dex/model/coin.dart';
-import 'package:web_dex/model/kdf_auth_metadata_extension.dart';
 import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/shared/utils/utils.dart';
 
@@ -49,6 +49,7 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
   StreamSubscription<Coin>? _enabledCoinsSubscription;
   Timer? _updateBalancesTimer;
   Timer? _updatePricesTimer;
+  bool _isInitialActivationInProgress = false;
 
   @override
   Future<void> close() async {
@@ -64,11 +65,24 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     Emitter<CoinsState> emit,
   ) async {
     try {
-      // Return early if the coin is not yet in wallet coins, meaning that
-      // it's not yet activated.
-      // TODO: update this once coin activation is fully handled by the SDK
+      if (_isInitialActivationInProgress) {
+        _log.info(
+          'Skipping pubkeys request for ${event.coinId} while initial activation is in progress.',
+        );
+        return;
+      }
+
+      // Coins are added to walletCoins before activation even starts
+      // to show them in the UI regardless of activation state.
+      // If the coin is not found here, it means the auth state handler
+      // has not pre-populated the list with activating coins yet.
       final coin = state.walletCoins[event.coinId];
-      if (coin == null) return;
+      if (coin == null) {
+        _log.warning(
+          'Coin ${event.coinId} not found in wallet coins, cannot fetch pubkeys',
+        );
+        return;
+      }
 
       // Get pubkeys from the SDK through the repo
       final asset = _kdfSdk.assets.available[coin.id]!;
@@ -142,17 +156,6 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
         );
       },
     );
-
-    final coinUpdates = _syncIguanaCoinsStates();
-    await emit.forEach(
-      coinUpdates,
-      onData: (coin) =>
-          state.copyWith(walletCoins: {...state.walletCoins, coin.id.id: coin}),
-      onError: (error, stackTrace) {
-        _log.severe('Error syncing iguana coins states', error, stackTrace);
-        return state;
-      },
-    );
   }
 
   Future<void> _onWalletCoinUpdated(
@@ -205,18 +208,6 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     // in the list at once, rather than one at a time as they are activated
     emit(_prePopulateListWithActivatingCoins(event.coinIds));
     await _activateCoins(event.coinIds, emit);
-
-    final currentWallet = await _kdfSdk.currentWallet();
-    if (currentWallet?.config.type == WalletType.iguana ||
-        currentWallet?.config.type == WalletType.hdwallet) {
-      final coinUpdates = _syncIguanaCoinsStates();
-      await emit.forEach(
-        coinUpdates,
-        onData: (coin) => state.copyWith(
-          walletCoins: {...state.walletCoins, coin.id.id: coin},
-        ),
-      );
-    }
 
     add(CoinsBalancesRefreshed());
   }
@@ -326,6 +317,7 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     CoinsSessionStarted event,
     Emitter<CoinsState> emit,
   ) async {
+    _isInitialActivationInProgress = true;
     try {
       // Ensure any cached addresses/pubkeys from a previous wallet are cleared
       // so that UI fetches fresh pubkeys for the newly logged-in wallet.
@@ -335,21 +327,29 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
 
       // Start off by emitting the newly activated coins so that they all appear
       // in the list at once, rather than one at a time as they are activated
-      final allCoinsToActivate = currentWallet.config.activatedCoins;
+      final coinsToActivate = currentWallet.config.activatedCoins;
 
       // Filter out blocked coins before activation
-      final allowedCoins = allCoinsToActivate.where((coinId) {
+      final allowedCoins = coinsToActivate.where((coinId) {
         final assets = _kdfSdk.assets.findAssetsByConfigId(coinId);
         if (assets.isEmpty) return false;
         return !_tradingStatusService.isAssetBlocked(assets.single.id);
       });
 
       emit(_prePopulateListWithActivatingCoins(allowedCoins));
-      await _activateCoins(allowedCoins, emit);
-
-      add(CoinsBalancesRefreshed());
-      add(CoinsBalanceMonitoringStarted());
+      _scheduleInitialBalanceRefresh(allowedCoins);
+      final activationFuture = _activateCoins(allowedCoins, emit);
+      unawaited(() async {
+        try {
+          await activationFuture;
+        } catch (e, s) {
+          _log.shout('Error during initial coin activation', e, s);
+        } finally {
+          _isInitialActivationInProgress = false;
+        }
+      }());
     } catch (e, s) {
+      _isInitialActivationInProgress = false;
       _log.shout('Error on login', e, s);
     }
   }
@@ -358,6 +358,7 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     CoinsSessionEnded event,
     Emitter<CoinsState> emit,
   ) async {
+    _resetInitialActivationState();
     add(CoinsBalanceMonitoringStopped());
 
     emit(
@@ -369,6 +370,60 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
       ),
     );
     _coinsRepo.flushCache();
+  }
+
+  void _scheduleInitialBalanceRefresh(Iterable<String> coinsToActivate) {
+    if (isClosed) return;
+
+    final knownCoins = _coinsRepo.getKnownCoinsMap();
+    final walletCoinsForThreshold = coinsToActivate
+        .map((coinId) => knownCoins[coinId])
+        .whereType<Coin>()
+        .toList();
+
+    if (walletCoinsForThreshold.isEmpty) {
+      add(CoinsBalancesRefreshed());
+      add(CoinsBalanceMonitoringStarted());
+      return;
+    }
+
+    unawaited(() async {
+      var triggeredByThreshold = false;
+      try {
+        triggeredByThreshold = await _kdfSdk.waitForEnabledCoinsToPassThreshold(
+          walletCoinsForThreshold,
+          threshold: 0.8,
+          timeout: const Duration(minutes: 1),
+        );
+      } catch (e, s) {
+        _log.shout(
+          'Failed while waiting for enabled coins threshold during login',
+          e,
+          s,
+        );
+      }
+
+      if (isClosed) {
+        return;
+      }
+
+      if (triggeredByThreshold) {
+        _log.fine(
+          'Initial balance refresh triggered after 80% of coins activated.',
+        );
+      } else {
+        _log.fine(
+          'Initial balance refresh triggered after timeout while waiting for coin activation.',
+        );
+      }
+
+      add(CoinsBalancesRefreshed());
+      add(CoinsBalanceMonitoringStarted());
+    }());
+  }
+
+  void _resetInitialActivationState() {
+    _isInitialActivationInProgress = false;
   }
 
   Future<void> _activateCoins(
@@ -412,86 +467,15 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
             return sdkCoin?.copyWith(state: CoinState.activating);
           })
           .where((coin) => coin != null)
-          .cast<Coin>(),
+          .cast<Coin>()
+          // Do not pre-populate zhtlc coins, as they require configuration
+          // and longer activation times, and are handled separately.
+          .where((coin) => coin.id.subClass != CoinSubClass.zhtlc),
       key: (element) => (element as Coin).id.id,
     );
     return state.copyWith(
       walletCoins: {...state.walletCoins, ...activatingCoins},
       coins: {...knownCoins, ...state.coins, ...activatingCoins},
     );
-  }
-
-  /// Yields one coin at a time to provide visual feedback to the user as
-  /// coins are activated.
-  ///
-  /// When multiple coins are found for the provided IDs,
-  Stream<Coin> _syncIguanaCoinsStates() async* {
-    final coinsBlocWalletCoinsState = state.walletCoins;
-    final previouslyActivatedCoinIds =
-        (await _kdfSdk.currentWallet())?.config.activatedCoins ?? [];
-
-    final walletAssets = <Asset>[];
-    for (final coinId in previouslyActivatedCoinIds) {
-      final assets = _kdfSdk.assets.findAssetsByConfigId(coinId);
-      if (assets.isEmpty) {
-        _log.warning(
-          'No assets found for activated coin ID: $coinId. '
-          'This coin will be skipped during synchronization.',
-        );
-        continue;
-      }
-      if (assets.length > 1) {
-        final assetIds = assets.map((a) => a.id.id).join(', ');
-        _log.shout(
-          'Multiple assets found for activated coin ID: $coinId. '
-          'Expected single asset, found ${assets.length}: $assetIds. ',
-        );
-      }
-
-      // This is expected to throw if there are multiple assets, to stick
-      // to the strategy of using `.single` elsewhere in the codebase.
-      walletAssets.add(assets.single);
-    }
-
-    final coinsToSync = _getWalletCoinsNotInState(
-      walletAssets,
-      coinsBlocWalletCoinsState,
-    );
-    if (coinsToSync.isNotEmpty) {
-      _log.info(
-        'Found ${coinsToSync.length} wallet coins not in state, '
-        'syncing them to state as suspended',
-      );
-      yield* Stream.fromIterable(coinsToSync);
-    }
-  }
-
-  List<Coin> _getWalletCoinsNotInState(
-    List<Asset> walletAssets,
-    Map<String, Coin> coinsBlocWalletCoinsState,
-  ) {
-    final List<Coin> coinsToSyncToState = [];
-
-    final enabledAssetsNotInState = walletAssets
-        .where((asset) => !coinsBlocWalletCoinsState.containsKey(asset.id.id))
-        .toList();
-
-    // Show assets that are in the wallet metadata but not in the state. This might
-    // happen if activation occurs outside of the coins bloc, like the dex or
-    // coins manager auto-activation or deactivation.
-    for (final asset in enabledAssetsNotInState) {
-      final coin = _coinsRepo.getCoinFromId(asset.id);
-      if (coin == null) {
-        _log.shout(
-          'Coin ${asset.id.id} not found in coins repository, '
-          'skipping sync from wallet metadata to coins bloc state.',
-        );
-        continue;
-      }
-
-      coinsToSyncToState.add(coin.copyWith(state: CoinState.suspended));
-    }
-
-    return coinsToSyncToState;
   }
 }
