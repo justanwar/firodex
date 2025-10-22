@@ -239,25 +239,25 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
     Emitter<AuthBlocState> emit,
   ) async {
     try {
-      // Sanitize and ensure the migrated wallet name is unique before any
-      // registration attempts. This avoids conflicts when legacy names contain
-      // unsupported characters or collide with existing wallets after
-      // sanitization.
-      final String sanitizedUniqueName = await _walletsRepository
-          .sanitizeAndResolveLegacyWalletName(event.wallet.name);
-      final Wallet sanitizedWallet = event.wallet.copyWith(
-        name: sanitizedUniqueName,
-      );
+      // For legacy wallets only: sanitize and ensure the migrated wallet name
+      // is unique before any registration attempts. Non-legacy restores (seed
+      // imports) should keep the user-provided name unchanged.
+      Wallet workingWallet = event.wallet;
+      if (event.wallet.isLegacyWallet) {
+        final String sanitizedUniqueName = await _walletsRepository
+            .sanitizeAndResolveLegacyWalletName(event.wallet.name);
+        workingWallet = event.wallet.copyWith(name: sanitizedUniqueName);
+      }
 
-      if (await _didSignInExistingWallet(sanitizedWallet, event.password)) {
+      if (await _didSignInExistingWallet(workingWallet, event.password)) {
         add(
           AuthSignInRequested(
-            wallet: sanitizedWallet,
+            wallet: workingWallet,
             password: event.password,
           ),
         );
         _log.warning(
-          'Wallet ${sanitizedWallet.name} already exists, attempting sign-in',
+          'Wallet ${workingWallet.name} already exists, attempting sign-in',
         );
         return;
       }
@@ -267,10 +267,10 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
       final weakPasswordsAllowed = await _areWeakPasswordsAllowed();
       await _kdfSdk.auth.register(
         password: event.password,
-        walletName: sanitizedWallet.name,
+        walletName: workingWallet.name,
         mnemonic: Mnemonic.plaintext(event.seed),
         options: AuthOptions(
-          derivationMethod: sanitizedWallet.config.type == WalletType.hdwallet
+          derivationMethod: workingWallet.config.type == WalletType.hdwallet
               ? DerivationMethod.hdWallet
               : DerivationMethod.iguana,
           allowWeakPassword: weakPasswordsAllowed,
@@ -281,18 +281,18 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
         'Successfully restored wallet from a seed. '
         'Setting up wallet metadata and logging in...',
       );
-      await _kdfSdk.setWalletType(sanitizedWallet.config.type);
+      await _kdfSdk.setWalletType(workingWallet.config.type);
       await _kdfSdk.confirmSeedBackup(
-        hasBackup: sanitizedWallet.config.hasBackup,
+        hasBackup: workingWallet.config.hasBackup,
       );
       // Filter out geo-blocked assets from default coins before adding to wallet
       final allowedDefaultCoins = _filterBlockedAssets(enabledByDefaultCoins);
       await _kdfSdk.addActivatedCoins(allowedDefaultCoins);
-      if (sanitizedWallet.config.activatedCoins.isNotEmpty) {
+      if (workingWallet.config.activatedCoins.isNotEmpty) {
         // Seed import files and legacy wallets may contain removed or unsupported
         // coins, so we filter them out before adding them to the wallet metadata.
         final availableWalletCoins = _filterOutUnsupportedCoins(
-          sanitizedWallet.config.activatedCoins,
+          workingWallet.config.activatedCoins,
         );
         // Also filter out geo-blocked assets from restored wallet coins
         final allowedWalletCoins = _filterBlockedAssets(availableWalletCoins);
@@ -301,13 +301,13 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
 
       // Delete legacy wallet on successful restoration & login to avoid
       // duplicates in the wallet list
-      if (sanitizedWallet.isLegacyWallet) {
+      if (event.wallet.isLegacyWallet) {
         _log.info(
           'Migration successful. '
-          'Deleting legacy wallet ${sanitizedWallet.name}',
+          'Deleting legacy wallet ${workingWallet.name}',
         );
         await _walletsRepository.deleteWallet(
-          sanitizedWallet,
+          event.wallet,
           password: event.password,
         );
       }
