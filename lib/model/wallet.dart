@@ -67,12 +67,8 @@ class Wallet {
   Wallet copy() {
     return Wallet(id: id, name: name, config: config.copy());
   }
-  
-  Wallet copyWith({
-    String? id,
-    String? name,
-    WalletConfig? config,
-  }) {
+
+  Wallet copyWith({String? id, String? name, WalletConfig? config}) {
     return Wallet(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -129,9 +125,12 @@ class WalletConfig {
       type: type,
       seedPhrase: seedPhrase,
       pubKey: pubKey,
+      // Preserve legacy flag when copying config; losing this flag breaks
+      // legacy login flow and can hide the wallet from lists.
+      isLegacyWallet: isLegacyWallet,
     );
   }
-  
+
   WalletConfig copyWith({
     String? seedPhrase,
     String? pubKey,
