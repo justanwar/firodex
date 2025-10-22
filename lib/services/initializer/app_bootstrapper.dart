@@ -9,7 +9,11 @@ final class AppBootstrapper {
 
   bool _isInitialized = false;
 
-  Future<void> ensureInitialized(KomodoDefiSdk kdfSdk, Mm2Api mm2Api) async {
+  Future<void> ensureInitialized(
+    KomodoDefiSdk kdfSdk,
+    Mm2Api mm2Api,
+    SparklineRepository sparklineRepository,
+  ) async {
     if (_isInitialized) return;
 
     // Register core services with GetIt
@@ -22,8 +26,10 @@ final class AppBootstrapper {
     log('AppBootstrapper: Log initialized in ${timer.elapsedMilliseconds}ms');
     timer.reset();
 
-    await _warmUpInitializers().awaitAll();
-    log('AppBootstrapper: Warm-up initializers completed in ${timer.elapsedMilliseconds}ms');
+    await _warmUpInitializers(sparklineRepository).awaitAll();
+    log(
+      'AppBootstrapper: Warm-up initializers completed in ${timer.elapsedMilliseconds}ms',
+    );
     timer.stop();
 
     _isInitialized = true;
@@ -38,7 +44,9 @@ final class AppBootstrapper {
 
   /// A list of futures that should be completed before the app starts
   /// ([runApp]) which do not depend on each other.
-  List<Future<void>> _warmUpInitializers() {
+  List<Future<void>> _warmUpInitializers(
+    SparklineRepository sparklineRepository,
+  ) {
     return [
       app_bloc_root.loadLibrary(),
       packageInformation.init(),
@@ -46,9 +54,10 @@ final class AppBootstrapper {
       CexMarketData.ensureInitialized(),
       PlatformTuner.setWindowTitleAndSize(),
       _initializeSettings(),
-      _initHive(isWeb: kIsWeb || kIsWasm, appFolder: appFolder).then(
-        (_) => sparklineRepository.init(),
-      ),
+      _initHive(
+        isWeb: kIsWeb || kIsWasm,
+        appFolder: appFolder,
+      ).then((_) => sparklineRepository.init()),
     ];
   }
 
@@ -57,11 +66,14 @@ final class AppBootstrapper {
     final stored = await SettingsRepository.loadStoredSettings();
     _storedSettings = stored;
 
-    // Register the analytics repository with GetIt
+    // Register the unified analytics repository with GetIt
     // This will make sure we have a singleton instance across the app
-    FirebaseAnalyticsRepo.register(stored.analytics);
+    // that handles both Firebase and Matomo analytics simultaneously
+    AnalyticsRepository.register(stored.analytics);
 
-    log('AppBootstrapper: Analytics repository registered with GetIt');
+    log(
+      'AppBootstrapper: Unified Analytics repository (Firebase + Matomo) registered with GetIt',
+    );
     return;
   }
 }
