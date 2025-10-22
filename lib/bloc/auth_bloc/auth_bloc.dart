@@ -239,22 +239,43 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
     Emitter<AuthBlocState> emit,
   ) async {
     try {
-      // For legacy wallets only: sanitize and ensure the migrated wallet name
-      // is unique before any registration attempts. Non-legacy restores (seed
-      // imports) should keep the user-provided name unchanged.
+      // Legacy wallets: sanitize base name, try sign-in, then resolve
+      // uniqueness only if needed. Non-legacy restores (seed imports) keep the
+      // user-provided name unchanged.
       Wallet workingWallet = event.wallet;
       if (event.wallet.isLegacyWallet) {
-        final String sanitizedUniqueName = await _walletsRepository
-            .sanitizeAndResolveLegacyWalletName(event.wallet.name);
-        workingWallet = event.wallet.copyWith(name: sanitizedUniqueName);
+        final String baseName = _walletsRepository.sanitizeLegacyMigrationName(
+          event.wallet.name,
+        );
+        final Wallet sanitizedBaseWallet = event.wallet.copyWith(
+          name: baseName,
+        );
+
+        // Attempt sign-in with sanitized base name first to avoid creating a
+        // suffixed duplicate when a migrated wallet already exists.
+        if (await _didSignInExistingWallet(
+          sanitizedBaseWallet,
+          event.password,
+        )) {
+          add(
+            AuthSignInRequested(
+              wallet: sanitizedBaseWallet,
+              password: event.password,
+            ),
+          );
+          _log.warning('Wallet $baseName already exists, attempting sign-in');
+          return;
+        }
+
+        // Otherwise, resolve the lowest available unique name for registration.
+        final String uniqueName = await _walletsRepository
+            .resolveUniqueWalletName(baseName);
+        workingWallet = event.wallet.copyWith(name: uniqueName);
       }
 
       if (await _didSignInExistingWallet(workingWallet, event.password)) {
         add(
-          AuthSignInRequested(
-            wallet: workingWallet,
-            password: event.password,
-          ),
+          AuthSignInRequested(wallet: workingWallet, password: event.password),
         );
         _log.warning(
           'Wallet ${workingWallet.name} already exists, attempting sign-in',
