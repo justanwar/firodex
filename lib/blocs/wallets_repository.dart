@@ -220,4 +220,38 @@ class WalletsRepository {
       }
     }
   }
+
+  /// Sanitizes a legacy wallet name for migration by replacing any
+  /// non-alphanumeric character (Unicode letters/digits) except underscore
+  /// with an underscore. This ensures compatibility with stricter name rules
+  /// in the target storage/backend.
+  String sanitizeLegacyMigrationName(String name) {
+    final sanitized = name.replaceAll(
+      RegExp(r'[^\p{L}\p{N}_]', unicode: true),
+      '_',
+    );
+    // Avoid returning an empty string
+    return sanitized.isEmpty ? '_' : sanitized;
+  }
+
+  /// Resolves a unique wallet name by appending the lowest integer suffix
+  /// starting at 1 that makes the name unique across both SDK and legacy
+  /// wallets. If [baseName] is already unique, it is returned unchanged.
+  Future<String> resolveUniqueWalletName(String baseName) async {
+    final List<Wallet> allWallets = await getWallets();
+    final Set<String> existing = allWallets.map((w) => w.name).toSet();
+    if (!existing.contains(baseName)) return baseName;
+
+    int i = 1;
+    while (existing.contains('${baseName}_$i')) {
+      i++;
+    }
+    return '${baseName}_$i';
+  }
+
+  /// Convenience helper for migration: sanitize and then ensure uniqueness.
+  Future<String> sanitizeAndResolveLegacyWalletName(String legacyName) async {
+    final sanitized = sanitizeLegacyMigrationName(legacyName);
+    return resolveUniqueWalletName(sanitized);
+  }
 }
