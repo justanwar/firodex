@@ -4,6 +4,8 @@ import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
 import 'package:web_dex/bloc/market_maker_bot/market_maker_order_list/trade_pair.dart';
 import 'package:web_dex/bloc/settings/settings_repository.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/market_maker_bot/trade_coin_pair_config.dart';
+import 'package:web_dex/mm2/mm2_api/rpc/market_maker_bot/trade_volume.dart';
+import 'package:web_dex/views/market_maker_bot/trade_volume_type.dart';
 import 'package:web_dex/model/my_orders/my_order.dart';
 import 'package:web_dex/services/orders_service/my_orders_service.dart';
 
@@ -79,18 +81,43 @@ class MarketMakerBotOrderListRepository {
   }
 
   Rational _getBaseCoinAmount(TradeCoinPairConfig config, MyOrder? order) {
-    return order?.baseAmountAvailable ??
-        _getBaseAmountFromVolume(config.baseCoinId, config.maxVolume!.value);
+    if (order?.baseAmountAvailable != null) {
+      return order!.baseAmountAvailable!;
+    }
+
+    final TradeVolume? maxVolume = config.maxVolume;
+    if (maxVolume == null) return Rational.zero;
+
+    return _getBaseAmountFromVolume(config.baseCoinId, maxVolume);
   }
 
-  Rational _getBaseAmountFromVolume(String baseCoinId, double maxVolume) {
+  Rational _getBaseAmountFromVolume(String baseCoinId, TradeVolume maxVolume) {
     final baseCoin = _coinsRepository.getCoin(baseCoinId);
-    final baseCoinBalance = baseCoin == null
+    final Decimal balance = baseCoin == null
         ? Decimal.zero
         : _coinsRepository.lastKnownBalance(baseCoin.id)?.spendable ??
-              Decimal.zero;
-    return baseCoinBalance.toRational() *
-        Rational.parse(baseCoinBalance.toString());
+            Decimal.zero;
+
+    if (balance == Decimal.zero) return Rational.zero;
+
+    final Rational balanceRational = balance.toRational();
+
+    if (maxVolume.type == TradeVolumeType.percentage) {
+      // maxVolume.value is a fraction (e.g., 0.1 for 10%)
+      final Rational percentage = Rational.parse(maxVolume.value.toString());
+      final Rational desired = balanceRational * percentage;
+      return desired > balanceRational ? balanceRational : desired;
+    }
+
+    // USD-based volume: convert USD to base coin amount using USD price (as Rational), then clamp to balance
+    final Decimal? usdPrice = baseCoin?.usdPrice?.price;
+    if (usdPrice == null || usdPrice == Decimal.zero) return Rational.zero;
+
+    final Rational usdPriceRational = usdPrice.toRational();
+    final Rational usdVolumeRational =
+        Rational.parse(maxVolume.value.toString());
+    final Rational amountInBase = usdVolumeRational / usdPriceRational;
+    return amountInBase > balanceRational ? balanceRational : amountInBase;
   }
 
   Rational _getRelAmountFromBaseAmount(
