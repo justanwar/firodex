@@ -7,7 +7,6 @@ import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/shared/ui/ui_light_button.dart';
 import 'package:web_dex/views/common/hw_wallet_dialog/constants.dart';
 import 'package:web_dex/shared/screenshot/screenshot_sensitivity.dart';
-import 'package:web_dex/shared/widgets/password_visibility_control.dart';
 
 const List<List<int>> _keys = [
   [7, 8, 9],
@@ -32,7 +31,6 @@ class TrezorDialogPinPad extends StatefulWidget {
 class _TrezorDialogPinPadState extends State<TrezorDialogPinPad> {
   final TextEditingController _pinController = TextEditingController(text: '');
   final _focus = FocusNode();
-  bool _isObscured = true;
   @override
   void initState() {
     _pinController.addListener(_onPinChange);
@@ -84,34 +82,22 @@ class _TrezorDialogPinPadState extends State<TrezorDialogPinPad> {
     return UiTextFormField(
       controller: _pinController,
       readOnly: true,
-      obscureText: _isObscured,
+      obscureText: true,
       style: const TextStyle(fontSize: 36),
       inputContentPadding:
           const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-      suffixIcon: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          PasswordVisibilityControl(
-            onVisibilityChange: (bool isObscured) {
-              setState(() {
-                _isObscured = isObscured;
-              });
-            },
+      suffixIcon: Padding(
+        padding: const EdgeInsets.only(right: 12.0),
+        child: IconButton(
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+          icon: Icon(
+            Icons.backspace,
+            color: backspaceColor,
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: IconButton(
-              hoverColor: Colors.transparent,
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-              icon: Icon(
-                Icons.backspace,
-                color: backspaceColor,
-              ),
-              onPressed: _pinController.text.isEmpty ? null : _deleteLast,
-            ),
-          ),
-        ],
+          onPressed: _pinController.text.isEmpty ? null : _deleteLast,
+        ),
       ),
     );
   }
