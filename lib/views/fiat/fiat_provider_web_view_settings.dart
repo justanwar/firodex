@@ -38,22 +38,26 @@ class FiatProviderWebViewSettings {
         // Deliberately NOT including ALLOW_TOP_NAVIGATION to prevent
         // parent navigation
       },
-      contentBlockers: [
-        // Block all content by default
-        ContentBlocker(
-          trigger: ContentBlockerTrigger(urlFilter: '.*'),
-          action: ContentBlockerAction(type: ContentBlockerActionType.BLOCK),
-        ),
-        // Allow the specific domains we trust
-        ...trustedDomainFilters.map(
-          (urlFilter) => ContentBlocker(
-            trigger: ContentBlockerTrigger(urlFilter: urlFilter),
-            action: ContentBlockerAction(
-              type: ContentBlockerActionType.IGNORE_PREVIOUS_RULES,
-            ),
-          ),
-        ),
-      ],
+      // TODO: revisit & possibly fork repo to add support for more platforms
+      // The intended approach only works on iOS and macOS, and is far too restrictive
+      // given that we are using 3rd party providers that can change their dependencies at
+      // any time (i.e. Ramp)tk
+      // contentBlockers: [
+      //   // Block all content by default
+      //   ContentBlocker(
+      //     trigger: ContentBlockerTrigger(urlFilter: '.*'),
+      //     action: ContentBlockerAction(type: ContentBlockerActionType.BLOCK),
+      //   ),
+      //   // Allow the specific domains we trust
+      //   ...trustedDomainFilters.map(
+      //     (urlFilter) => ContentBlocker(
+      //       trigger: ContentBlockerTrigger(urlFilter: urlFilter),
+      //       action: ContentBlockerAction(
+      //         type: ContentBlockerActionType.IGNORE_PREVIOUS_RULES,
+      //       ),
+      //     ),
+      //   ),
+      // ],
     );
   }
 }
