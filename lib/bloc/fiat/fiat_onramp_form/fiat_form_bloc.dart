@@ -169,6 +169,8 @@ class FiatFormBloc extends Bloc<FiatFormEvent, FiatFormState> {
     FiatFormSubmitted event,
     Emitter<FiatFormState> emit,
   ) async {
+    emit(state.copyWith(fiatOrderStatus: FiatOrderStatus.submitting));
+
     final formValidationError = getFormIssue();
     if (formValidationError != null || !state.isValid) {
       _log.warning('Form validation failed. Validation: ${state.isValid}');
@@ -229,12 +231,11 @@ class FiatFormBloc extends Bloc<FiatFormEvent, FiatFormState> {
   WebViewDialogMode _determineWebViewMode() {
     final bool isLinux = !kIsWeb && !kIsWasm && Platform.isLinux;
     const bool isWeb = kIsWeb || kIsWasm;
-    final bool isBanxa = state.selectedPaymentMethod.providerId == 'Banxa';
 
     // Banxa "Return to Komodo" button attempts to navigate the top window to
     // the return URL, which is not supported in a dialog. So we need to open
     // it in a new tab.
-    if (isLinux || (isWeb && isBanxa)) {
+    if (isLinux || (isWeb && state.isBanxaSelected)) {
       return WebViewDialogMode.newTab;
     } else if (isWeb) {
       return WebViewDialogMode.dialog;

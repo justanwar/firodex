@@ -4,9 +4,11 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 /// Default trusted domains for the WebView content blockers
 const List<String> kDefaultTrustedDomainFilters = [
   r'komodo\.banxa\.com.*',
-  r'app\.demo\.ramp\.network.*',
+  if (kDebugMode) r'app\.demo\.ramp\.network.*',
   r'app\.ramp\.network.*',
   r'embed\.bitrefill\.com.*',
+  if (kDebugMode) r'komodo\.banxa-sandbox\.com.*',
+  r'app\.komodoplatform\.com.*',
 ];
 
 /// Factory methods for creating webview settings for specific providers
@@ -39,19 +41,13 @@ class FiatProviderWebViewSettings {
       contentBlockers: [
         // Block all content by default
         ContentBlocker(
-          trigger: ContentBlockerTrigger(
-            urlFilter: '.*',
-          ),
-          action: ContentBlockerAction(
-            type: ContentBlockerActionType.BLOCK,
-          ),
+          trigger: ContentBlockerTrigger(urlFilter: '.*'),
+          action: ContentBlockerAction(type: ContentBlockerActionType.BLOCK),
         ),
         // Allow the specific domains we trust
         ...trustedDomainFilters.map(
           (urlFilter) => ContentBlocker(
-            trigger: ContentBlockerTrigger(
-              urlFilter: urlFilter,
-            ),
+            trigger: ContentBlockerTrigger(urlFilter: urlFilter),
             action: ContentBlockerAction(
               type: ContentBlockerActionType.IGNORE_PREVIOUS_RULES,
             ),

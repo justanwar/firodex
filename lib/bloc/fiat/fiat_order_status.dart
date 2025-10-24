@@ -4,6 +4,10 @@ import 'package:logging/logging.dart';
 enum FiatOrderStatus {
   /// Initial status: User has not yet started the payment process
   initial,
+  
+  /// User has opened the webview to go to the provider to proceed with the 
+  /// purchase
+  submitting,
 
   /// User has started the process, and the payment method has been opened.
   /// E.g. Ramp or Banxa websites have been opened
@@ -30,6 +34,7 @@ enum FiatOrderStatus {
   bool get isSubmitting =>
       this == FiatOrderStatus.inProgress ||
       this == FiatOrderStatus.submitted ||
+      this == FiatOrderStatus.submitting ||
       this == FiatOrderStatus.pendingPayment;
   bool get isFailed => this == FiatOrderStatus.failed;
   bool get isSuccess => this == FiatOrderStatus.success;

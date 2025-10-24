@@ -287,6 +287,7 @@ class _FiatFormState extends State<FiatForm> {
       case FiatOrderStatus.inProgress:
       case FiatOrderStatus.windowCloseRequested:
       case FiatOrderStatus.initial:
+      case FiatOrderStatus.submitting:
       case FiatOrderStatus.pendingPayment:
         debugPrint('Pending status should not be shown in dialog.');
         return;
