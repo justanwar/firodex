@@ -41,7 +41,7 @@ class FiatAssetIcon extends StatelessWidget {
     final size = CoinItemSize.large;
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: expanded ? MainAxisSize.max : MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AssetLogo.ofId(coin.id, size: size.coinLogo),
@@ -51,6 +51,7 @@ class FiatAssetIcon extends StatelessWidget {
                 child: _FiatCoinItemLabel(size: size, coin: coin),
               )
             : Flexible(
+                fit: expanded ? FlexFit.tight : FlexFit.loose,
                 child: _FiatCoinItemLabel(size: size, coin: coin),
               ),
       ],

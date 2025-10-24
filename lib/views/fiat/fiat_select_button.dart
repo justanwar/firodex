@@ -54,18 +54,6 @@ class FiatSelectButton extends StatelessWidget {
                         : foregroundColor.withValues(alpha: 0.5),
                   ),
                 ),
-                if (!isFiat && cryptoCurrency != null)
-                  Text(
-                    getCoinTypeName(
-                      cryptoCurrency.chainType,
-                      cryptoCurrency.symbol,
-                    ),
-                    style: DefaultTextStyle.of(context).style.copyWith(
-                      color: enabled
-                          ? foregroundColor.withValues(alpha: 0.5)
-                          : foregroundColor.withValues(alpha: 0.25),
-                    ),
-                  ),
               ],
             ),
           const SizedBox(width: 4),

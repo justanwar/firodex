@@ -499,6 +499,11 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
       }
     } catch (e, s) {
       _log.severe('Failed to update max sell amount', e, s);
+      emitter(
+        state.copyWith(
+          availableBalanceState: () => AvailableBalanceState.failure,
+        ),
+      );
     }
   }
 
