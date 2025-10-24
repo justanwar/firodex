@@ -90,11 +90,14 @@ class FiatSelectButton extends StatelessWidget {
           ),
       icon: currency == null
           ? Icon(_getDefaultAssetIcon(isFiat ? 'fiat' : 'coin'))
-          : FiatAssetIcon(
-              currency: currency!,
-              icon: icon,
-              onTap: onTap,
-              assetExists: assetExists,
+          : Flexible(
+              child: FiatAssetIcon(
+                currency: currency!,
+                icon: icon,
+                onTap: onTap,
+                assetExists: assetExists,
+                expanded: true,
+              ),
             ),
     );
   }
