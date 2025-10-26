@@ -122,7 +122,12 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     _updatePricesTimer?.cancel();
     _updatePricesTimer = Timer.periodic(
       const Duration(minutes: 1),
-      (_) => add(CoinsPricesUpdated()),
+      (_) {
+        if (kDebugElectrumLogs) {
+          _log.info('[POLLING] Triggering periodic price update (every 1 minute)');
+        }
+        add(CoinsPricesUpdated());
+      },
     );
 
     // This is used to connect [CoinsBloc] to [CoinsManagerBloc] via [CoinsRepo],
@@ -196,7 +201,12 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     _updateBalancesTimer?.cancel();
     _updateBalancesTimer = Timer.periodic(
       const Duration(minutes: 1),
-      (timer) => add(CoinsBalancesRefreshed()),
+      (timer) {
+        if (kDebugElectrumLogs) {
+          _log.info('[POLLING] Triggering periodic balance refresh (every 1 minute)');
+        }
+        add(CoinsBalancesRefreshed());
+      },
     );
   }
 

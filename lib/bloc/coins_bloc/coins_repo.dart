@@ -12,7 +12,7 @@ import 'package:komodo_defi_types/komodo_defi_type_utils.dart'
 import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:komodo_ui/komodo_ui.dart';
 import 'package:logging/logging.dart';
-import 'package:web_dex/app_config/app_config.dart' show excludedAssetList;
+import 'package:web_dex/app_config/app_config.dart' show excludedAssetList, kDebugElectrumLogs;
 import 'package:web_dex/bloc/coins_bloc/asset_coin_extension.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_service.dart'
     show TradingStatusService;
@@ -284,6 +284,20 @@ class CoinsRepo {
       return;
     }
 
+    // Debug logging for activation
+    if (kDebugElectrumLogs) {
+      final coinIdList = assets.map((e) => e.id.id).join(', ');
+      final protocolBreakdown = <String, int>{};
+      for (final asset in assets) {
+        final protocol = asset.protocol.runtimeType.toString();
+        protocolBreakdown[protocol] = (protocolBreakdown[protocol] ?? 0) + 1;
+      }
+      _log.info(
+        '[ACTIVATION] Starting activation of ${assets.length} coins: [$coinIdList]',
+      );
+      _log.info('[ACTIVATION] Protocol breakdown: $protocolBreakdown');
+    }
+
     // Separate ZHTLC and regular assets
     final zhtlcAssets = assets
         .where((asset) => asset.id.subClass == CoinSubClass.zhtlc)
@@ -352,6 +366,11 @@ class CoinsRepo {
         );
 
         _log.info('Asset activated: ${asset.id.id}');
+        if (kDebugElectrumLogs) {
+          _log.info(
+            '[ACTIVATION] Successfully activated ${asset.id.id} (${asset.protocol.runtimeType})',
+          );
+        }
         if (notifyListeners) {
           _broadcastAsset(coin.copyWith(state: CoinState.active));
           if (coin.id.parentId != null) {
@@ -362,6 +381,9 @@ class CoinsRepo {
           }
         }
         _subscribeToBalanceUpdates(asset);
+        if (kDebugElectrumLogs) {
+          _log.info('[ACTIVATION] Subscribed to balance updates for ${asset.id.id}');
+        }
         if (coin.id.parentId != null) {
           final parentAsset = _kdfSdk.assets.available[coin.id.parentId];
           if (parentAsset == null) {
