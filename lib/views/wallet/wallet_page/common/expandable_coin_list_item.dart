@@ -314,7 +314,7 @@ class _AddressRow extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
               ),
             ),
-            if (isSwapAddress && canTradeCoin) ...[
+            if (isSwapAddress) ...[
               const SizedBox(width: 8),
               // TODO: Refactor to use "DexPill" component from the SDK UI library (not yet created)
               Padding(
@@ -329,7 +329,7 @@ class _AddressRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16.0),
                   ),
                   child: Text(
-                    LocaleKeys.dexAddress.tr(),
+                    LocaleKeys.swapAddress.tr(),
                     style: TextStyle(fontSize: isMobile ? 9 : 12),
                   ),
                 ),
