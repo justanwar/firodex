@@ -65,7 +65,18 @@ class _CoinDetailsState extends State<CoinDetails> {
   Widget build(BuildContext context) {
     return BlocBuilder<CoinsBloc, CoinsState>(
       builder: (context, state) {
-        return _buildContent();
+        return GestureDetector(
+          onHorizontalDragEnd: (details) {
+            // Detect swipe-back gesture (swipe from left to right)
+            if (details.primaryVelocity != null && details.primaryVelocity! > 0) {
+              // Only trigger back navigation if we're on the info page
+              if (_selectedPageType == CoinPageType.info) {
+                widget.onBackButtonPressed();
+              }
+            }
+          },
+          child: _buildContent(),
+        );
       },
     );
   }
