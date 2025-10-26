@@ -21,6 +21,7 @@ import 'package:web_dex/bloc/auth_bloc/auth_bloc.dart';
 import 'package:web_dex/bloc/cex_market_data/cex_market_data.dart';
 import 'package:web_dex/bloc/cex_market_data/mockup/performance_mode.dart';
 import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
+import 'package:komodo_defi_framework/komodo_defi_framework.dart';
 import 'package:web_dex/bloc/settings/settings_repository.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_repository.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_service.dart';
@@ -61,6 +62,12 @@ Future<void> main() async {
     // The current focus is migrating mm2Api to the new sdk, so that the sdk
     // is the only/primary API/repository for KDF
     final KomodoDefiSdk komodoDefiSdk = await mm2.initialize();
+    
+    // Configure SDK debug logging to match app configuration
+    KdfApiClient.enableDebugLogging = kDebugElectrumLogs;
+    KomodoDefiFramework.enableDebugLogging = kDebugElectrumLogs;
+    BalanceManager.enableDebugLogging = kDebugElectrumLogs;
+    
     final mm2Api = Mm2Api(mm2: mm2, sdk: komodoDefiSdk);
     // Sparkline is dependent on Hive initialization, so we pass it on to the
     // bootstrapper here
