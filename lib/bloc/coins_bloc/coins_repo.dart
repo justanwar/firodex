@@ -296,6 +296,14 @@ class CoinsRepo {
         '[ACTIVATION] Starting activation of ${assets.length} coins: [$coinIdList]',
       );
       _log.info('[ACTIVATION] Protocol breakdown: $protocolBreakdown');
+      
+      // Log detailed parameters for each asset being activated
+      for (final asset in assets) {
+        _log.info(
+          '[ACTIVATION] Asset: ${asset.id.id}, Protocol: ${asset.protocol.runtimeType}, '
+          'SubClass: ${asset.id.subClass}, ParentId: ${asset.id.parentId?.id ?? "none"}',
+        );
+      }
     }
 
     // Separate ZHTLC and regular assets
@@ -369,6 +377,11 @@ class CoinsRepo {
         if (kDebugElectrumLogs) {
           _log.info(
             '[ACTIVATION] Successfully activated ${asset.id.id} (${asset.protocol.runtimeType})',
+          );
+          _log.info(
+            '[ACTIVATION] Activation completed for ${asset.id.id}, '
+            'Protocol: ${asset.protocol.runtimeType}, '
+            'SubClass: ${asset.id.subClass}',
           );
         }
         if (notifyListeners) {
