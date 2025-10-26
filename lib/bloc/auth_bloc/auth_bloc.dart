@@ -423,6 +423,16 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
     AuthLifecycleCheckRequested event,
     Emitter<AuthBlocState> emit,
   ) async {
+    // Ensure KDF is healthy before checking user state
+    // This helps recover from situations where MM2 becomes unavailable
+    // (e.g., after app backgrounding on mobile platforms)
+    try {
+      await _kdfSdk.auth.ensureKdfHealthy();
+    } catch (e) {
+      _log.warning('Failed to ensure KDF health during lifecycle check: $e');
+      // Continue anyway - the health check is best-effort
+    }
+
     final currentUser = await _kdfSdk.auth.currentUser;
 
     // Do not emit any state if the user is currently attempting to log in.
