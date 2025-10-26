@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:equatable/equatable.dart';
-import 'package:flutter/foundation.dart' show mapEquals;
+import 'package:collection/collection.dart' show MapEquality;
 import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
 import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:logging/logging.dart';
@@ -120,15 +120,14 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
 
     add(CoinsPricesUpdated());
     _updatePricesTimer?.cancel();
-    _updatePricesTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) {
-        if (kDebugElectrumLogs) {
-          _log.info('[POLLING] Triggering periodic price update (every 1 minute)');
-        }
-        add(CoinsPricesUpdated());
-      },
-    );
+    _updatePricesTimer = Timer.periodic(const Duration(minutes: 3), (_) {
+      if (kDebugElectrumLogs) {
+        _log.info(
+          '[POLLING] Triggering periodic price update (every 3 minutes)',
+        );
+      }
+      add(CoinsPricesUpdated());
+    });
 
     // This is used to connect [CoinsBloc] to [CoinsManagerBloc] via [CoinsRepo],
     // since coins manager bloc activates and deactivates coins using the repository.
@@ -199,15 +198,14 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     Emitter<CoinsState> emit,
   ) async {
     _updateBalancesTimer?.cancel();
-    _updateBalancesTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (timer) {
-        if (kDebugElectrumLogs) {
-          _log.info('[POLLING] Triggering periodic balance refresh (every 1 minute)');
-        }
-        add(CoinsBalancesRefreshed());
-      },
-    );
+    _updateBalancesTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (kDebugElectrumLogs) {
+        _log.info(
+          '[POLLING] Triggering periodic balance refresh (every 1 minute)',
+        );
+      }
+      add(CoinsBalancesRefreshed());
+    });
   }
 
   Future<void> _onCoinsActivated(
@@ -290,7 +288,7 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
         _log.severe('Coin prices list empty/null');
         return;
       }
-      final didPricesChange = !mapEquals(state.prices, prices);
+      final didPricesChange = !const MapEquality().equals(state.prices, prices);
       if (!didPricesChange) {
         _log.info('Coin prices list unchanged');
         return;
