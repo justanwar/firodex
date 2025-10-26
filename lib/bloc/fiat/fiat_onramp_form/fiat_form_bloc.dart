@@ -120,7 +120,7 @@ class FiatFormBloc extends Bloc<FiatFormEvent, FiatFormState> {
       await _sdk.addActivatedCoins([event.selectedCoin.getAbbr()]);
       final asset = event.selectedCoin.toAsset(_sdk);
       // TODO: increase the max delay in the SDK or make it adjustable
-      final assetPubkeys = await retry(
+      final assetPubkeys = await retry<AssetPubkeys>(
         () async =>
             _sdk.pubkeys.lastKnown(asset.id) ?? _sdk.pubkeys.getPubkeys(asset),
         maxAttempts: _pubkeysMaxRetryAttempts,
