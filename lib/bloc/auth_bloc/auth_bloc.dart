@@ -239,12 +239,46 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
     Emitter<AuthBlocState> emit,
   ) async {
     try {
-      if (await _didSignInExistingWallet(event.wallet, event.password)) {
+      // Legacy wallets: sanitize base name, try sign-in, then resolve
+      // uniqueness only if needed. Non-legacy restores (seed imports) keep the
+      // user-provided name unchanged.
+      Wallet workingWallet = event.wallet;
+      if (event.wallet.isLegacyWallet) {
+        final String baseName = _walletsRepository.sanitizeLegacyMigrationName(
+          event.wallet.name,
+        );
+        final Wallet sanitizedBaseWallet = event.wallet.copyWith(
+          name: baseName,
+        );
+
+        // Attempt sign-in with sanitized base name first to avoid creating a
+        // suffixed duplicate when a migrated wallet already exists.
+        if (await _didSignInExistingWallet(
+          sanitizedBaseWallet,
+          event.password,
+        )) {
+          add(
+            AuthSignInRequested(
+              wallet: sanitizedBaseWallet,
+              password: event.password,
+            ),
+          );
+          _log.warning('Wallet $baseName already exists, attempting sign-in');
+          return;
+        }
+
+        // Otherwise, resolve the lowest available unique name for registration.
+        final String uniqueName = await _walletsRepository
+            .resolveUniqueWalletName(baseName);
+        workingWallet = event.wallet.copyWith(name: uniqueName);
+      }
+
+      if (await _didSignInExistingWallet(workingWallet, event.password)) {
         add(
-          AuthSignInRequested(wallet: event.wallet, password: event.password),
+          AuthSignInRequested(wallet: workingWallet, password: event.password),
         );
         _log.warning(
-          'Wallet ${event.wallet.name} already exists, attempting sign-in',
+          'Wallet ${workingWallet.name} already exists, attempting sign-in',
         );
         return;
       }
@@ -254,10 +288,10 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
       final weakPasswordsAllowed = await _areWeakPasswordsAllowed();
       await _kdfSdk.auth.register(
         password: event.password,
-        walletName: event.wallet.name,
+        walletName: workingWallet.name,
         mnemonic: Mnemonic.plaintext(event.seed),
         options: AuthOptions(
-          derivationMethod: event.wallet.config.type == WalletType.hdwallet
+          derivationMethod: workingWallet.config.type == WalletType.hdwallet
               ? DerivationMethod.hdWallet
               : DerivationMethod.iguana,
           allowWeakPassword: weakPasswordsAllowed,
@@ -268,16 +302,18 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
         'Successfully restored wallet from a seed. '
         'Setting up wallet metadata and logging in...',
       );
-      await _kdfSdk.setWalletType(event.wallet.config.type);
-      await _kdfSdk.confirmSeedBackup(hasBackup: event.wallet.config.hasBackup);
+      await _kdfSdk.setWalletType(workingWallet.config.type);
+      await _kdfSdk.confirmSeedBackup(
+        hasBackup: workingWallet.config.hasBackup,
+      );
       // Filter out geo-blocked assets from default coins before adding to wallet
       final allowedDefaultCoins = _filterBlockedAssets(enabledByDefaultCoins);
       await _kdfSdk.addActivatedCoins(allowedDefaultCoins);
-      if (event.wallet.config.activatedCoins.isNotEmpty) {
+      if (workingWallet.config.activatedCoins.isNotEmpty) {
         // Seed import files and legacy wallets may contain removed or unsupported
         // coins, so we filter them out before adding them to the wallet metadata.
         final availableWalletCoins = _filterOutUnsupportedCoins(
-          event.wallet.config.activatedCoins,
+          workingWallet.config.activatedCoins,
         );
         // Also filter out geo-blocked assets from restored wallet coins
         final allowedWalletCoins = _filterBlockedAssets(availableWalletCoins);
@@ -289,7 +325,7 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
       if (event.wallet.isLegacyWallet) {
         _log.info(
           'Migration successful. '
-          'Deleting legacy wallet ${event.wallet.name}',
+          'Deleting legacy wallet ${workingWallet.name}',
         );
         await _walletsRepository.deleteWallet(
           event.wallet,
@@ -387,6 +423,16 @@ class AuthBloc extends Bloc<AuthBlocEvent, AuthBlocState> with TrezorAuthMixin {
     AuthLifecycleCheckRequested event,
     Emitter<AuthBlocState> emit,
   ) async {
+    // Ensure KDF is healthy before checking user state
+    // This helps recover from situations where MM2 becomes unavailable
+    // (e.g., after app backgrounding on mobile platforms)
+    try {
+      await _kdfSdk.auth.ensureKdfHealthy();
+    } catch (e) {
+      _log.warning('Failed to ensure KDF health during lifecycle check: $e');
+      // Continue anyway - the health check is best-effort
+    }
+
     final currentUser = await _kdfSdk.auth.currentUser;
 
     // Do not emit any state if the user is currently attempting to log in.

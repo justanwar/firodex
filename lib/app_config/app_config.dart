@@ -36,6 +36,14 @@ const bool kShowTradingWarning = false;
 
 const Duration kPerformanceLogInterval = Duration(minutes: 1);
 
+/// Enable debug logging for electrum connections and RPC methods.
+/// When enabled, logs detailed information about:
+/// - Electrum server connections and connection counts
+/// - RPC method calls with durations and responses
+/// - Coin activation events and polling mechanisms
+/// - Balance and price update polling
+const bool kDebugElectrumLogs = true;
+
 // This information is here because it is not contextual and is branded.
 // Names of their own are not localized. Also, the application is initialized before
 // the localization package is initialized.
@@ -155,17 +163,9 @@ const List<String> appWalletOnlyAssetList = [
 
 /// Coins that are enabled by default on restore from seed or registration.
 /// This will not affect existing wallets.
+/// Reduced to only KMD to minimize initial connections and resource usage.
 List<String> get enabledByDefaultCoins => [
-  'KMD', // Always included (Komodo ecosystem)
-  'BTC-segwit', // Bitcoin (Rank 1, ~$2.21T market cap)
-  'ETH', // Ethereum (Rank 2, ~$335B market cap)
-  'BNB', // Binance Coin (Rank 5, ~$93B market cap)
-  'DOGE', // Dogecoin (Rank 9, ~$27.1B market cap)
-  'LTC-segwit', // Litecoin (popular, has segwit support)
-  'USDT-ERC20', // Tether on Ethereum (most common stablecoin)
-  'XRP-ERC20', // XRP (Rank 4, ~$145B market cap)
-  if (kDebugMode) 'DOC',
-  if (kDebugMode) 'MARTY',
+  'KMD', // Komodo ecosystem coin
 ];
 
 const String logsDbName = 'logs';
