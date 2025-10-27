@@ -77,6 +77,8 @@ class _MainLayoutState extends State<MainLayout> {
         // Track when user has been logged in
         if (state.mode == AuthorizeMode.logIn) {
           QuickLoginSwitch.trackUserLoggedIn();
+          // Always route to Wallet on login
+          routingState.selectedMenu = MainMenuValue.wallet;
         }
 
         // Only reset the remember me dialog flag if user was logged in and is now logged out
@@ -86,6 +88,8 @@ class _MainLayoutState extends State<MainLayout> {
           routingState.resetOnLogOut();
           // Reset dialog state so it can be shown again after user logs out
           QuickLoginSwitch.resetOnLogout();
+          // Always route to Wallet on logout
+          routingState.selectedMenu = MainMenuValue.wallet;
         }
       },
       builder: (context, state) {
