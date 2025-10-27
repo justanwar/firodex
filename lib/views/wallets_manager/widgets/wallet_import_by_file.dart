@@ -217,6 +217,12 @@ class _WalletImportByFileState extends State<WalletImportByFile> {
   late final KomodoDefiSdk _sdk = context.read<KomodoDefiSdk>();
 
   Future<void> _onImport() async {
+    // Clear any previous common error before starting a new import attempt
+    if (_commonError != null) {
+      setState(() {
+        _commonError = null;
+      });
+    }
     final EncryptionTool encryptionTool = EncryptionTool();
     final String? fileData = await encryptionTool.decryptData(
       _filePasswordController.text,
@@ -248,23 +254,22 @@ class _WalletImportByFileState extends State<WalletImportByFile> {
       if (!_isValidData) return;
 
       final bool isBip39 = _sdk.mnemonicValidator.validateBip39(decryptedSeed);
-      if (!isBip39 && _isHdMode) {
-        setState(() {
-          // In HD mode, custom seeds are not supported. Show HD-specific error
-          _commonError = LocaleKeys.walletCreationHdBip39SeedError.tr();
-          _showCustomSeedToggle = false;
-          _allowCustomSeed = false;
-        });
-        return;
-      }
-
-      if (!isBip39 && !_allowCustomSeed) {
-        setState(() {
-          // Non-HD and custom seed not yet allowed: show error and reveal toggle
-          _commonError = LocaleKeys.walletCreationBip39SeedError.tr();
-          _showCustomSeedToggle = true;
-        });
-        return;
+      if (!isBip39) {
+        if (_isHdMode) {
+          setState(() {
+            _commonError = LocaleKeys.walletCreationHdBip39SeedError.tr();
+            _showCustomSeedToggle = true;
+          });
+          return;
+        }
+        if (!_allowCustomSeed) {
+          setState(() {
+            _commonError = LocaleKeys.walletCreationBip39SeedError.tr();
+            _showCustomSeedToggle = true;
+          });
+          return;
+        }
+        // Non-HD and custom seed allowed: continue without setting an error
       }
 
       walletConfig.seedPhrase = decryptedSeed;
@@ -314,8 +319,8 @@ class _WalletImportByFileState extends State<WalletImportByFile> {
   }
 
   bool get _shouldShowCustomSeedToggle {
-    if (_isHdMode) return false;
     if (_allowCustomSeed) return true; // keep visible once enabled
-    return _showCustomSeedToggle;
+    if (_showCustomSeedToggle) return true; // show after first failure, even in HD
+    return false;
   }
 }
