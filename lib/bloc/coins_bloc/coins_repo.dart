@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:math' show min;
 
 import 'package:collection/collection.dart';
@@ -29,6 +30,7 @@ import 'package:web_dex/model/kdf_auth_metadata_extension.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/withdraw_details/withdraw_details.dart';
 import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
+import 'package:web_dex/services/fd_monitor_service.dart';
 
 class CoinsRepo {
   CoinsRepo({
@@ -296,6 +298,14 @@ class CoinsRepo {
         '[ACTIVATION] Starting activation of ${assets.length} coins: [$coinIdList]',
       );
       _log.info('[ACTIVATION] Protocol breakdown: $protocolBreakdown');
+      
+      // Log detailed parameters for each asset being activated
+      for (final asset in assets) {
+        _log.info(
+          '[ACTIVATION] Asset: ${asset.id.id}, Protocol: ${asset.protocol.runtimeType}, '
+          'SubClass: ${asset.id.subClass}, ParentId: ${asset.id.parentId?.id ?? "none"}',
+        );
+      }
     }
 
     // Separate ZHTLC and regular assets
@@ -370,6 +380,11 @@ class CoinsRepo {
           _log.info(
             '[ACTIVATION] Successfully activated ${asset.id.id} (${asset.protocol.runtimeType})',
           );
+          _log.info(
+            '[ACTIVATION] Activation completed for ${asset.id.id}, '
+            'Protocol: ${asset.protocol.runtimeType}, '
+            'SubClass: ${asset.id.subClass}',
+          );
         }
         if (notifyListeners) {
           _broadcastAsset(coin.copyWith(state: CoinState.active));
@@ -399,6 +414,20 @@ class CoinsRepo {
           e,
           s,
         );
+        
+        // Capture FD snapshot when KDF asset activation fails
+        if (Platform.isIOS) {
+          try {
+            await FdMonitorService().logDetailedStatus();
+            final stats = await FdMonitorService().getCurrentCount();
+            _log.warning(
+              'FD stats at asset activation failure for ${asset.id.id}: $stats',
+            );
+          } catch (fdError) {
+            _log.warning('Failed to capture FD stats: $fdError');
+          }
+        }
+        
         if (notifyListeners) {
           _broadcastAsset(asset.toCoin().copyWith(state: CoinState.suspended));
         }

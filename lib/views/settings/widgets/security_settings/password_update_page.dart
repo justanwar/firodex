@@ -2,7 +2,6 @@ import 'package:app_theme/app_theme.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:web_dex/shared/constants.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
 import 'package:komodo_defi_types/komodo_defi_types.dart';
@@ -14,6 +13,7 @@ import 'package:web_dex/bloc/settings/settings_bloc.dart';
 import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/model/wallet.dart';
+import 'package:web_dex/shared/constants.dart';
 import 'package:web_dex/shared/utils/validators.dart';
 import 'package:web_dex/shared/widgets/password_visibility_control.dart';
 import 'package:web_dex/views/common/page_header/page_header.dart';
@@ -366,7 +366,10 @@ class _PasswordField extends StatelessWidget {
     return UiTextFormField(
       autofocus: true,
       controller: controller,
-      textInputAction: TextInputAction.none,
+      // Use .next, rather than done or go, as this is a generic password field
+      // that is not guaranteed to be the last field in the forms it is
+      // referenced in
+      textInputAction: TextInputAction.next,
       autocorrect: false,
       enableInteractiveSelection: true,
       obscureText: isObscured,

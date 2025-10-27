@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart' show kIsWasm, kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWasm, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -32,6 +33,7 @@ import 'package:web_dex/model/stored_settings.dart';
 import 'package:web_dex/performance_analytics/performance_analytics.dart';
 import 'package:web_dex/sdk/widgets/window_close_handler.dart';
 import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
+import 'package:web_dex/services/fd_monitor_service.dart';
 import 'package:web_dex/services/feedback/app_feedback_wrapper.dart';
 import 'package:web_dex/services/logger/get_logger.dart';
 import 'package:web_dex/services/storage/get_storage.dart';
@@ -94,6 +96,20 @@ Future<void> main() async {
       mm2Api,
       getStorage(),
     );
+
+    // Start FD monitoring on iOS (works in both Debug and Release)
+    if (Platform.isIOS) {
+      try {
+        final result = await FdMonitorService().start(intervalSeconds: 60.0);
+        if (result['success'] == true) {
+          log('FD Monitor started successfully in ${kDebugMode ? "DEBUG" : "RELEASE"} mode');
+        } else {
+          log('FD Monitor failed to start: ${result['message']}');
+        }
+      } catch (e) {
+        log('Failed to start FD Monitor: $e');
+      }
+    }
 
     runApp(
       EasyLocalization(
