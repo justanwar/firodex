@@ -58,6 +58,7 @@ class _WalletImportByFileState extends State<WalletImportByFile> {
   bool _eulaAndTosChecked = false;
   bool _rememberMe = false;
   bool _allowCustomSeed = false;
+  bool _showCustomSeedToggle = false;
 
   String? _filePasswordError;
   String? _commonError;
@@ -147,11 +148,17 @@ class _WalletImportByFileState extends State<WalletImportByFile> {
                   HDWalletModeSwitch(
                     value: _isHdMode,
                     onChanged: (value) {
-                      setState(() => _isHdMode = value);
+                      setState(() {
+                        _isHdMode = value;
+                        // Reset custom seed usage and hide toggle on HD switch
+                        if (_isHdMode) {
+                          _allowCustomSeed = false;
+                        }
+                      });
                     },
                   ),
                   const SizedBox(height: 15),
-                  if (!_isHdMode)
+                  if (_shouldShowCustomSeedToggle)
                     CustomSeedCheckbox(
                       value: _allowCustomSeed,
                       onChanged: (value) {
@@ -240,10 +247,22 @@ class _WalletImportByFileState extends State<WalletImportByFile> {
       if (decryptedSeed == null) return;
       if (!_isValidData) return;
 
-      if ((_isHdMode || !_allowCustomSeed) &&
-          !_sdk.mnemonicValidator.validateBip39(decryptedSeed)) {
+      final bool isBip39 = _sdk.mnemonicValidator.validateBip39(decryptedSeed);
+      if (!isBip39 && _isHdMode) {
         setState(() {
+          // In HD mode, custom seeds are not supported. Show HD-specific error
+          _commonError = LocaleKeys.walletCreationHdBip39SeedError.tr();
+          _showCustomSeedToggle = false;
+          _allowCustomSeed = false;
+        });
+        return;
+      }
+
+      if (!isBip39 && !_allowCustomSeed) {
+        setState(() {
+          // Non-HD and custom seed not yet allowed: show error and reveal toggle
           _commonError = LocaleKeys.walletCreationBip39SeedError.tr();
+          _showCustomSeedToggle = true;
         });
         return;
       }
@@ -292,5 +311,11 @@ class _WalletImportByFileState extends State<WalletImportByFile> {
         _commonError = LocaleKeys.somethingWrong.tr();
       });
     }
+  }
+
+  bool get _shouldShowCustomSeedToggle {
+    if (_isHdMode) return false;
+    if (_allowCustomSeed) return true; // keep visible once enabled
+    return _showCustomSeedToggle;
   }
 }
