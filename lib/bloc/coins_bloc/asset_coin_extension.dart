@@ -8,7 +8,6 @@ import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/coin_type.dart';
 import 'package:web_dex/shared/utils/extensions/collection_extensions.dart';
 import 'package:web_dex/shared/utils/extensions/legacy_coin_migration_extensions.dart';
-import 'package:web_dex/shared/utils/activated_assets_cache.dart';
 
 extension AssetCoinExtension on Asset {
   Coin toCoin() {
@@ -263,13 +262,13 @@ extension CoinSupportOps on Iterable<Coin> {
   static Future<bool> _alwaysSupported(Coin _) async => true;
 
   Future<List<Coin>> removeInactiveCoins(KomodoDefiSdk sdk) async {
-    final activeIds = await ActivatedAssetsCache.of(sdk).getActivatedAssetIds();
+    final activeIds = await sdk.activatedAssetsCache.getActivatedAssetIds();
 
     return where((coin) => activeIds.contains(coin.id)).unmodifiable().toList();
   }
 
   Future<List<Coin>> removeActiveCoins(KomodoDefiSdk sdk) async {
-    final activeIds = await ActivatedAssetsCache.of(sdk).getActivatedAssetIds();
+    final activeIds = await sdk.activatedAssetsCache.getActivatedAssetIds();
 
     return where(
       (coin) => !activeIds.contains(coin.id),

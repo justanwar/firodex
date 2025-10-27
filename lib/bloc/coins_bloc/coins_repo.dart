@@ -21,7 +21,6 @@ import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/mm2/mm2.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/bloc_response.dart';
-import 'package:web_dex/mm2/mm2_api/rpc/disable_coin/disable_coin_req.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/withdraw/withdraw_errors.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/withdraw/withdraw_request.dart';
 import 'package:web_dex/model/cex_price.dart';
@@ -30,7 +29,6 @@ import 'package:web_dex/model/kdf_auth_metadata_extension.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/withdraw_details/withdraw_details.dart';
 import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
-import 'package:web_dex/shared/utils/activated_assets_cache.dart';
 
 class CoinsRepo {
   CoinsRepo({
@@ -41,8 +39,7 @@ class CoinsRepo {
   }) : _kdfSdk = kdfSdk,
        _mm2 = mm2,
        _tradingStatusService = tradingStatusService,
-       _arrrActivationService = arrrActivationService,
-       _activatedAssetsCache = ActivatedAssetsCache.of(kdfSdk) {
+       _arrrActivationService = arrrActivationService {
     enabledAssetsChanges = StreamController<Coin>.broadcast(
       onListen: () => _enabledAssetListenerCount += 1,
       onCancel: () => _enabledAssetListenerCount -= 1,
@@ -50,7 +47,6 @@ class CoinsRepo {
   }
 
   final KomodoDefiSdk _kdfSdk;
-  final ActivatedAssetsCache _activatedAssetsCache;
   final MM2 _mm2;
   final TradingStatusService _tradingStatusService;
   final ArrrActivationService _arrrActivationService;
@@ -141,7 +137,7 @@ class CoinsRepo {
   }
 
   Future<Set<AssetId>> getActivatedAssetIds({bool forceRefresh = false}) {
-    return _activatedAssetsCache.getActivatedAssetIds(
+    return _kdfSdk.activatedAssetsCache.getActivatedAssetIds(
       forceRefresh: forceRefresh,
     );
   }
@@ -155,7 +151,7 @@ class CoinsRepo {
   }
 
   void _invalidateActivatedAssetsCache() {
-    _activatedAssetsCache.invalidate();
+    _kdfSdk.activatedAssetsCache.invalidate();
   }
 
   /// Returns all known coins, optionally filtering out excluded assets.
@@ -319,7 +315,7 @@ class CoinsRepo {
         '[ACTIVATION] Starting activation of ${assets.length} coins: [$coinIdList]',
       );
       _log.info('[ACTIVATION] Protocol breakdown: $protocolBreakdown');
-      
+
       // Log detailed parameters for each asset being activated
       for (final asset in assets) {
         _log.info(
@@ -534,7 +530,8 @@ class CoinsRepo {
     final allCoinIds = <String>{};
     final allChildCoins = <Coin>[];
 
-    final activatedAssets = await _activatedAssetsCache.getActivatedAssets();
+    final activatedAssets = await _kdfSdk.activatedAssetsCache
+        .getActivatedAssets();
     for (final coin in coins) {
       allCoinIds.add(coin.id.id);
 
@@ -583,44 +580,6 @@ class CoinsRepo {
     await Future.wait(deactivationTasks);
     await Future.wait([...parentCancelFutures, ...childCancelFutures]);
     _invalidateActivatedAssetsCache();
-  }
-
-  Future<void> _disableCoin(String coinId) async {
-    try {
-      await _mm2.call(DisableCoinReq(coin: coinId));
-    } on Exception catch (e, s) {
-      _log.shout('Error disabling $coinId', e, s);
-      return;
-    }
-  }
-
-  @Deprecated(
-    'Use SDK pubkeys.getPubkeys instead and let the user '
-    'select from the available options.',
-  )
-  Future<String?> getFirstPubkey(String coinId) async {
-    final assets = _kdfSdk.assets.findAssetsByConfigId(coinId);
-    if (assets.isEmpty) {
-      _log.warning(
-        'Unable to fetch pubkey for coinId $coinId because the asset is no longer available.',
-      );
-      return null;
-    }
-
-    if (assets.length > 1) {
-      final assetIds = assets.map((asset) => asset.id.id).join(', ');
-      final message =
-          'Multiple assets found for coinId $coinId while fetching pubkey: $assetIds';
-      _log.shout(message);
-      throw StateError(message);
-    }
-
-    final asset = assets.single;
-    final pubkeys = await _kdfSdk.pubkeys.getPubkeys(asset);
-    if (pubkeys.keys.isEmpty) {
-      return null;
-    }
-    return pubkeys.keys.first.address;
   }
 
   double? getUsdPriceByAmount(String amount, String coinAbbr) {
@@ -807,7 +766,8 @@ class CoinsRepo {
     bool notifyListeners = true,
     bool addToWalletMetadata = true,
   }) async {
-    final activatedAssets = await _activatedAssetsCache.getActivatedAssets();
+    final activatedAssets = await _kdfSdk.activatedAssetsCache
+        .getActivatedAssets();
 
     for (final asset in assets) {
       final coin = coins.firstWhere((coin) => coin.id == asset.id);

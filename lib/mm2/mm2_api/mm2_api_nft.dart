@@ -14,7 +14,6 @@ import 'package:web_dex/mm2/mm2_api/rpc/nft/withdraw/withdraw_nft_request.dart';
 import 'package:web_dex/mm2/rpc/nft_transaction/nft_transactions_request.dart';
 import 'package:web_dex/model/nft.dart';
 import 'package:web_dex/shared/constants.dart';
-import 'package:web_dex/shared/utils/activated_assets_cache.dart';
 
 class Mm2ApiNft {
   Mm2ApiNft(this.call, this._sdk);
@@ -22,6 +21,11 @@ class Mm2ApiNft {
   final KomodoDefiSdk _sdk;
   final Future<JsonMap> Function(dynamic) call;
   final _log = Logger('Mm2ApiNft');
+
+  /// Dispose method for cleanup. Currently no-op as there are no resources to dispose.
+  void dispose() {
+    // No resources to dispose currently
+  }
 
   Future<Map<String, dynamic>> updateNftList(
     List<NftBlockchains> chains,
@@ -128,9 +132,8 @@ class Mm2ApiNft {
   /// chains that are activated in the SDK.
   /// If no chains are active, an empty list is returned.
   Future<List<String>> getActiveNftChains(List<NftBlockchains> chains) async {
-    final activatedAssets = await ActivatedAssetsCache.of(
-      _sdk,
-    ).getActivatedAssets();
+    final activatedAssets = await _sdk.activatedAssetsCache
+        .getActivatedAssets();
     final List<String> enabledCoinIds = activatedAssets
         .map((c) => c.id.id)
         .toList();
@@ -172,9 +175,7 @@ class Mm2ApiNft {
 
   Future<void> enableNftChains(List<NftBlockchains> chains) async {
     final knownAssets = _sdk.assets.available;
-    final activeAssets = await ActivatedAssetsCache.of(
-      _sdk,
-    ).getActivatedAssets();
+    final activeAssets = await _sdk.activatedAssetsCache.getActivatedAssets();
     final inactiveChains = chains
         .where(
           (chain) => !activeAssets.any(
