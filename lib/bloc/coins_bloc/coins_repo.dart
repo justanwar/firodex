@@ -12,7 +12,8 @@ import 'package:komodo_defi_types/komodo_defi_type_utils.dart'
 import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:komodo_ui/komodo_ui.dart';
 import 'package:logging/logging.dart';
-import 'package:web_dex/app_config/app_config.dart' show excludedAssetList, kDebugElectrumLogs;
+import 'package:web_dex/app_config/app_config.dart'
+    show excludedAssetList, kDebugElectrumLogs;
 import 'package:web_dex/bloc/coins_bloc/asset_coin_extension.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_service.dart'
     show TradingStatusService;
@@ -29,6 +30,7 @@ import 'package:web_dex/model/kdf_auth_metadata_extension.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/withdraw_details/withdraw_details.dart';
 import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
+import 'package:web_dex/shared/utils/activated_assets_cache.dart';
 
 class CoinsRepo {
   CoinsRepo({
@@ -39,7 +41,8 @@ class CoinsRepo {
   }) : _kdfSdk = kdfSdk,
        _mm2 = mm2,
        _tradingStatusService = tradingStatusService,
-       _arrrActivationService = arrrActivationService {
+       _arrrActivationService = arrrActivationService,
+       _activatedAssetsCache = ActivatedAssetsCache.of(kdfSdk) {
     enabledAssetsChanges = StreamController<Coin>.broadcast(
       onListen: () => _enabledAssetListenerCount += 1,
       onCancel: () => _enabledAssetListenerCount -= 1,
@@ -47,6 +50,7 @@ class CoinsRepo {
   }
 
   final KomodoDefiSdk _kdfSdk;
+  final ActivatedAssetsCache _activatedAssetsCache;
   final MM2 _mm2;
   final TradingStatusService _tradingStatusService;
   final ArrrActivationService _arrrActivationService;
@@ -124,6 +128,7 @@ class CoinsRepo {
       subscription.cancel();
     }
     _balanceWatchers.clear();
+    _invalidateActivatedAssetsCache();
   }
 
   void dispose() {
@@ -133,6 +138,24 @@ class CoinsRepo {
     _balanceWatchers.clear();
 
     enabledAssetsChanges.close();
+  }
+
+  Future<Set<AssetId>> getActivatedAssetIds({bool forceRefresh = false}) {
+    return _activatedAssetsCache.getActivatedAssetIds(
+      forceRefresh: forceRefresh,
+    );
+  }
+
+  Future<bool> isAssetActivated(
+    AssetId assetId, {
+    bool forceRefresh = false,
+  }) async {
+    final activated = await getActivatedAssetIds(forceRefresh: forceRefresh);
+    return activated.contains(assetId);
+  }
+
+  void _invalidateActivatedAssetsCache() {
+    _activatedAssetsCache.invalidate();
   }
 
   /// Returns all known coins, optionally filtering out excluded assets.
@@ -349,16 +372,6 @@ class CoinsRepo {
         // Use retry with exponential backoff for activation
         await retry<void>(
           () async {
-            // exception is thrown if the asset is already activated, so manual
-            // check is needed for now until specific exception type can be caught
-            final activatedAssets = await _kdfSdk.assets.getActivatedAssets();
-            if (activatedAssets.any((a) => a.id == asset.id)) {
-              _log.info(
-                'Coin ${coin.id} is already activated. Skipping activation.',
-              );
-              return;
-            }
-
             final progress = await _kdfSdk.assets.activateAsset(asset).last;
             if (!progress.isSuccess) {
               throw Exception(
@@ -374,6 +387,7 @@ class CoinsRepo {
         );
 
         _log.info('Asset activated: ${asset.id.id}');
+        _invalidateActivatedAssetsCache();
         if (kDebugElectrumLogs) {
           _log.info(
             '[ACTIVATION] Successfully activated ${asset.id.id} (${asset.protocol.runtimeType})',
@@ -395,7 +409,9 @@ class CoinsRepo {
         }
         _subscribeToBalanceUpdates(asset);
         if (kDebugElectrumLogs) {
-          _log.info('[ACTIVATION] Subscribed to balance updates for ${asset.id.id}');
+          _log.info(
+            '[ACTIVATION] Subscribed to balance updates for ${asset.id.id}',
+          );
         }
         if (coin.id.parentId != null) {
           final parentAsset = _kdfSdk.assets.available[coin.id.parentId];
@@ -518,7 +534,7 @@ class CoinsRepo {
     final allCoinIds = <String>{};
     final allChildCoins = <Coin>[];
 
-    final activatedAssets = await _kdfSdk.assets.getActivatedAssets();
+    final activatedAssets = await _activatedAssetsCache.getActivatedAssets();
     for (final coin in coins) {
       allCoinIds.add(coin.id.id);
 
@@ -566,6 +582,7 @@ class CoinsRepo {
     ];
     await Future.wait(deactivationTasks);
     await Future.wait([...parentCancelFutures, ...childCancelFutures]);
+    _invalidateActivatedAssetsCache();
   }
 
   Future<void> _disableCoin(String coinId) async {
@@ -790,7 +807,7 @@ class CoinsRepo {
     bool notifyListeners = true,
     bool addToWalletMetadata = true,
   }) async {
-    final activatedAssets = await _kdfSdk.assets.getActivatedAssets();
+    final activatedAssets = await _activatedAssetsCache.getActivatedAssets();
 
     for (final asset in assets) {
       final coin = coins.firstWhere((coin) => coin.id == asset.id);
@@ -907,6 +924,7 @@ class CoinsRepo {
               NetworkImage(coin.logoImageUrl!),
             );
           }
+          _invalidateActivatedAssetsCache();
         },
         error: (message) {
           _log.severe(

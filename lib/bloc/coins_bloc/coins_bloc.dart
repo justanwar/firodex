@@ -15,6 +15,7 @@ import 'package:web_dex/model/cex_price.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/shared/utils/utils.dart';
+import 'package:web_dex/shared/constants.dart';
 
 part 'coins_event.dart';
 part 'coins_state.dart';
@@ -402,6 +403,7 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
           walletCoinsForThreshold,
           threshold: 0.8,
           timeout: const Duration(minutes: 1),
+          delay: kActivationPollingInterval,
         );
       } catch (e, s) {
         _log.shout(

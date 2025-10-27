@@ -224,22 +224,17 @@ class TakerValidator {
 
   Future<bool> _validateCoinAndParent(String abbr) async {
     final coin = _sdk.getSdkAsset(abbr);
-    final enabledAssets = await _sdk.assets.getActivatedAssets();
-    final isAssetEnabled = enabledAssets.contains(coin);
+    final activatedAssetIds = await _coinsRepo.getActivatedAssetIds();
     final parentId = coin.id.parentId;
-    final parent = _sdk.assets.available[parentId];
 
-    if (!isAssetEnabled) {
+    if (!activatedAssetIds.contains(coin.id)) {
       add(TakerAddError(_coinNotActiveError(coin.id.id)));
       return false;
     }
 
-    if (parent != null) {
-      final isParentEnabled = enabledAssets.contains(parent);
-      if (!isParentEnabled) {
-        add(TakerAddError(_coinNotActiveError(parent.id.id)));
-        return false;
-      }
+    if (parentId != null && !activatedAssetIds.contains(parentId)) {
+      add(TakerAddError(_coinNotActiveError(parentId.id)));
+      return false;
     }
 
     return true;

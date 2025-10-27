@@ -70,6 +70,10 @@ class Mm2Api {
   late Mm2ApiNft nft;
   VersionResponse? _versionResponse;
 
+  Future<void> dispose() async {
+    nft.dispose();
+  }
+
   Future<void> disableCoin(String coinId) async {
     try {
       await _mm2.call(DisableCoinReq(coin: coinId));

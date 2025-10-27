@@ -123,8 +123,7 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
 
       // Log swap failure analytics event for immediate RPC errors
       final walletType =
-          (await _sdk.auth.currentUser)?.wallet.config.type.name ??
-          'unknown';
+          (await _sdk.auth.currentUser)?.wallet.config.type.name ?? 'unknown';
       _analyticsBloc.logEvent(
         SwapFailedEventData(
           asset: state.sellCoin!.abbr,
@@ -447,11 +446,7 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
       );
     }
 
-    // Required here because of the manual RPC calls that bypass the sdk
-    final activeAssets = await _sdk.assets.getActivatedAssets();
-    final isAssetActive = activeAssets.any(
-      (asset) => asset.id == state.sellCoin!.id,
-    );
+    final isAssetActive = await _coinsRepo.isAssetActivated(state.sellCoin!.id);
     if (!isAssetActive) {
       // Intentionally leave the state as loading so that a spinner is shown
       // instead of a "0.00" balance hinting that the asset is active when it
