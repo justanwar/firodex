@@ -316,6 +316,16 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
 
     add(TakerUpdateBestOrders(autoSelectOrderAbbr: event.autoSelectOrderAbbr));
 
+    // Before login, show 0.00 instead of spinner
+    if (!_isLoggedIn) {
+      emit(
+        state.copyWith(
+          availableBalanceState: () => AvailableBalanceState.unavailable,
+          maxSellAmount: () => null,
+        ),
+      );
+    }
+
     await _autoActivateCoin(state.sellCoin?.abbr);
     _subscribeMaxSellAmount();
     add(TakerGetMinSellAmount());
@@ -438,6 +448,17 @@ class TakerBloc extends Bloc<TakerEvent, TakerState> {
       _maxSellAmountTimer?.cancel();
       return;
     }
+    // If not logged in, show 0.00 (unavailable) and skip spinner
+    if (!_isLoggedIn) {
+      emitter(
+        state.copyWith(
+          availableBalanceState: () => AvailableBalanceState.unavailable,
+          maxSellAmount: () => null,
+        ),
+      );
+      return;
+    }
+
     if (state.availableBalanceState == AvailableBalanceState.initial ||
         event.setLoadingStatus) {
       emitter(
