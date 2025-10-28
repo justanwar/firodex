@@ -23,6 +23,8 @@ class FiatProviderWebViewSettings {
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
     return InAppWebViewSettings(
       isInspectable: kDebugMode,
+      // https://docs.banxa.com/docs/referral-link#%F0%9F%97%94-iframe
+      iframeAllow: 'payment; encrypted-media; microphone; camera; midi',
       iframeSandbox: {
         // Required for cookies and localStorage access
         Sandbox.ALLOW_SAME_ORIGIN,
@@ -39,25 +41,10 @@ class FiatProviderWebViewSettings {
         // parent navigation
       },
       // TODO: revisit & possibly fork repo to add support for more platforms
-      // The intended approach only works on iOS and macOS, and is far too restrictive
-      // given that we are using 3rd party providers that can change their dependencies at
-      // any time (i.e. Ramp)tk
-      // contentBlockers: [
-      //   // Block all content by default
-      //   ContentBlocker(
-      //     trigger: ContentBlockerTrigger(urlFilter: '.*'),
-      //     action: ContentBlockerAction(type: ContentBlockerActionType.BLOCK),
-      //   ),
-      //   // Allow the specific domains we trust
-      //   ...trustedDomainFilters.map(
-      //     (urlFilter) => ContentBlocker(
-      //       trigger: ContentBlockerTrigger(urlFilter: urlFilter),
-      //       action: ContentBlockerAction(
-      //         type: ContentBlockerActionType.IGNORE_PREVIOUS_RULES,
-      //       ),
-      //     ),
-      //   ),
-      // ],
+      // The whitelist approach is flaky due to the nested iframes used by
+      // Banxa, which is beyond our control and can change at any time at their 
+      // discretion. Not to mention Ramp.
+      contentBlockers: [],
     );
   }
 }
