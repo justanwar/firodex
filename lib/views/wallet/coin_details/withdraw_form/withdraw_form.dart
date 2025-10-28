@@ -338,6 +338,7 @@ class WithdrawPreviewDetails extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final padding = _calculatePadding(constraints.maxWidth);
+        final useRowLayout = constraints.maxWidth >= widthThreshold;
 
         return Card(
           child: Padding(
@@ -345,46 +346,102 @@ class WithdrawPreviewDetails extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildRow(
-                  LocaleKeys.amount.tr(),
+                if (useRowLayout)
+                  _buildRow(
+                    LocaleKeys.amount.tr(),
+                    AssetAmountWithFiat(
+                      assetId: assets.id,
+                      amount: preview.balanceChanges.netChange,
+                      isAutoScrollEnabled: true,
+                    ),
+                  )
+                else ...[
+                  Text(
+                    LocaleKeys.amount.tr(),
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 4),
                   AssetAmountWithFiat(
                     assetId: assets.id,
                     amount: preview.balanceChanges.netChange,
                     isAutoScrollEnabled: true,
                   ),
-                ),
+                ],
                 const SizedBox(height: 16),
-                _buildRow(
-                  LocaleKeys.fee.tr(),
+                if (useRowLayout)
+                  _buildRow(
+                    LocaleKeys.fee.tr(),
+                    AssetAmountWithFiat(
+                      assetId: feeAssets.id,
+                      amount: preview.fee.totalFee,
+                      isAutoScrollEnabled: true,
+                    ),
+                  )
+                else ...[
+                  Text(
+                    LocaleKeys.fee.tr(),
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 4),
                   AssetAmountWithFiat(
                     assetId: feeAssets.id,
                     amount: preview.fee.totalFee,
                     isAutoScrollEnabled: true,
                   ),
-                ),
+                ],
                 const SizedBox(height: 16),
-                _buildRow(
-                  LocaleKeys.recipientAddress.tr(),
+                if (useRowLayout)
+                  _buildRow(
+                    LocaleKeys.recipientAddress.tr(),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final recipient in preview.to)
+                          CopiedTextV2(copiedValue: recipient, fontSize: 14),
+                      ],
+                    ),
+                  )
+                else ...[
+                  Text(
+                    LocaleKeys.recipientAddress.tr(),
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  const SizedBox(height: 4),
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       for (final recipient in preview.to)
                         CopiedTextV2(copiedValue: recipient, fontSize: 14),
                     ],
                   ),
-                ),
+                ],
                 if (preview.memo?.isNotEmpty ?? false) ...[
                   const SizedBox(height: 16),
-                  _buildRow(
-                    LocaleKeys.memo.tr(),
+                  if (useRowLayout)
+                    _buildRow(
+                      LocaleKeys.memo.tr(),
+                      Text(
+                        preview.memo!,
+                        textAlign: TextAlign.right,
+                        softWrap: true,
+                        overflow: TextOverflow.visible,
+                      ),
+                    )
+                  else ...[
+                    Text(
+                      LocaleKeys.memo.tr(),
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 4),
                     Text(
                       preview.memo!,
-                      textAlign: TextAlign.right,
+                      textAlign: TextAlign.left,
                       softWrap: true,
                       overflow: TextOverflow.visible,
                     ),
-                  ),
+                  ],
                 ],
               ],
             ),
