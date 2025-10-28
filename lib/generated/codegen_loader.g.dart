@@ -210,7 +210,7 @@ abstract class  LocaleKeys {
   static const walletCreationHdBip39SeedError = 'walletCreationHdBip39SeedError';
   static const walletPageNoSuchAsset = 'walletPageNoSuchAsset';
   static const swap = 'swap';
-  static const dexAddress = 'dexAddress';
+  static const swapAddress = 'swapAddress';
   static const fiatBalance = 'fiatBalance';
   static const yourBalance = 'yourBalance';
   static const all = 'all';
