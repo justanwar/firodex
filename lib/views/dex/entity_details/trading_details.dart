@@ -29,7 +29,7 @@ class TradingDetails extends StatefulWidget {
   const TradingDetails({super.key, required this.uuid, this.kind = TradingEntityKind.swap});
 
   final String uuid;
-  final TradingEntityKind? kind;
+  final TradingEntityKind kind;
 
   @override
   State<TradingDetails> createState() => _TradingDetailsState();
@@ -116,7 +116,7 @@ class _TradingDetailsState extends State<TradingDetails> {
     } catch (e, s) {
       log(
         e.toString(),
-        path: 'trading_details =>_updateStatus ${widget.kind ?? TradingEntityKind.swap} error | uuid=${widget.uuid}',
+        path: 'trading_details =>_updateStatus ${widget.kind} error | uuid=${widget.uuid}',
         trace: s,
         isError: true,
       );
