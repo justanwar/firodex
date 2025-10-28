@@ -50,11 +50,9 @@ class AssetAmountWithFiat extends StatelessWidget {
     }
 
     // If no price available, just show the amount
-    var formattedFiat = '';
-    if (price != null) {
-      final fiatValue = (price * amount).toDouble();
-      formattedFiat = ' (${formatUsdValue(fiatValue)})';
-    }
+    final formattedFiat = price != null
+        ? ' (${formatUsdValue((price * amount).toDouble())})'
+        : '';
 
     final fullText = '$displayText$formattedFiat';
 
