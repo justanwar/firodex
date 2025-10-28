@@ -225,13 +225,25 @@ class TransactionHistoryBloc
   }
 }
 
-int _sortTransactions(Transaction tx1, Transaction tx2) {
-  if (tx2.timestamp == DateTime.now()) {
-    return 1;
-  } else if (tx1.timestamp == DateTime.now()) {
-    return -1;
+int _sortTransactions(Transaction left, Transaction right) {
+  // Unconfirmed (pending) transactions should appear first.
+  final leftIsUnconfirmed = left.confirmations == 0;
+  final rightIsUnconfirmed = right.confirmations == 0;
+
+  if (leftIsUnconfirmed != rightIsUnconfirmed) {
+    return leftIsUnconfirmed ? -1 : 1;
   }
-  return tx2.timestamp.compareTo(tx1.timestamp);
+
+  // Then sort by timestamp descending (newest first)
+  final timeComparison = right.timestamp.compareTo(left.timestamp);
+  if (timeComparison != 0) return timeComparison;
+
+  // As a stable tiebreaker, prefer higher block heights first
+  final heightComparison = right.blockHeight.compareTo(left.blockHeight);
+  if (heightComparison != 0) return heightComparison;
+
+  // Final tiebreaker to ensure deterministic ordering
+  return right.internalId.compareTo(left.internalId);
 }
 
 void _flagTransactions(List<Transaction> transactions, Coin coin) {
