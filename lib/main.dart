@@ -98,7 +98,8 @@ Future<void> main() async {
     );
 
     // Start FD monitoring on iOS (works in both Debug and Release)
-    if (Platform.isIOS) {
+    // Guard against web where dart:io Platform is unsupported
+    if (!kIsWeb && Platform.isIOS) {
       try {
         final result = await FdMonitorService().start(intervalSeconds: 60.0);
         if (result['success'] == true) {
