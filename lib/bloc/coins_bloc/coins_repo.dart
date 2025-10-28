@@ -397,7 +397,6 @@ class CoinsRepo {
 
           _log.info('Asset activated: ${asset.id.id}');
         }
-        _invalidateActivatedAssetsCache();
         if (kDebugElectrumLogs) {
           _log.info(
             '[ACTIVATION] Successfully activated ${asset.id.id} (${asset.protocol.runtimeType})',
@@ -466,6 +465,9 @@ class CoinsRepo {
         }
       }
     }
+
+    // Invalidate the activated assets cache once after processing all assets
+    _invalidateActivatedAssetsCache();
 
     // Rethrow the last activation exception if there was one
     if (lastActivationException != null) {
