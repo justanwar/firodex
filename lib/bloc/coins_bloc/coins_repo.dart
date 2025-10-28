@@ -46,6 +46,10 @@ class CoinsRepo {
       onListen: () => _enabledAssetListenerCount += 1,
       onCancel: () => _enabledAssetListenerCount -= 1,
     );
+    balanceChanges = StreamController<Coin>.broadcast(
+      onListen: () => _balanceListenerCount += 1,
+      onCancel: () => _balanceListenerCount -= 1,
+    );
   }
 
   final KomodoDefiSdk _kdfSdk;
@@ -89,6 +93,21 @@ class CoinsRepo {
     }
   }
 
+  /// Stream to broadcast real-time balance changes for coins
+  late final StreamController<Coin> balanceChanges;
+  int _balanceListenerCount = 0;
+  bool get _balancesHasListeners => _balanceListenerCount > 0;
+  void _broadcastBalanceChange(Coin coin) {
+    if (_balancesHasListeners) {
+      balanceChanges.add(coin);
+    } else {
+      _log.fine(
+        'No listeners for balanceChanges stream. '
+        'Skipping broadcast for ${coin.id.id}',
+      );
+    }
+  }
+
   Future<BalanceInfo?> balance(AssetId id) => _kdfSdk.balances.getBalance(id);
 
   BalanceInfo? lastKnownBalance(AssetId id) => _kdfSdk.balances.lastKnown(id);
@@ -111,6 +130,9 @@ class CoinsRepo {
           balance: balanceInfo.total.toDouble(),
           spendable: balanceInfo.spendable.toDouble(),
         );
+
+        // Broadcast updated coin for UI to refresh via bloc
+        _broadcastBalanceChange(_assetToCoinWithoutAddress(asset));
       },
     );
   }
@@ -136,6 +158,7 @@ class CoinsRepo {
     _balanceWatchers.clear();
 
     enabledAssetsChanges.close();
+    balanceChanges.close();
   }
 
   Future<Set<AssetId>> getActivatedAssetIds({bool forceRefresh = false}) {
