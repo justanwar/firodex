@@ -31,6 +31,9 @@ class TransactionHistoryBloc
 
   // TODO: Remove or move to SDK
   final Set<String> _processedTxIds = {};
+  // Stable in-memory clock for transactions that arrive with a zero timestamp.
+  // Ensures deterministic ordering of unconfirmed and just-confirmed items.
+  final Map<String, DateTime> _firstSeenAtById = {};
 
   @override
   Future<void> close() async {
@@ -62,6 +65,7 @@ class TransactionHistoryBloc
       await _historySubscription?.cancel();
       await _newTransactionsSubscription?.cancel();
       _processedTxIds.clear();
+      _firstSeenAtById.clear();
 
       add(const TransactionHistoryStartedLoading());
       final asset = _sdk.assets.available[event.coin.id];
@@ -88,6 +92,13 @@ class TransactionHistoryBloc
 
               for (final tx in newTransactions) {
                 final sanitized = tx.sanitize(myAddresses);
+                // Capture first-seen time for stable ordering where timestamp may be zero
+                _firstSeenAtById.putIfAbsent(
+                  sanitized.internalId,
+                  () => sanitized.timestamp.millisecondsSinceEpoch != 0
+                      ? sanitized.timestamp
+                      : DateTime.now(),
+                );
                 final existing = byId[sanitized.internalId];
                 if (existing == null) {
                   byId[sanitized.internalId] = sanitized;
@@ -105,7 +116,7 @@ class TransactionHistoryBloc
               }
 
               final updatedTransactions = byId.values.toList()
-                ..sort(_sortTransactions);
+                ..sort(_compareTransactions);
 
               if (event.coin.isErcType) {
                 _flagTransactions(updatedTransactions, event.coin);
@@ -159,6 +170,13 @@ class TransactionHistoryBloc
         .listen(
           (newTransaction) {
             final sanitized = newTransaction.sanitize(myAddresses);
+            // Capture first-seen time once for stable ordering when timestamp is zero
+            _firstSeenAtById.putIfAbsent(
+              sanitized.internalId,
+              () => sanitized.timestamp.millisecondsSinceEpoch != 0
+                  ? sanitized.timestamp
+                  : DateTime.now(),
+            );
 
             // Merge single update by internalId
             final Map<String, Transaction> byId = {
@@ -180,7 +198,7 @@ class TransactionHistoryBloc
             _processedTxIds.add(sanitized.internalId);
 
             final updatedTransactions = byId.values.toList()
-              ..sort(_sortTransactions);
+              ..sort(_compareTransactions);
 
             if (coin.isErcType) {
               _flagTransactions(updatedTransactions, coin);
@@ -223,28 +241,36 @@ class TransactionHistoryBloc
   ) {
     emit(state.copyWith(loading: false, error: event.error));
   }
-}
 
-int _sortTransactions(Transaction left, Transaction right) {
-  // Unconfirmed (pending) transactions should appear first.
-  final leftIsUnconfirmed = left.confirmations == 0;
-  final rightIsUnconfirmed = right.confirmations == 0;
-
-  if (leftIsUnconfirmed != rightIsUnconfirmed) {
-    return leftIsUnconfirmed ? -1 : 1;
+  DateTime _sortTime(Transaction tx) {
+    if (tx.timestamp.millisecondsSinceEpoch != 0) return tx.timestamp;
+    final firstSeen = _firstSeenAtById[tx.internalId];
+    return firstSeen ?? DateTime.fromMillisecondsSinceEpoch(0);
   }
 
-  // Then sort by timestamp descending (newest first)
-  final timeComparison = right.timestamp.compareTo(left.timestamp);
-  if (timeComparison != 0) return timeComparison;
+  int _compareTransactions(Transaction left, Transaction right) {
+    // Unconfirmed (pending) transactions should appear first.
+    final leftIsUnconfirmed = left.confirmations == 0;
+    final rightIsUnconfirmed = right.confirmations == 0;
 
-  // As a stable tiebreaker, prefer higher block heights first
-  final heightComparison = right.blockHeight.compareTo(left.blockHeight);
-  if (heightComparison != 0) return heightComparison;
+    if (leftIsUnconfirmed != rightIsUnconfirmed) {
+      return leftIsUnconfirmed ? -1 : 1;
+    }
 
-  // Final tiebreaker to ensure deterministic ordering
-  return right.internalId.compareTo(left.internalId);
+    // Within each group, sort by effective time (handles zero timestamps)
+    final timeComparison = _sortTime(right).compareTo(_sortTime(left));
+    if (timeComparison != 0) return timeComparison;
+
+    // Prefer higher block heights first
+    final heightComparison = right.blockHeight.compareTo(left.blockHeight);
+    if (heightComparison != 0) return heightComparison;
+
+    // Final tiebreaker to ensure deterministic ordering
+    return right.internalId.compareTo(left.internalId);
+  }
 }
+
+// Instance comparator now used; legacy top-level comparator removed.
 
 void _flagTransactions(List<Transaction> transactions, Coin coin) {
   if (!coin.isErcType) return;
