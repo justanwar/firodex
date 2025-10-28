@@ -12,7 +12,7 @@ import 'package:komodo_defi_types/komodo_defi_type_utils.dart'
 import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:komodo_ui/komodo_ui.dart';
 import 'package:logging/logging.dart';
-import 'package:web_dex/app_config/app_config.dart' show excludedAssetList;
+import 'package:web_dex/app_config/app_config.dart' show excludedAssetList, kDebugElectrumLogs;
 import 'package:web_dex/bloc/coins_bloc/asset_coin_extension.dart';
 import 'package:web_dex/bloc/trading_status/trading_status_service.dart'
     show TradingStatusService;
@@ -29,6 +29,8 @@ import 'package:web_dex/model/kdf_auth_metadata_extension.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/withdraw_details/withdraw_details.dart';
 import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
+import 'package:web_dex/services/fd_monitor_service.dart';
+import 'package:web_dex/shared/utils/platform_tuner.dart';
 
 class CoinsRepo {
   CoinsRepo({
@@ -284,6 +286,28 @@ class CoinsRepo {
       return;
     }
 
+    // Debug logging for activation
+    if (kDebugElectrumLogs) {
+      final coinIdList = assets.map((e) => e.id.id).join(', ');
+      final protocolBreakdown = <String, int>{};
+      for (final asset in assets) {
+        final protocol = asset.protocol.runtimeType.toString();
+        protocolBreakdown[protocol] = (protocolBreakdown[protocol] ?? 0) + 1;
+      }
+      _log.info(
+        '[ACTIVATION] Starting activation of ${assets.length} coins: [$coinIdList]',
+      );
+      _log.info('[ACTIVATION] Protocol breakdown: $protocolBreakdown');
+      
+      // Log detailed parameters for each asset being activated
+      for (final asset in assets) {
+        _log.info(
+          '[ACTIVATION] Asset: ${asset.id.id}, Protocol: ${asset.protocol.runtimeType}, '
+          'SubClass: ${asset.id.subClass}, ParentId: ${asset.id.parentId?.id ?? "none"}',
+        );
+      }
+    }
+
     // Separate ZHTLC and regular assets
     final zhtlcAssets = assets
         .where((asset) => asset.id.subClass == CoinSubClass.zhtlc)
@@ -352,6 +376,16 @@ class CoinsRepo {
         );
 
         _log.info('Asset activated: ${asset.id.id}');
+        if (kDebugElectrumLogs) {
+          _log.info(
+            '[ACTIVATION] Successfully activated ${asset.id.id} (${asset.protocol.runtimeType})',
+          );
+          _log.info(
+            '[ACTIVATION] Activation completed for ${asset.id.id}, '
+            'Protocol: ${asset.protocol.runtimeType}, '
+            'SubClass: ${asset.id.subClass}',
+          );
+        }
         if (notifyListeners) {
           _broadcastAsset(coin.copyWith(state: CoinState.active));
           if (coin.id.parentId != null) {
@@ -362,6 +396,9 @@ class CoinsRepo {
           }
         }
         _subscribeToBalanceUpdates(asset);
+        if (kDebugElectrumLogs) {
+          _log.info('[ACTIVATION] Subscribed to balance updates for ${asset.id.id}');
+        }
         if (coin.id.parentId != null) {
           final parentAsset = _kdfSdk.assets.available[coin.id.parentId];
           if (parentAsset == null) {
@@ -377,6 +414,20 @@ class CoinsRepo {
           e,
           s,
         );
+        
+        // Capture FD snapshot when KDF asset activation fails
+        if (PlatformTuner.isIOS) {
+          try {
+            await FdMonitorService().logDetailedStatus();
+            final stats = await FdMonitorService().getCurrentCount();
+            _log.warning(
+              'FD stats at asset activation failure for ${asset.id.id}: $stats',
+            );
+          } catch (fdError) {
+            _log.warning('Failed to capture FD stats: $fdError');
+          }
+        }
+        
         if (notifyListeners) {
           _broadcastAsset(asset.toCoin().copyWith(state: CoinState.suspended));
         }

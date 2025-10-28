@@ -94,7 +94,7 @@ class _CoinsManagerFiltersState extends State<CoinsManagerFilters> {
           : null,
       autocorrect: false,
       autofocus: true,
-      textInputAction: TextInputAction.none,
+      textInputAction: TextInputAction.search,
       enableInteractiveSelection: true,
       prefixIcon: const Icon(Icons.search, size: 18),
       inputFormatters: [LengthLimitingTextInputFormatter(40)],

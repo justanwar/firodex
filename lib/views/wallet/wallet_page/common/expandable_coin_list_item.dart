@@ -9,7 +9,6 @@ import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:komodo_ui/komodo_ui.dart';
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
 import 'package:web_dex/bloc/coins_bloc/coins_bloc.dart';
-import 'package:web_dex/bloc/trading_status/trading_status_bloc.dart';
 import 'package:web_dex/common/screen.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/model/coin.dart';
@@ -291,9 +290,6 @@ class _AddressRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final tradingState = context.watch<TradingStatusBloc>().state;
-    final canTradeCoin = tradingState.canTradeAssets([coin.id]);
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: ListTile(
@@ -321,7 +317,7 @@ class _AddressRow extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
               ),
             ),
-            if (isSwapAddress && canTradeCoin) ...[
+            if (isSwapAddress) ...[
               const SizedBox(width: 8),
               // TODO: Refactor to use "DexPill" component from the SDK UI library (not yet created)
               Padding(
@@ -336,7 +332,7 @@ class _AddressRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16.0),
                   ),
                   child: Text(
-                    LocaleKeys.dexAddress.tr(),
+                    LocaleKeys.swapAddress.tr(),
                     style: TextStyle(fontSize: isMobile ? 9 : 12),
                   ),
                 ),
