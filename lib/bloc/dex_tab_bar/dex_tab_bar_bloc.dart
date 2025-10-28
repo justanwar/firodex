@@ -93,7 +93,7 @@ class DexTabBarBloc extends Bloc<DexTabBarEvent, DexTabBarState> {
 
   FutureOr<void> _onTabChanged(TabChanged event, Emitter<DexTabBarState> emit) {
     // Validate tabIndex to prevent out-of-bounds access
-    final validatedIndex = event.tabIndex.clamp(0, DexListType.values.length - 1);
+    final int validatedIndex = event.tabIndex.clamp(0, DexListType.values.length - 1).toInt();
     emit(state.copyWith(tabIndex: validatedIndex));
   }
 
