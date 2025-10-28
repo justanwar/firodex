@@ -7,6 +7,8 @@ import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/wallet.dart';
+import 'package:web_dex/services/fd_monitor_service.dart';
+import 'package:web_dex/shared/utils/platform_tuner.dart';
 import 'package:collection/collection.dart';
 
 export 'package:web_dex/bloc/withdraw_form/withdraw_form_event.dart';
@@ -432,6 +434,17 @@ class WithdrawFormBloc extends Bloc<WithdrawFormEvent, WithdrawFormState> {
         ),
       );
     } catch (e) {
+      // Capture FD snapshot when KDF withdrawal preview fails
+      if (PlatformTuner.isIOS) {
+        try {
+          await FdMonitorService().logDetailedStatus();
+          final stats = await FdMonitorService().getCurrentCount();
+          print('FD stats at withdrawal preview failure for ${state.asset.id.id}: $stats');
+        } catch (fdError) {
+          print('Failed to capture FD stats: $fdError');
+        }
+      }
+      
       emit(
         state.copyWith(
           previewError: () =>
@@ -483,6 +496,17 @@ class WithdrawFormBloc extends Bloc<WithdrawFormEvent, WithdrawFormState> {
         }
       }
     } catch (e) {
+      // Capture FD snapshot when KDF withdrawal submission fails
+      if (PlatformTuner.isIOS) {
+        try {
+          await FdMonitorService().logDetailedStatus();
+          final stats = await FdMonitorService().getCurrentCount();
+          print('FD stats at withdrawal submission failure for ${state.asset.id.id}: $stats');
+        } catch (fdError) {
+          print('Failed to capture FD stats: $fdError');
+        }
+      }
+      
       emit(
         state.copyWith(
           transactionError: () => TextError(error: 'Transaction failed: $e'),
