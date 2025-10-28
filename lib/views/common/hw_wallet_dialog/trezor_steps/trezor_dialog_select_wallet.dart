@@ -75,6 +75,13 @@ class _TrezorHiddenWalletState extends State<_TrezorHiddenWallet> {
   }
 
   @override
+  void dispose() {
+    _passphraseController.dispose();
+    _passphraseFieldFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
