@@ -4,6 +4,7 @@ import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
+import 'package:komodo_defi_sdk/src/activation/activation_exceptions.dart';
 import 'package:komodo_defi_types/komodo_defi_types.dart';
 import 'package:web_dex/bloc/transaction_history/transaction_history_event.dart';
 import 'package:web_dex/bloc/transaction_history/transaction_history_state.dart';
@@ -78,24 +79,33 @@ class TransactionHistoryBloc
           .getTransactionsStreamed(asset)
           .listen(
             (newTransactions) {
-              // Filter out any transactions we've already processed
-              final uniqueTransactions = newTransactions.where((tx) {
-                final isNew = !_processedTxIds.contains(tx.internalId);
-                if (isNew) {
-                  _processedTxIds.add(tx.internalId);
+              if (newTransactions.isEmpty) return;
+
+              // Merge incoming batch by internalId, updating confirmations and other fields
+              final Map<String, Transaction> byId = {
+                for (final t in state.transactions) t.internalId: t,
+              };
+
+              for (final tx in newTransactions) {
+                final sanitized = tx.sanitize(myAddresses);
+                final existing = byId[sanitized.internalId];
+                if (existing == null) {
+                  byId[sanitized.internalId] = sanitized;
+                  _processedTxIds.add(sanitized.internalId);
+                  continue;
                 }
-                return isNew;
-              }).toList();
 
-              if (uniqueTransactions.isEmpty) return;
+                // Update existing entry with fresher data (confirmations, blockHeight, fee, memo)
+                byId[sanitized.internalId] = existing.copyWith(
+                  confirmations: sanitized.confirmations,
+                  blockHeight: sanitized.blockHeight,
+                  fee: sanitized.fee ?? existing.fee,
+                  memo: sanitized.memo ?? existing.memo,
+                );
+              }
 
-              final sanitized = uniqueTransactions
-                  .map((tx) => tx.sanitize(myAddresses))
-                  .toList();
-              final updatedTransactions =
-                  List<Transaction>.of(state.transactions)
-                    ..addAll(sanitized)
-                    ..sort(_sortTransactions);
+              final updatedTransactions = byId.values.toList()
+                ..sort(_sortTransactions);
 
               if (event.coin.isErcType) {
                 _flagTransactions(updatedTransactions, event.coin);
@@ -127,11 +137,15 @@ class TransactionHistoryBloc
         path: 'transaction_history_bloc->_onSubscribe',
         trace: s,
       );
-      add(
-        TransactionHistoryFailure(
-          error: TextError(error: LocaleKeys.somethingWrong.tr()),
-        ),
-      );
+
+      String errorMessage;
+      if (e is ActivationFailedException) {
+        errorMessage = 'Asset activation failed: ${e.message}';
+      } else {
+        errorMessage = LocaleKeys.somethingWrong.tr();
+      }
+
+      add(TransactionHistoryFailure(error: TextError(error: errorMessage)));
     }
   }
 
@@ -144,13 +158,28 @@ class TransactionHistoryBloc
         .watchTransactions(asset)
         .listen(
           (newTransaction) {
-            if (_processedTxIds.contains(newTransaction.internalId)) return;
-
-            _processedTxIds.add(newTransaction.internalId);
-
             final sanitized = newTransaction.sanitize(myAddresses);
-            final updatedTransactions = List<Transaction>.of(state.transactions)
-              ..add(sanitized)
+
+            // Merge single update by internalId
+            final Map<String, Transaction> byId = {
+              for (final t in state.transactions) t.internalId: t,
+            };
+
+            final existing = byId[sanitized.internalId];
+            if (existing == null) {
+              byId[sanitized.internalId] = sanitized;
+            } else {
+              byId[sanitized.internalId] = existing.copyWith(
+                confirmations: sanitized.confirmations,
+                blockHeight: sanitized.blockHeight,
+                fee: sanitized.fee ?? existing.fee,
+                memo: sanitized.memo ?? existing.memo,
+              );
+            }
+
+            _processedTxIds.add(sanitized.internalId);
+
+            final updatedTransactions = byId.values.toList()
               ..sort(_sortTransactions);
 
             if (coin.isErcType) {
@@ -160,10 +189,15 @@ class TransactionHistoryBloc
             add(TransactionHistoryUpdated(transactions: updatedTransactions));
           },
           onError: (error) {
+            String errorMessage;
+            if (error is ActivationFailedException) {
+              errorMessage = 'Asset activation failed: ${error.message}';
+            } else {
+              errorMessage = LocaleKeys.somethingWrong.tr();
+            }
+
             add(
-              TransactionHistoryFailure(
-                error: TextError(error: LocaleKeys.somethingWrong.tr()),
-              ),
+              TransactionHistoryFailure(error: TextError(error: errorMessage)),
             );
           },
         );
