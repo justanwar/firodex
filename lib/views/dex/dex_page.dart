@@ -48,7 +48,6 @@ class _DexPageState extends State<DexPage> {
     );
     final coinsRepository = RepositoryProvider.of<CoinsRepo>(context);
     final myOrdersService = RepositoryProvider.of<MyOrdersService>(context);
-
     final pageContent = MultiBlocProvider(
       providers: [
         BlocProvider<DexTabBarBloc>(
@@ -64,9 +63,26 @@ class _DexPageState extends State<DexPage> {
           )..add(const ListenToOrdersRequested()),
         ),
       ],
-      child: isTradingDetails
-          ? TradingDetails(uuid: routingState.dexState.uuid)
-          : _DexContent(),
+      child: BlocBuilder<DexTabBarBloc, DexTabBarState>(
+        builder: (context, state) {
+          // Defensive bounds check for tabIndex
+          final bool inRange =
+              state.tabIndex >= 0 && state.tabIndex < DexListType.values.length;
+          final tab = inRange 
+              ? DexListType.values[state.tabIndex] 
+              : DexListType.swap;
+          // Explicit mapping: only orders tab shows order entities, all others show swaps
+          final kind = switch (tab) {
+            DexListType.orders => TradingEntityKind.order,
+            DexListType.swap => TradingEntityKind.swap,
+            DexListType.inProgress => TradingEntityKind.swap,
+            DexListType.history => TradingEntityKind.swap,
+          };
+          return isTradingDetails
+              ? TradingDetails(uuid: routingState.dexState.uuid, kind: kind)
+              : _DexContent();
+        },
+      ),
     );
     return ZhtlcConfigurationHandler(child: pageContent);
   }
@@ -109,7 +125,9 @@ class _DexContentState extends State<_DexContent> {
                     child: shouldShowTabContent(state.tabIndex)
                         ? DexListWrapper(
                             key: Key('dex-list-wrapper-${state.tabIndex}'),
-                            DexListType.values[state.tabIndex],
+                            state.tabIndex >= 0 && state.tabIndex < DexListType.values.length
+                                ? DexListType.values[state.tabIndex]
+                                : DexListType.swap,
                           )
                         : const SizedBox.shrink(),
                   ),
@@ -131,6 +149,6 @@ class _DexContentState extends State<_DexContent> {
   }
 
   bool shouldShowTabContent(int tabIndex) {
-    return DexListType.values.length > tabIndex;
+    return tabIndex >= 0 && tabIndex < DexListType.values.length;
   }
 }
