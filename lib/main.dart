@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWasm, kIsWeb;
@@ -98,8 +97,7 @@ Future<void> main() async {
     );
 
     // Start FD monitoring on iOS (works in both Debug and Release)
-    // Guard against web where dart:io Platform is unsupported
-    if (!kIsWeb && Platform.isIOS) {
+    if (PlatformTuner.isIOS) {
       try {
         final result = await FdMonitorService().start(intervalSeconds: 60.0);
         if (result['success'] == true) {

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 import 'dart:math' show min;
 
 import 'package:collection/collection.dart';
@@ -31,6 +30,7 @@ import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/withdraw_details/withdraw_details.dart';
 import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
 import 'package:web_dex/services/fd_monitor_service.dart';
+import 'package:web_dex/shared/utils/platform_tuner.dart';
 
 class CoinsRepo {
   CoinsRepo({
@@ -416,7 +416,7 @@ class CoinsRepo {
         );
         
         // Capture FD snapshot when KDF asset activation fails
-        if (Platform.isIOS) {
+        if (PlatformTuner.isIOS) {
           try {
             await FdMonitorService().logDetailedStatus();
             final stats = await FdMonitorService().getCurrentCount();
