@@ -363,28 +363,40 @@ class CoinsRepo {
     for (final asset in assets) {
       final coin = _assetToCoinWithoutAddress(asset);
       try {
-        if (notifyListeners) {
-          _broadcastAsset(coin.copyWith(state: CoinState.activating));
+        // Check if asset is already activated to avoid SDK exception.
+        // The SDK throws an exception when trying to activate an already-activated
+        // asset, so we need this manual check to prevent unnecessary retries.
+        final isAlreadyActivated = await isAssetActivated(asset.id);
+
+        if (isAlreadyActivated) {
+          _log.info(
+            'Asset ${asset.id.id} is already activated. Skipping activation.',
+          );
+        } else {
+          if (notifyListeners) {
+            _broadcastAsset(coin.copyWith(state: CoinState.activating));
+          }
+
+          // Use retry with exponential backoff for activation
+          await retry<void>(
+            () async {
+              final progress = await _kdfSdk.assets.activateAsset(asset).last;
+              if (!progress.isSuccess) {
+                throw Exception(
+                  progress.errorMessage ??
+                      'Activation failed for ${asset.id.id}',
+                );
+              }
+            },
+            maxAttempts: maxRetryAttempts,
+            backoffStrategy: ExponentialBackoff(
+              initialDelay: initialRetryDelay,
+              maxDelay: maxRetryDelay,
+            ),
+          );
+
+          _log.info('Asset activated: ${asset.id.id}');
         }
-
-        // Use retry with exponential backoff for activation
-        await retry<void>(
-          () async {
-            final progress = await _kdfSdk.assets.activateAsset(asset).last;
-            if (!progress.isSuccess) {
-              throw Exception(
-                progress.errorMessage ?? 'Activation failed for ${asset.id.id}',
-              );
-            }
-          },
-          maxAttempts: maxRetryAttempts,
-          backoffStrategy: ExponentialBackoff(
-            initialDelay: initialRetryDelay,
-            maxDelay: maxRetryDelay,
-          ),
-        );
-
-        _log.info('Asset activated: ${asset.id.id}');
         _invalidateActivatedAssetsCache();
         if (kDebugElectrumLogs) {
           _log.info(
@@ -426,7 +438,7 @@ class CoinsRepo {
           e,
           s,
         );
-        
+
         // Capture FD snapshot when KDF asset activation fails
         if (Platform.isIOS) {
           try {
@@ -439,7 +451,7 @@ class CoinsRepo {
             _log.warning('Failed to capture FD stats: $fdError');
           }
         }
-        
+
         if (notifyListeners) {
           _broadcastAsset(asset.toCoin().copyWith(state: CoinState.suspended));
         }
