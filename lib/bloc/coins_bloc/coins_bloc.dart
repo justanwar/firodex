@@ -200,13 +200,17 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     Emitter<CoinsState> emit,
   ) async {
     final updated = event.coin;
-    final isTracked = state.walletCoins.containsKey(updated.id.id);
-    if (!isTracked) return;
+    final assetId = updated.id.id;
+    final existing = state.walletCoins[assetId] ?? state.coins[assetId];
+    if (existing == null) return;
+
+    // Preserve persistent state fields such as activation state
+    final merged = updated.copyWith(state: existing.state);
+
     emit(
       state.copyWith(
-        // Update both maps so coin details and list reflect changes
-        walletCoins: {...state.walletCoins, updated.id.id: updated},
-        coins: {...state.coins, updated.id.id: updated},
+        walletCoins: {...state.walletCoins, assetId: merged},
+        coins: {...state.coins, assetId: merged},
       ),
     );
   }
