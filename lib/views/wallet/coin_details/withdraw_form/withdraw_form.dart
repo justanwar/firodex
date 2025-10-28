@@ -311,7 +311,7 @@ class WithdrawPreviewDetails extends StatelessWidget {
   const WithdrawPreviewDetails({
     required this.preview,
     super.key,
-    this.widthThreshold = 350,
+    this.widthThreshold = 400,
     this.minPadding = 2,
     this.maxPadding = 16,
   });
@@ -351,7 +351,10 @@ class WithdrawPreviewDetails extends StatelessWidget {
                     LocaleKeys.amount.tr(),
                     AssetAmountWithFiat(
                       assetId: assets.id,
-                      amount: preview.balanceChanges.netChange,
+                      // netchange for withdrawals is expected to be negative
+                      // so we display the absolute value here to avoid
+                      // confusion with the negative sign
+                      amount: preview.balanceChanges.netChange.abs(),
                       isAutoScrollEnabled: true,
                     ),
                   )
