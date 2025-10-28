@@ -73,19 +73,21 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthBloc, AuthBlocState>(
+      listenWhen: (previous, current) => previous.mode != current.mode,
       listener: (context, state) {
-        // Track when user has been logged in
+        // Route after login completes (works for both software and hardware wallets)
         if (state.mode == AuthorizeMode.logIn) {
           QuickLoginSwitch.trackUserLoggedIn();
+          routingState.selectedMenu = MainMenuValue.wallet;
+          return;
         }
 
-        // Only reset the remember me dialog flag if user was logged in and is now logged out
-        // This prevents the flag from being reset on initial app startup
+        // Route after logout completes
         if (state.mode == AuthorizeMode.noLogin &&
             QuickLoginSwitch.hasBeenLoggedInThisSession) {
           routingState.resetOnLogOut();
-          // Reset dialog state so it can be shown again after user logs out
           QuickLoginSwitch.resetOnLogout();
+          routingState.selectedMenu = MainMenuValue.wallet;
         }
       },
       builder: (context, state) {

@@ -214,7 +214,7 @@
   "walletCreationHdBip39SeedError": "Your input seed phrase is not BIP39 compliant, and can not be used in multi-address wallet mode. Please try again, or disable multi-address wallet mode and select 'Allow custom seed' to proceed.",
   "walletPageNoSuchAsset": "No assets match search criteria",
   "swap": "Swap",
-  "dexAddress": "DEX Address",
+  "swapAddress": "Swap Address",
   "fiatBalance": "Fiat balance",
   "yourBalance": "Your balance",
   "all": "All",
