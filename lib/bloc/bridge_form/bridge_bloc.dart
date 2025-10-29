@@ -246,6 +246,7 @@ class BridgeBloc extends Bloc<BridgeEvent, BridgeState> {
           maxSellAmount: () => null,
         ),
       );
+      return;
     }
 
     _autoActivateCoin(event.coin.abbr);
