@@ -123,11 +123,14 @@ class FiatFormBloc extends Bloc<FiatFormEvent, FiatFormState> {
       final asset = event.selectedCoin.toAsset(_sdk);
       await _coinsRepo.activateAssetsSync([asset]);
       // TODO: increase the max delay in the SDK or make it adjustable
-      final assetPubkeys = await retry(
-        () async => _sdk.pubkeys.getPubkeys(asset),
-        maxAttempts: _pubkeysMaxRetryAttempts,
-        backoffStrategy: ConstantBackoff(delay: _pubkeysRetryDelay),
-      );
+      AssetPubkeys? assetPubkeys = _sdk.pubkeys.lastKnown(asset.id);
+      if (assetPubkeys == null) {
+        assetPubkeys = await retry<AssetPubkeys>(
+          () async => _sdk.pubkeys.getPubkeys(asset),
+          maxAttempts: _pubkeysMaxRetryAttempts,
+          backoffStrategy: ConstantBackoff(delay: _pubkeysRetryDelay),
+        );
+      }
       final address = assetPubkeys.keys.firstOrNull;
 
       emit(
