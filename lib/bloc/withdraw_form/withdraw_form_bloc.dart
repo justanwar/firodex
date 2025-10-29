@@ -8,6 +8,7 @@ import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/services/fd_monitor_service.dart';
+import 'package:web_dex/shared/utils/formatters.dart';
 import 'package:web_dex/shared/utils/platform_tuner.dart';
 import 'package:collection/collection.dart';
 
@@ -221,7 +222,9 @@ class WithdrawFormBloc extends Bloc<WithdrawFormEvent, WithdrawFormState> {
     if (state.isMaxAmount) return;
 
     try {
-      final amount = Decimal.parse(event.amount);
+      // Normalize the amount string to handle locale-specific formats
+      final normalizedAmount = normalizeDecimalString(event.amount);
+      final amount = Decimal.parse(normalizedAmount);
       // Use the selected address balance if available
       final balance = state.selectedSourceAddress?.balance.spendable;
 
