@@ -32,6 +32,14 @@ import 'package:web_dex/services/arrr_activation/arrr_activation_service.dart';
 import 'package:web_dex/services/fd_monitor_service.dart';
 import 'package:web_dex/shared/utils/platform_tuner.dart';
 
+/// Exception used to indicate that ZHTLC activation was cancelled by the user.
+class ZhtlcActivationCancelled implements Exception {
+  ZhtlcActivationCancelled(this.coinId);
+  final String coinId;
+  @override
+  String toString() => 'ZhtlcActivationCancelled: $coinId';
+}
+
 class CoinsRepo {
   CoinsRepo({
     required KomodoDefiSdk kdfSdk,
@@ -948,13 +956,16 @@ class CoinsRepo {
           // User cancellations have the message "Configuration cancelled by user or timed out"
           final isUserCancellation = message.contains('cancelled by user');
 
-          if (notifyListeners && !isUserCancellation) {
+          if (isUserCancellation) {
+            // Bubble up a typed cancellation so the UI can revert the toggle
+            throw ZhtlcActivationCancelled(asset.id.id);
+          }
+
+          if (notifyListeners) {
             _broadcastAsset(coin.copyWith(state: CoinState.suspended));
           }
 
-          if (!isUserCancellation) {
-            throw Exception("zcoin activaiton failed: $message");
-          }
+          throw Exception('zcoin activaiton failed: $message');
         },
         needsConfiguration: (coinId, requiredSettings) {
           _log.severe(
