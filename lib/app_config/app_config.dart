@@ -166,6 +166,7 @@ const List<String> appWalletOnlyAssetList = [
 /// Reduced to only KMD to minimize initial connections and resource usage.
 List<String> get enabledByDefaultCoins => [
   'KMD', // Komodo ecosystem coin
+  'BTC-segwit' // Default Fiat Ramps coin
 ];
 
 const String logsDbName = 'logs';

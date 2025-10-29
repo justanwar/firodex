@@ -17,6 +17,7 @@ import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/bloc/fiat/base_fiat_provider.dart';
 import 'package:web_dex/bloc/fiat/fiat_order_status.dart';
 import 'package:web_dex/bloc/fiat/fiat_repository.dart';
+import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
 import 'package:web_dex/bloc/fiat/models/models.dart';
 import 'package:web_dex/bloc/fiat/payment_status_type.dart';
 import 'package:web_dex/model/forms/fiat/currency_input.dart';
@@ -31,10 +32,12 @@ part 'fiat_form_state.dart';
 class FiatFormBloc extends Bloc<FiatFormEvent, FiatFormState> {
   FiatFormBloc({
     required FiatRepository repository,
+    required CoinsRepo coinsRepo,
     required KomodoDefiSdk sdk,
     int pubkeysMaxRetryAttempts = 20,
     Duration pubkeysRetryDelay = const Duration(milliseconds: 500),
   }) : _fiatRepository = repository,
+       _coinsRepo = coinsRepo,
        _sdk = sdk,
        _pubkeysMaxRetryAttempts = pubkeysMaxRetryAttempts,
        _pubkeysRetryDelay = pubkeysRetryDelay,
@@ -74,6 +77,7 @@ class FiatFormBloc extends Bloc<FiatFormEvent, FiatFormState> {
   }
 
   final FiatRepository _fiatRepository;
+  final CoinsRepo _coinsRepo;
   final KomodoDefiSdk _sdk;
   final int _pubkeysMaxRetryAttempts;
   final Duration _pubkeysRetryDelay;
@@ -115,11 +119,9 @@ class FiatFormBloc extends Bloc<FiatFormEvent, FiatFormState> {
         return emit(state.copyWith(selectedAssetAddress: () => null));
       }
 
-      // Necessary to add the coin to the wallet coins list for now since
-      // CoinsRepository is not used here to manually activate the coin -
-      // which would propagate it to the coins_bloc state.
-      await _sdk.addActivatedCoins([event.selectedCoin.getAbbr()]);
+      // Activate the asset via CoinsRepo to ensure broadcasts reach CoinsBloc
       final asset = event.selectedCoin.toAsset(_sdk);
+      await _coinsRepo.activateAssetsSync([asset]);
       // TODO: increase the max delay in the SDK or make it adjustable
       final assetPubkeys = await retry(
         () async => _sdk.pubkeys.getPubkeys(asset),
