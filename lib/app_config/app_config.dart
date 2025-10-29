@@ -168,8 +168,6 @@ List<String> get enabledByDefaultCoins => [
   'KMD', // Komodo ecosystem coin
 ];
 
-List<String> get coinsWithFaucet => ['RICK', 'MORTY', 'DOC', 'MARTY'];
-
 const String logsDbName = 'logs';
 const String appFolder = 'KomodoWallet';
 
