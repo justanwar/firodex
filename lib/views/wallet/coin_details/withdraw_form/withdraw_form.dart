@@ -14,6 +14,7 @@ import 'package:web_dex/bloc/coins_bloc/asset_coin_extension.dart';
 import 'package:web_dex/bloc/withdraw_form/withdraw_form_bloc.dart';
 import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/base.dart';
+import 'package:web_dex/mm2/mm2_api/mm2_api.dart';
 import 'package:web_dex/model/text_error.dart';
 import 'package:web_dex/model/wallet.dart';
 import 'package:web_dex/shared/utils/extensions/kdf_user_extensions.dart';
@@ -49,6 +50,7 @@ class WithdrawForm extends StatefulWidget {
 class _WithdrawFormState extends State<WithdrawForm> {
   late final WithdrawFormBloc _formBloc;
   late final _sdk = context.read<KomodoDefiSdk>();
+  late final _mm2Api = context.read<Mm2Api>();
 
   @override
   void initState() {
@@ -58,6 +60,7 @@ class _WithdrawFormState extends State<WithdrawForm> {
     _formBloc = WithdrawFormBloc(
       asset: widget.asset,
       sdk: _sdk,
+      mm2Api: _mm2Api,
       walletType: walletType,
     );
   }
