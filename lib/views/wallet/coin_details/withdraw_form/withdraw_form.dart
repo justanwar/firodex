@@ -699,7 +699,7 @@ class WithdrawFormConfirmSection extends StatelessWidget {
                             height: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(LocaleKeys.confirm.tr()),
+                        : Text(LocaleKeys.send.tr()),
                   ),
                 ),
               ],
