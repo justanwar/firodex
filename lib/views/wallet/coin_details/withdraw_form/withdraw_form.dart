@@ -25,6 +25,7 @@ import 'package:web_dex/views/wallet/coin_details/withdraw_form/widgets/fill_for
 import 'package:web_dex/views/wallet/coin_details/withdraw_form/widgets/fill_form/fields/fill_form_memo.dart';
 import 'package:web_dex/views/wallet/coin_details/withdraw_form/widgets/trezor_withdraw_progress_dialog.dart';
 import 'package:web_dex/views/wallet/coin_details/withdraw_form/widgets/withdraw_form_header.dart';
+import 'package:web_dex/views/wallet/coin_details/transactions/transaction_details.dart';
 
 bool _isMemoSupportedProtocol(Asset asset) {
   final protocol = asset.protocol;
@@ -80,7 +81,7 @@ class _WithdrawFormState extends State<WithdrawForm> {
           BlocListener<WithdrawFormBloc, WithdrawFormState>(
             listenWhen: (prev, curr) =>
                 prev.step != curr.step && curr.step == WithdrawFormStep.success,
-            listener: (context, state) {
+            listener: (context, state) async {
               final authBloc = context.read<AuthBloc>();
               final walletType = authBloc.state.currentUser?.type ?? '';
               context.read<AnalyticsBloc>().logEvent(
@@ -91,7 +92,6 @@ class _WithdrawFormState extends State<WithdrawForm> {
                   hdType: walletType,
                 ),
               );
-              widget.onSuccess();
             },
           ),
           BlocListener<WithdrawFormBloc, WithdrawFormState>(
@@ -141,6 +141,7 @@ class _WithdrawFormState extends State<WithdrawForm> {
         ],
         child: WithdrawFormContent(
           onBackButtonPressed: widget.onBackButtonPressed,
+          onSuccess: widget.onSuccess,
         ),
       ),
     );
@@ -149,8 +150,9 @@ class _WithdrawFormState extends State<WithdrawForm> {
 
 class WithdrawFormContent extends StatelessWidget {
   final VoidCallback? onBackButtonPressed;
+  final VoidCallback onSuccess;
 
-  const WithdrawFormContent({this.onBackButtonPressed, super.key});
+  const WithdrawFormContent({required this.onSuccess, this.onBackButtonPressed, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +191,7 @@ class WithdrawFormContent extends StatelessWidget {
       case WithdrawFormStep.confirm:
         return const WithdrawFormConfirmSection();
       case WithdrawFormStep.success:
-        return const WithdrawFormSuccessSection();
+        return WithdrawFormSuccessSection(onDone: onSuccess);
       case WithdrawFormStep.failed:
         return const WithdrawFormFailedSection();
     }
@@ -712,34 +714,38 @@ class WithdrawFormConfirmSection extends StatelessWidget {
 }
 
 class WithdrawFormSuccessSection extends StatelessWidget {
-  const WithdrawFormSuccessSection({super.key});
+  final VoidCallback onDone;
+
+  const WithdrawFormSuccessSection({required this.onDone, super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<WithdrawFormBloc, WithdrawFormState>(
       builder: (context, state) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              LocaleKeys.transactionSuccessful.tr(),
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            WithdrawResultDetails(result: state.result!),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(LocaleKeys.done.tr()),
-            ),
-          ],
+        // Build a temporary Transaction model matching history view expectations
+        final result = state.result!;
+        final tx = Transaction(
+          id: result.txHash,
+          internalId: result.txHash,
+          assetId: state.asset.id,
+          balanceChanges: result.balanceChanges,
+          // Show as unconfirmed initially
+          timestamp: DateTime.fromMillisecondsSinceEpoch(0),
+          confirmations: 0,
+          blockHeight: 0,
+          from: state.selectedSourceAddress != null
+              ? [state.selectedSourceAddress!.address]
+              : <String>[],
+          to: [result.toAddress],
+          txHash: result.txHash,
+          fee: result.fee,
+          memo: state.memo,
+        );
+
+        return TransactionDetails(
+          transaction: tx,
+          coin: state.asset.toCoin(),
+          onClose: onDone,
         );
       },
     );
