@@ -1,5 +1,6 @@
 import 'package:app_theme/app_theme.dart';
 import 'package:bloc/bloc.dart';
+import 'package:komodo_defi_framework/komodo_defi_framework.dart';
 import 'package:web_dex/bloc/settings/settings_event.dart';
 import 'package:web_dex/bloc/settings/settings_repository.dart';
 import 'package:web_dex/bloc/settings/settings_state.dart';
@@ -14,12 +15,18 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
         super(SettingsState.fromStored(stored)) {
     _storedSettings = stored;
     theme.mode = state.themeMode;
+    
+    // Initialize diagnostic logging with the stored setting
+    KdfLoggingConfig.verboseLogging = stored.diagnosticLoggingEnabled;
+    KdfApiClient.enableDebugLogging = stored.diagnosticLoggingEnabled;
+    KomodoDefiFramework.enableDebugLogging = stored.diagnosticLoggingEnabled;
 
     on<ThemeModeChanged>(_onThemeModeChanged);
     on<MarketMakerBotSettingsChanged>(_onMarketMakerBotSettingsChanged);
     on<TestCoinsEnabledChanged>(_onTestCoinsEnabledChanged);
     on<WeakPasswordsAllowedChanged>(_onWeakPasswordsAllowedChanged);
     on<HideZeroBalanceAssetsChanged>(_onHideZeroBalanceAssetsChanged);
+    on<DiagnosticLoggingChanged>(_onDiagnosticLoggingChanged);
   }
 
   late StoredSettings _storedSettings;
@@ -80,5 +87,22 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       ),
     );
     emitter(state.copyWith(hideZeroBalanceAssets: event.hideZeroBalanceAssets));
+  }
+
+  Future<void> _onDiagnosticLoggingChanged(
+    DiagnosticLoggingChanged event,
+    Emitter<SettingsState> emitter,
+  ) async {
+    // Update all diagnostic logging flags immediately
+    KdfLoggingConfig.verboseLogging = event.diagnosticLoggingEnabled;
+    KdfApiClient.enableDebugLogging = event.diagnosticLoggingEnabled;
+    KomodoDefiFramework.enableDebugLogging = event.diagnosticLoggingEnabled;
+    
+    await _settingsRepo.updateSettings(
+      _storedSettings.copyWith(
+        diagnosticLoggingEnabled: event.diagnosticLoggingEnabled,
+      ),
+    );
+    emitter(state.copyWith(diagnosticLoggingEnabled: event.diagnosticLoggingEnabled));
   }
 }
