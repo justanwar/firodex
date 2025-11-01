@@ -39,7 +39,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     if (materialPageContext == null) return;
     final newMode = event.mode;
     theme.mode = newMode;
-    await _settingsRepo.updateSettings(_storedSettings.copyWith(mode: newMode));
+    _storedSettings = _storedSettings.copyWith(mode: newMode);
+    await _settingsRepo.updateSettings(_storedSettings);
     changeHtmlTheme(newMode.index);
     emitter(state.copyWith(mode: newMode));
 
@@ -50,9 +51,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     MarketMakerBotSettingsChanged event,
     Emitter<SettingsState> emitter,
   ) async {
-    await _settingsRepo.updateSettings(
-      _storedSettings.copyWith(marketMakerBotSettings: event.settings),
-    );
+    _storedSettings = _storedSettings.copyWith(marketMakerBotSettings: event.settings);
+    await _settingsRepo.updateSettings(_storedSettings);
     emitter(state.copyWith(marketMakerBotSettings: event.settings));
   }
 
@@ -60,9 +60,8 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     TestCoinsEnabledChanged event,
     Emitter<SettingsState> emitter,
   ) async {
-    await _settingsRepo.updateSettings(
-      _storedSettings.copyWith(testCoinsEnabled: event.testCoinsEnabled),
-    );
+    _storedSettings = _storedSettings.copyWith(testCoinsEnabled: event.testCoinsEnabled);
+    await _settingsRepo.updateSettings(_storedSettings);
     emitter(state.copyWith(testCoinsEnabled: event.testCoinsEnabled));
   }
 
@@ -70,10 +69,9 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     WeakPasswordsAllowedChanged event,
     Emitter<SettingsState> emitter,
   ) async {
-    await _settingsRepo.updateSettings(
-      _storedSettings.copyWith(
-          weakPasswordsAllowed: event.weakPasswordsAllowed),
-    );
+    _storedSettings = _storedSettings.copyWith(
+        weakPasswordsAllowed: event.weakPasswordsAllowed);
+    await _settingsRepo.updateSettings(_storedSettings);
     emitter(state.copyWith(weakPasswordsAllowed: event.weakPasswordsAllowed));
   }
 
@@ -81,11 +79,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     HideZeroBalanceAssetsChanged event,
     Emitter<SettingsState> emitter,
   ) async {
-    await _settingsRepo.updateSettings(
-      _storedSettings.copyWith(
-        hideZeroBalanceAssets: event.hideZeroBalanceAssets,
-      ),
+    _storedSettings = _storedSettings.copyWith(
+      hideZeroBalanceAssets: event.hideZeroBalanceAssets,
     );
+    await _settingsRepo.updateSettings(_storedSettings);
     emitter(state.copyWith(hideZeroBalanceAssets: event.hideZeroBalanceAssets));
   }
 
@@ -98,11 +95,10 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
     KdfApiClient.enableDebugLogging = event.diagnosticLoggingEnabled;
     KomodoDefiFramework.enableDebugLogging = event.diagnosticLoggingEnabled;
     
-    await _settingsRepo.updateSettings(
-      _storedSettings.copyWith(
-        diagnosticLoggingEnabled: event.diagnosticLoggingEnabled,
-      ),
+    _storedSettings = _storedSettings.copyWith(
+      diagnosticLoggingEnabled: event.diagnosticLoggingEnabled,
     );
+    await _settingsRepo.updateSettings(_storedSettings);
     emitter(state.copyWith(diagnosticLoggingEnabled: event.diagnosticLoggingEnabled));
   }
 }
