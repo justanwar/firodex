@@ -19,7 +19,6 @@ struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
   GtkWindow* main_window;
-  FlView* flutter_view;
 };
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
@@ -27,7 +26,6 @@ G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
 static void on_window_destroy(GtkWidget* widget, gpointer user_data) {
   MyApplication* self = MY_APPLICATION(user_data);
   self->main_window = nullptr;
-  self->flutter_view = nullptr;
 }
 
 // Workaround for Flutter Linux shutdown issue (#132404)
@@ -109,7 +107,6 @@ static void my_application_activate(GApplication* application) {
   gtk_widget_grab_focus(GTK_WIDGET(view));
 
   self->main_window = window;
-  self->flutter_view = view;
   
   // Connect destroy signal
   g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), self);
@@ -147,8 +144,6 @@ static void my_application_dispose(GObject* object) {
     self->main_window = nullptr;
   }
 
-  self->flutter_view = nullptr;
-
   G_OBJECT_CLASS(my_application_parent_class)->dispose(object);
 }
 
@@ -160,7 +155,6 @@ static void my_application_class_init(MyApplicationClass* klass) {
 
 static void my_application_init(MyApplication* self) {
   self->main_window = nullptr;
-  self->flutter_view = nullptr;
 }
 
 MyApplication* my_application_new() {
