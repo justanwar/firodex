@@ -14,7 +14,7 @@ class SettingsRepository {
   static final _log = Logger('SettingsRepository');
 
   Future<StoredSettings> loadSettings() async {
-    return loadStoredSettings();
+    return loadStoredSettings(settingsStorage: _storage);
   }
 
   Future<void> updateSettings(StoredSettings settings) async {
@@ -28,8 +28,10 @@ class SettingsRepository {
     await _storage.write(storedSettingsKey, legacyData);
   }
 
-  static Future<StoredSettings> loadStoredSettings() async {
-    final storage = getStorage();
+  static Future<StoredSettings> loadStoredSettings({
+    BaseStorage? settingsStorage,
+  }) async {
+    final storage = settingsStorage ?? getStorage();
     try {
       // Prefer V2 settings if present
       final dynamic v2 = await storage.read(storedSettingsKeyV2);
