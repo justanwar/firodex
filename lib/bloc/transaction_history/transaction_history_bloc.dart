@@ -242,12 +242,6 @@ class TransactionHistoryBloc
     emit(state.copyWith(loading: false, error: event.error));
   }
 
-  DateTime _sortTime(Transaction tx) {
-    if (tx.timestamp.millisecondsSinceEpoch != 0) return tx.timestamp;
-    final firstSeen = _firstSeenAtById[tx.internalId];
-    return firstSeen ?? DateTime.fromMillisecondsSinceEpoch(0);
-  }
-
   int _compareTransactions(Transaction left, Transaction right) {
     final unconfirmedTimestamp = DateTime.fromMillisecondsSinceEpoch(0);
     if (right.timestamp == unconfirmedTimestamp) {
