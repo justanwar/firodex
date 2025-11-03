@@ -48,25 +48,6 @@ class SwapDetails extends StatelessWidget {
                 : swapStatus.takerAmount,
             swapId: swapStatus.uuid,
           ),
-          // Swap UUID row
-          Padding(
-            padding: const EdgeInsets.only(top: 12.0, bottom: 12.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Swap UUID'),
-                CopiedText(
-                  copiedValue: swapStatus.uuid,
-                  text: swapStatus.uuid,
-                  isCopiedValueShown: false,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  fontSize: 11,
-                  iconSize: 14,
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
