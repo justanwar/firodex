@@ -12,11 +12,12 @@ import 'package:web_dex/shared/widgets/copied_text.dart';
 /// button so users can easily copy it.  This version uses static strings
 /// instead of translation keys for the “Swap UUID” label.
 class SwapDetails extends StatelessWidget {
-  const SwapDetails({Key? key, required this.swapStatus, required this.isFailed})
+  const SwapDetails({Key? key, required this.swapStatus, required this.isFailed, this.belowUuid})
       : super(key: key);
 
   final Swap swapStatus;
   final bool isFailed;
+  final Widget? belowUuid;
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +48,7 @@ class SwapDetails extends StatelessWidget {
                 ? swapStatus.makerAmount
                 : swapStatus.takerAmount,
             swapId: swapStatus.uuid,
+            belowUuid: belowUuid,
           ),
           const SizedBox(height: 20),
           Column(

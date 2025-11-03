@@ -19,6 +19,7 @@ class TradingDetailsCoinPair extends StatelessWidget {
     required this.relAmount,
     this.swapId,
     this.isOrder = false,
+    this.belowUuid,
   }) : super(key: key);
   final String baseCoin;
   final Rational baseAmount;
@@ -26,6 +27,7 @@ class TradingDetailsCoinPair extends StatelessWidget {
   final Rational relAmount;
   final String? swapId;
   final bool isOrder;
+  final Widget? belowUuid;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +94,15 @@ class TradingDetailsCoinPair extends StatelessWidget {
               ),
             ],
           ),
+          if (swapId != null && belowUuid != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                belowUuid!,
+              ],
+            ),
+          ],
         ],
       ),
     );
