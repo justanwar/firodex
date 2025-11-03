@@ -223,11 +223,11 @@ Iterable<Coin> sortByPriority(Iterable<Coin> list) {
   return sortedList;
 }
 
-/// Sorts AssetId list with priority tickers first (alphabetically sorted),
-/// followed by other assets (also alphabetically sorted).
+/// Sorts AssetId list with priority tickers first (in order from list),
+/// followed by other assets (alphabetically sorted).
 /// 
 /// Priority tickers are defined in [unauthenticatedUserPriorityTickers].
-/// Priority assets are sorted alphabetically among themselves,
+/// Priority assets maintain their order from the priority list,
 /// then non-priority assets are sorted alphabetically.
 List<AssetId> sortAssetIdsWithPriority(List<AssetId> assetIds) {
   final sortedList = List<AssetId>.from(assetIds);
@@ -236,14 +236,22 @@ List<AssetId> sortAssetIdsWithPriority(List<AssetId> assetIds) {
     final String tickerA = a.symbol.configSymbol;
     final String tickerB = b.symbol.configSymbol;
     
-    final bool aIsPriority = unauthenticatedUserPriorityTickers.contains(tickerA);
-    final bool bIsPriority = unauthenticatedUserPriorityTickers.contains(tickerB);
+    final int indexA = unauthenticatedUserPriorityTickers.indexOf(tickerA);
+    final int indexB = unauthenticatedUserPriorityTickers.indexOf(tickerB);
+    
+    final bool aIsPriority = indexA != -1;
+    final bool bIsPriority = indexB != -1;
     
     // Priority assets come first
     if (aIsPriority && !bIsPriority) return -1;
     if (!aIsPriority && bIsPriority) return 1;
     
-    // If both are priority or both are not, sort alphabetically by ticker
+    // If both are priority, sort by their order in the priority list
+    if (aIsPriority && bIsPriority) {
+      return indexA.compareTo(indexB);
+    }
+    
+    // If both are not priority, sort alphabetically by ticker
     return tickerA.compareTo(tickerB);
   });
   
