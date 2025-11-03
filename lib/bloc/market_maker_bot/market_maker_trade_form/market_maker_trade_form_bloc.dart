@@ -98,6 +98,10 @@ class MarketMakerTradeFormBloc
 
     // Fetch max maker volume with fallback to swap address balance
     final maxMakerVolume = await _getMaxMakerVolumeWithFallback(event.sellCoin);
+    // Fetch coin-specific minimum trading volume
+    final minTradingVol = event.sellCoin == null
+        ? null
+        : await _dexRepository.getMinTradingVolume(event.sellCoin!.abbr);
 
     final maxMakerVolumeDouble = maxMakerVolume?.toDouble() ?? 0;
     final newSellAmount = CoinTradeAmountInput.dirty(
@@ -120,6 +124,7 @@ class MarketMakerTradeFormBloc
         sellAmount: newSellAmount,
         buyAmount: newBuyAmount,
         maxMakerVolume: maxMakerVolume,
+        minTradingVolume: minTradingVol,
         isLoadingMaxMakerVolume: false,
       ),
     );
@@ -266,6 +271,10 @@ class MarketMakerTradeFormBloc
 
     // Fetch max maker volume with fallback to swap address balance
     final maxMakerVolume = await _getMaxMakerVolumeWithFallback(sellCoin);
+    // Fetch coin-specific minimum trading volume for new base coin
+    final minTradingVol = sellCoin == null
+        ? null
+        : await _dexRepository.getMinTradingVolume(sellCoin.abbr);
 
     final maxMakerVolumeDouble = maxMakerVolume?.toDouble() ?? 0;
     final maxVolumeValue =
@@ -288,6 +297,7 @@ class MarketMakerTradeFormBloc
         sellAmount: CoinTradeAmountInput.dirty(newSellAmount.toString()),
         buyAmount: CoinTradeAmountInput.dirty(newBuyAmount.toString()),
         maxMakerVolume: maxMakerVolume,
+        minTradingVolume: minTradingVol,
         isLoadingMaxMakerVolume: false,
       ),
     );
@@ -347,6 +357,10 @@ class MarketMakerTradeFormBloc
 
     // Fetch max maker volume with fallback to swap address balance
     final maxMakerVolume = await _getMaxMakerVolumeWithFallback(sellCoin.value);
+    // Fetch coin-specific minimum trading volume for base coin
+    final minTradingVol = sellCoin.value == null
+        ? null
+        : await _dexRepository.getMinTradingVolume(sellCoin.value!.abbr);
 
     final maxMakerVolumeDouble = maxMakerVolume?.toDouble() ?? 0;
     final sellAmountFromVolume = maxTradeVolume * maxMakerVolumeDouble;
@@ -374,6 +388,7 @@ class MarketMakerTradeFormBloc
         tradeMargin: tradeMargin,
         updateInterval: updateInterval,
         maxMakerVolume: maxMakerVolume,
+        minTradingVolume: minTradingVol,
       ),
     );
 
@@ -429,10 +444,23 @@ class MarketMakerTradeFormBloc
 
     final preImage = await _getPreimageData(state);
     final preImageError = await _getPreImageError(preImage.error, state);
+    if (preImage.error is TradePreimageTransportError) {
+      // After retries, still transport error -> show raw error
+      emit(
+        state.copyWith(
+          status: MarketMakerTradeFormStatus.error,
+          rawErrorMessage: (preImage.error as TradePreimageTransportError)
+              .message,
+        ),
+      );
+      return;
+    }
+
     if (preImageError == MarketMakerTradeFormError.none) {
       return emit(
         state.copyWith(
           tradePreImage: preImage.data,
+          rawErrorMessage: null,
           status: MarketMakerTradeFormStatus.success,
         ),
       );
@@ -453,6 +481,7 @@ class MarketMakerTradeFormBloc
       state.copyWith(
         tradePreImage: preImage.data,
         preImageError: isInsufficientBaseBalance ? null : preImageError,
+        rawErrorMessage: null,
         sellAmount: isInsufficientBaseBalance
             ? CoinTradeAmountInput.dirty(newSellAmount.toString())
             : state.sellAmount,
@@ -532,8 +561,13 @@ class MarketMakerTradeFormBloc
       // if Rel coin has a parent, e.g. 1INCH-AVX-20, then the error is
       // due to insufficient balance of the parent coin
       return MarketMakerTradeFormError.insufficientBalanceRelParent;
-    } else if (preImageError is TradePreimageTransportError) {
+    } else if (preImageError is TradePreimageVolumeTooLowError) {
+      // Explicit VolumeTooLow should map to insufficient trade amount
       return MarketMakerTradeFormError.insufficientTradeAmount;
+    } else if (preImageError is TradePreimageTransportError) {
+      // Transport is a generic connectivity/transport layer issue; don't
+      // mislabel it as a min-volume problem
+      return MarketMakerTradeFormError.none;
     } else {
       return MarketMakerTradeFormError.none;
     }
@@ -556,13 +590,35 @@ class MarketMakerTradeFormBloc
         throw ArgumentError('Base and rel coins must be set');
       }
 
-      final preimageData = await _dexRepository.getTradePreimage(
+      // initial attempt
+      DataFromService<TradePreimage, BaseError> preimageData =
+          await _dexRepository.getTradePreimage(
         base,
         rel,
         price,
         'setprice',
         volume,
       );
+
+      // If transport error, retry every second up to 10 seconds while UI
+      // remains in loading state.
+      int attemptsLeft = 10;
+      while (preimageData.error is TradePreimageTransportError &&
+          attemptsLeft > 0) {
+        _log.warning(
+          'trade_preimage transport error for $base/$rel, retrying... '
+          '(${11 - attemptsLeft}/10)',
+        );
+        await Future<void>.delayed(const Duration(seconds: 1));
+        preimageData = await _dexRepository.getTradePreimage(
+          base,
+          rel,
+          price,
+          'setprice',
+          volume,
+        );
+        attemptsLeft--;
+      }
 
       return preimageData;
     } catch (e, s) {
