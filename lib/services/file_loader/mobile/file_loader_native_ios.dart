@@ -18,7 +18,11 @@ class FileLoaderNativeIOS implements FileLoader {
   }) async {
     switch (type) {
       case LoadFileType.text:
-        await _saveAsTextFile(fileName: fileName, data: data);
+        if (path.extension(fileName).toLowerCase() == '.json') {
+          await _saveAsJsonFile(fileName: fileName, data: data);
+        } else {
+          await _saveAsTextFile(fileName: fileName, data: data);
+        }
       case LoadFileType.compressed:
         await _saveAsCompressedFile(fileName: fileName, data: data);
     }
@@ -29,9 +33,32 @@ class FileLoaderNativeIOS implements FileLoader {
     required String data,
   }) async {
     final directory = await getApplicationDocumentsDirectory();
-    final filePath = path.join(directory.path, '$fileName.txt');
+    final String suggestedName =
+        path.extension(fileName).isEmpty ? '$fileName.txt' : fileName;
+    final filePath = path.join(directory.path, suggestedName);
     final File file = File(filePath);
     await file.writeAsString(data);
+
+    await Share.shareXFiles([XFile(file.path)]);
+  }
+
+  Future<void> _saveAsJsonFile({
+    required String fileName,
+    required String data,
+  }) async {
+    final directory = await getApplicationDocumentsDirectory();
+    final String suggestedName =
+        path.extension(fileName).isEmpty ? '$fileName.json' : fileName;
+    final filePath = path.join(directory.path, suggestedName);
+
+    String prettyData = data;
+    try {
+      final dynamic decoded = json.decode(data);
+      prettyData = const JsonEncoder.withIndent('  ').convert(decoded);
+    } catch (_) {}
+
+    final File file = File(filePath);
+    await file.writeAsString(prettyData);
 
     await Share.shareXFiles([XFile(file.path)]);
   }
