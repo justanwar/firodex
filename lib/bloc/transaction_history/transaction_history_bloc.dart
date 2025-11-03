@@ -249,10 +249,10 @@ class TransactionHistoryBloc
   }
 
   int _compareTransactions(Transaction left, Transaction right) {
-    final now = DateTime.now();
-    if (right.timestamp == now) {
+    final unconfirmedTimestamp = DateTime.fromMillisecondsSinceEpoch(0);
+    if (right.timestamp == unconfirmedTimestamp) {
       return 1;
-    } else if (left.timestamp == now) {
+    } else if (left.timestamp == unconfirmedTimestamp) {
       return -1;
     }
     return right.timestamp.compareTo(left.timestamp);
