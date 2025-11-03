@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:komodo_defi_types/komodo_defi_types.dart';
+import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/views/wallet/wallet_page/common/asset_list_item.dart';
 import 'package:web_dex/views/wallet/wallet_page/common/grouped_asset_ticker_item.dart';
 
@@ -95,9 +96,24 @@ class AssetsList extends StatelessWidget {
       groupedAssets.putIfAbsent(symbol, () => []).add(asset);
     }
 
-    return Map.fromEntries(
-      groupedAssets.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
-    );
+    // Sort groups: priority tickers first (alphabetically), then others (alphabetically)
+    final groups = groupedAssets.entries.toList();
+    groups.sort((a, b) {
+      final String tickerA = a.key;
+      final String tickerB = b.key;
+      
+      final bool aIsPriority = unauthenticatedUserPriorityTickers.contains(tickerA);
+      final bool bIsPriority = unauthenticatedUserPriorityTickers.contains(tickerB);
+      
+      // Priority tickers come first
+      if (aIsPriority && !bIsPriority) return -1;
+      if (!aIsPriority && bIsPriority) return 1;
+      
+      // If both are priority or both are not, sort alphabetically
+      return tickerA.compareTo(tickerB);
+    });
+
+    return Map.fromEntries(groups);
   }
 
   /// Filters assets based on search phrase

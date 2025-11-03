@@ -99,6 +99,17 @@ Map<String, int> priorityCoinsAbbrMap = {
   // All other coins get default priority (0)
 };
 
+/// Priority ticker symbols for unauthenticated users' asset list.
+/// These coins will appear first, sorted alphabetically, before other coins.
+const Set<String> unauthenticatedUserPriorityTickers = {
+  'BTC',
+  'KMD',
+  'DASH',
+  'LTC',
+  'ETH',
+  'BNB',
+};
+
 /// List of coins that are excluded from the list of coins displayed on the
 /// coin lists (e.g. wallet page, coin selection dropdowns, etc.)
 /// TODO: remove this list once zhltc and NFTs are fully supported in the SDK

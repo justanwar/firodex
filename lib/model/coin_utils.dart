@@ -1,5 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
+import 'package:komodo_defi_types/komodo_defi_types.dart';
+import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/mm2/mm2_api/rpc/orderbook_depth/orderbook_depth_response.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/model/coin_type.dart';
@@ -218,5 +220,32 @@ Iterable<Coin> sortByPriority(Iterable<Coin> list) {
     // Ensure deterministic ordering when priorities are equal
     return a.abbr.compareTo(b.abbr);
   });
+  return sortedList;
+}
+
+/// Sorts AssetId list with priority tickers first (alphabetically sorted),
+/// followed by other assets (also alphabetically sorted).
+/// 
+/// Priority tickers are defined in [unauthenticatedUserPriorityTickers].
+/// Priority assets are sorted alphabetically among themselves,
+/// then non-priority assets are sorted alphabetically.
+List<AssetId> sortAssetIdsWithPriority(List<AssetId> assetIds) {
+  final sortedList = List<AssetId>.from(assetIds);
+  
+  sortedList.sort((a, b) {
+    final String tickerA = a.symbol.configSymbol;
+    final String tickerB = b.symbol.configSymbol;
+    
+    final bool aIsPriority = unauthenticatedUserPriorityTickers.contains(tickerA);
+    final bool bIsPriority = unauthenticatedUserPriorityTickers.contains(tickerB);
+    
+    // Priority assets come first
+    if (aIsPriority && !bIsPriority) return -1;
+    if (!aIsPriority && bIsPriority) return 1;
+    
+    // If both are priority or both are not, sort alphabetically by ticker
+    return tickerA.compareTo(tickerB);
+  });
+  
   return sortedList;
 }
