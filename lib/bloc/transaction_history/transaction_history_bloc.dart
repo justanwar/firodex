@@ -112,6 +112,9 @@ class TransactionHistoryBloc
                   blockHeight: sanitized.blockHeight,
                   fee: sanitized.fee ?? existing.fee,
                   memo: sanitized.memo ?? existing.memo,
+                  // Update the timestamp to change date from "Now" once tx
+                  // is confirmed on the blockchain
+                  timestamp: sanitized.timestamp,
                 );
               }
 
@@ -192,6 +195,9 @@ class TransactionHistoryBloc
                 blockHeight: sanitized.blockHeight,
                 fee: sanitized.fee ?? existing.fee,
                 memo: sanitized.memo ?? existing.memo,
+                // Update the timestamp to change date from "Now" once tx
+                // is confirmed on the blockchain
+                timestamp: sanitized.timestamp,
               );
             }
 
