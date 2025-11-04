@@ -63,7 +63,7 @@ class _SwapDetailsPageState extends State<SwapDetailsPage> {
             backgroundColor: theme.custom.subCardBackgroundColor,
             fontWeight: FontWeight.w500,
             fontSize: 11,
-            text: 'Export swap data',
+            text: LocaleKeys.exportSwapData.tr(),
             icon: _isExporting
                 ? const UiSpinner()
                 : Icon(

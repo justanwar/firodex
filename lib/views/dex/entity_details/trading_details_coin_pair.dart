@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:rational/rational.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/bloc/coins_bloc/coins_repo.dart';
+import 'package:web_dex/generated/codegen_loader.g.dart';
 import 'package:web_dex/model/coin.dart';
 import 'package:web_dex/shared/widgets/coin_item/coin_item.dart';
 import 'package:web_dex/shared/widgets/coin_item/coin_item_size.dart';
@@ -83,7 +85,9 @@ class TradingDetailsCoinPair extends StatelessWidget {
               Flexible(
                 child: CopiedText(
                   key: Key('uuid-${swapId}'),
-                  text: isOrder ? 'Order UUID: ${swapId}' : 'Swap UUID: ${swapId}',
+                  text: isOrder
+                      ? LocaleKeys.orderUuid.tr(args: [swapId])
+                      : LocaleKeys.swapUuid.tr(args: [swapId]),
                   copiedValue: swapId,
                   isCopiedValueShown: false,
                   padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
