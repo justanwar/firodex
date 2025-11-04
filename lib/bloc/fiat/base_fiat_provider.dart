@@ -128,6 +128,8 @@ abstract class BaseFiatProvider {
         return 'FTM';
       case CoinType.arb20:
         return 'ARB';
+      case CoinType.base20:
+        return 'BASE';
       case CoinType.hrc20:
         return 'HARMONY';
       case CoinType.plg20:
