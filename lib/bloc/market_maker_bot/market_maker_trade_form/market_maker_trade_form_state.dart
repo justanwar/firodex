@@ -32,6 +32,8 @@ class MarketMakerTradeFormState extends Equatable with FormzMixin {
     this.tradePreImageError,
     this.tradePreImage,
     this.maxMakerVolume,
+    this.minTradingVolume,
+    this.rawErrorMessage,
     this.isLoadingMaxMakerVolume = false,
   });
 
@@ -49,6 +51,8 @@ class MarketMakerTradeFormState extends Equatable with FormzMixin {
       tradePreImageError = null,
       tradePreImage = null,
       maxMakerVolume = null,
+      minTradingVolume = null,
+      rawErrorMessage = null,
       isLoadingMaxMakerVolume = false;
 
   /// The coin being sold in the trade pair (base coin).
@@ -92,6 +96,15 @@ class MarketMakerTradeFormState extends Equatable with FormzMixin {
   /// The maximum maker volume available for swaps for the sell coin.
   /// This value is fetched from the DEX API and cached in the state.
   final Rational? maxMakerVolume;
+
+  /// The minimum trading volume required by the base coin (sell coin).
+  /// Retrieved from the DEX API `min_trading_vol` for clearer validation
+  /// and error messaging.
+  final Rational? minTradingVolume;
+
+  /// Raw error message for displaying unparsed backend errors to users when
+  /// a generic/transport failure persists after retries.
+  final String? rawErrorMessage;
 
   /// Indicates whether the max maker volume is currently being fetched.
   final bool isLoadingMaxMakerVolume;
@@ -172,6 +185,8 @@ class MarketMakerTradeFormState extends Equatable with FormzMixin {
     MarketMakerTradeFormStage? stage,
     TradePreimage? tradePreImage,
     Rational? maxMakerVolume,
+    Rational? minTradingVolume,
+    String? rawErrorMessage,
     bool? isLoadingMaxMakerVolume,
   }) {
     return MarketMakerTradeFormState(
@@ -188,6 +203,8 @@ class MarketMakerTradeFormState extends Equatable with FormzMixin {
       stage: stage ?? this.stage,
       tradePreImage: tradePreImage ?? this.tradePreImage,
       maxMakerVolume: maxMakerVolume ?? this.maxMakerVolume,
+      minTradingVolume: minTradingVolume ?? this.minTradingVolume,
+      rawErrorMessage: rawErrorMessage ?? this.rawErrorMessage,
       isLoadingMaxMakerVolume:
           isLoadingMaxMakerVolume ?? this.isLoadingMaxMakerVolume,
     );
@@ -244,6 +261,8 @@ class MarketMakerTradeFormState extends Equatable with FormzMixin {
     status,
     tradePreImage,
     maxMakerVolume,
+    minTradingVolume,
+    rawErrorMessage,
     isLoadingMaxMakerVolume,
   ];
 }
