@@ -374,6 +374,21 @@ class CoinsManagerBloc extends Bloc<CoinsManagerEvent, CoinsManagerState> {
     final selectedCoinIds = result.map((c) => c.id.id).toSet();
 
     for (final walletCoin in walletCoins) {
+      // Do not pre-select ZHTLC coins without saved configuration.
+      // This ensures toggles remain OFF if auto-activation was bypassed.
+      if (walletCoin.id.subClass == CoinSubClass.zhtlc) {
+        try {
+          final saved =
+              await _sdk.activationConfigService.getSavedZhtlc(walletCoin.id);
+          if (saved == null) {
+            continue;
+          }
+        } catch (_) {
+          // On any error, be conservative and keep toggle OFF
+          continue;
+        }
+      }
+
       if (!selectedCoinIds.contains(walletCoin.id.id)) {
         result.add(walletCoin);
       }
