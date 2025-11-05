@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:web_dex/common/screen.dart';
+import 'package:web_dex/app_config/app_config.dart';
 import 'package:web_dex/services/file_loader/file_loader.dart';
 import 'package:web_dex/shared/utils/zip.dart';
 
@@ -13,7 +13,7 @@ class FileLoaderNativeIOS implements FileLoader {
   const FileLoaderNativeIOS();
 
   Rect? _getSharePositionOrigin() {
-    final context = materialPageContext;
+    final context = scaffoldKey.currentContext;
     if (context == null) return null;
 
     final box = context.findRenderObject() as RenderBox?;
