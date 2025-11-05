@@ -744,6 +744,7 @@ abstract class  LocaleKeys {
   static const trend7d = 'trend7d';
   static const tradingDisabledTooltip = 'tradingDisabledTooltip';
   static const tradingDisabled = 'tradingDisabled';
+  static const nftDisabledTooltip = 'nftDisabledTooltip';
   static const includeBlockedAssets = 'includeBlockedAssets';
   static const unbanPubkeysResults = 'unbanPubkeysResults';
   static const unbannedPubkeys = 'unbannedPubkeys';
