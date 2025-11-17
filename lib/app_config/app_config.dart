@@ -141,11 +141,6 @@ const List<String> appWalletOnlyAssetList = [
 /// This will not affect existing wallets.
 /// Reduced to only KMD to minimize initial connections and resource usage.
 List<String> get enabledByDefaultCoins => [
-<<<<<<< HEAD
-  'KMD', // Komodo ecosystem coin
-  'BTC-segwit' // Default Fiat Ramps coin
-];
-=======
       'BTC-segwit',
       'FIRO',
       'USDT-PLG20',
@@ -159,7 +154,6 @@ List<String> get enabledByDefaultCoins => [
       if (kDebugMode) 'DOC',
       if (kDebugMode) 'MARTY',
     ];
->>>>>>> a0a78857f (Set FIRO to default)
 
 const String logsDbName = 'logs';
 const String appFolder = 'KomodoWallet';
