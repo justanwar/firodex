@@ -188,7 +188,7 @@ class CoinsManagerBloc extends Bloc<CoinsManagerEvent, CoinsManagerState> {
             ? state.selectedCoinTypes
                 .where((type) => type != event.type)
                 .toList()
-            : [...state.selectedCoinTypes, event.type];
+        : [...state.selectedCoinTypes, event.type];
 
     emit(state.copyWith(selectedCoinTypes: newTypes));
 
