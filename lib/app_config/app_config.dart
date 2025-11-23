@@ -44,6 +44,11 @@ const Duration kPerformanceLogInterval = Duration(minutes: 1);
 /// - Balance and price update polling
 const bool kDebugElectrumLogs = true;
 
+/// Temporary failure simulation toggles for testing UI/flows.
+/// Guarded by kDebugMode in calling sites.
+const bool kSimulateBestOrdersFailure = false;
+const double kSimulatedBestOrdersFailureRate = 0.5; // 50%
+
 // This information is here because it is not contextual and is branded.
 // Names of their own are not localized. Also, the application is initialized before
 // the localization package is initialized.
@@ -98,6 +103,20 @@ Map<String, int> priorityCoinsAbbrMap = {
 
   // All other coins get default priority (0)
 };
+
+/// Priority ticker symbols for unauthenticated users' asset list.
+/// These coins will appear first in the order specified here, before other coins.
+/// Order matters: coins are displayed in the order they appear in this list.
+const List<String> unauthenticatedUserPriorityTickers = [
+  'BTC',
+  'KMD',
+  'ETH',
+  'BNB',
+  'LTC',
+  'DASH',
+  'ZEC',
+  'DOGE',
+];
 
 /// List of coins that are excluded from the list of coins displayed on the
 /// coin lists (e.g. wallet page, coin selection dropdowns, etc.)
