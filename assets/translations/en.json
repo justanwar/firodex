@@ -148,7 +148,7 @@
   "settingsMenuSecurity": "Security",
   "settingsMenuAbout": "About",
   "seedPhraseSettingControlsViewSeed": "View seed phrase",
-  "seedPhraseSettingControlsDownloadSeed": "Download seed phrase file",
+  "seedPhraseSettingControlsDownloadSeed": "Download as file",
   "debugSettingsResetActivatedCoins": "Reset activated coins",
   "debugSettingsDownloadButton": "Download logs",
   "or": "Or",
