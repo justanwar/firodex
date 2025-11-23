@@ -482,7 +482,9 @@ class WithdrawFormBloc extends Bloc<WithdrawFormEvent, WithdrawFormState> {
         throw Exception('Missing withdrawal preview');
       }
 
-      // Execute the previewed withdrawal (transaction already signed during preview)
+      // Execute the previewed withdrawal: the transaction was already signed during preview,
+      // so executeWithdrawal() will NOT sign again. It simply broadcasts the pre-signed transaction,
+      // preserving the key behavior from the previous implementation.
       WithdrawalResult? result;
       await for (final progress in _sdk.withdrawals.executeWithdrawal(
         preview,
@@ -498,7 +500,14 @@ class WithdrawFormBloc extends Bloc<WithdrawFormEvent, WithdrawFormState> {
       }
 
       if (result == null) {
-        throw Exception('Withdrawal completed without result');
+        emit(
+          state.copyWith(
+            isSending: false,
+            transactionError: () => TextError('Withdrawal did not complete: no result received.'),
+            isAwaitingTrezorConfirmation: false,
+          ),
+        );
+        return;
       }
 
       emit(
