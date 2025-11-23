@@ -63,7 +63,7 @@
   "transactionComplete": "Transaction complete!",
   "transactionDenied": "Denied",
   "coinDisableSpan1": "You can't disable {} while it has a swap in progress",
-  "confirmSending": "Confirm withdrawl",
+  "confirmSending": "Confirm withdrawal",
   "confirmSend": "Confirm send",
   "confirm": "Confirm",
   "confirmed": "Confirmed",
