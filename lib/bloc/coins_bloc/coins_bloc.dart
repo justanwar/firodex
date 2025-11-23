@@ -523,9 +523,17 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
         .map((assetsSet) => assetsSet.single);
 
     // Filter out blocked assets
-    final coinsToActivate = _tradingStatusService.filterAllowedAssets(
+    var coinsToActivate = _tradingStatusService.filterAllowedAssets(
       availableAssets.toList(),
     );
+
+    // During initial login auto-activation, skip ZHTLC assets that would
+    // trigger configuration dialogs (i.e. no saved configuration yet).
+    if (_isInitialActivationInProgress) {
+      coinsToActivate = await _filterAssetsForInitialActivation(
+        coinsToActivate,
+      );
+    }
 
     final enableFutures = coinsToActivate
         .map((asset) => _coinsRepo.activateAssetsSync([asset]))
@@ -534,6 +542,41 @@ class CoinsBloc extends Bloc<CoinsEvent, CoinsState> {
     // Ignore the return type here and let the broadcast handle the state updates as
     // coins are activated.
     await Future.wait(enableFutures);
+  }
+
+  /// Filters assets for initial auto-activation on login.
+  ///
+  /// - Keeps all non-ZHTLC assets
+  /// - Keeps ZHTLC assets only if a saved configuration already exists
+  Future<List<Asset>> _filterAssetsForInitialActivation(
+    List<Asset> assets,
+  ) async {
+    final filtered = <Asset>[];
+    for (final asset in assets) {
+      if (asset.id.subClass != CoinSubClass.zhtlc) {
+        filtered.add(asset);
+        continue;
+      }
+
+      try {
+        final saved =
+            await _kdfSdk.activationConfigService.getSavedZhtlc(asset.id);
+        if (saved != null) {
+          filtered.add(asset);
+        } else {
+          _log.info(
+            'Skipping auto-activation of ZHTLC asset ${asset.id.id} during login: no saved configuration found',
+          );
+        }
+      } catch (e, s) {
+        _log.shout(
+          'Error checking saved ZHTLC configuration for ${asset.id.id}',
+          e,
+          s,
+        );
+      }
+    }
+    return filtered;
   }
 
   CoinsState _prePopulateListWithActivatingCoins(Iterable<String> coins) {

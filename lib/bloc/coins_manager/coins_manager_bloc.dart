@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart' show Bloc, Emitter;
 import 'package:komodo_defi_sdk/komodo_defi_sdk.dart';
+import 'package:komodo_defi_types/komodo_defi_types.dart' show CoinSubClass;
 import 'package:komodo_ui_kit/komodo_ui_kit.dart';
 import 'package:logging/logging.dart';
 import 'package:web_dex/analytics/events/portfolio_events.dart';
@@ -374,6 +375,21 @@ class CoinsManagerBloc extends Bloc<CoinsManagerEvent, CoinsManagerState> {
     final selectedCoinIds = result.map((c) => c.id.id).toSet();
 
     for (final walletCoin in walletCoins) {
+      // Do not pre-select ZHTLC coins without saved configuration.
+      // This ensures toggles remain OFF if auto-activation was bypassed.
+      if (walletCoin.id.subClass == CoinSubClass.zhtlc) {
+        try {
+          final saved =
+              await _sdk.activationConfigService.getSavedZhtlc(walletCoin.id);
+          if (saved == null) {
+            continue;
+          }
+        } catch (_) {
+          // On any error, be conservative and keep toggle OFF
+          continue;
+        }
+      }
+
       if (!selectedCoinIds.contains(walletCoin.id.id)) {
         result.add(walletCoin);
       }
