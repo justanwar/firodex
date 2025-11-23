@@ -503,7 +503,9 @@ class WithdrawFormBloc extends Bloc<WithdrawFormEvent, WithdrawFormState> {
         emit(
           state.copyWith(
             isSending: false,
-            transactionError: () => TextError('Withdrawal did not complete: no result received.'),
+            transactionError: () => TextError(
+              error: 'Withdrawal did not complete: no result received.'
+            ),
             isAwaitingTrezorConfirmation: false,
           ),
         );
