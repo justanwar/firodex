@@ -10,20 +10,16 @@ const double mainLayoutPadding = 29;
 const double appBarHeight = 70;
 const int scaleOnInfinitePrecision = 20; // ETH has 18 decimals, so use more
 const String allWalletsStorageKey = 'all-wallets';
-const String defaultDexCoin = 'GLEEC';
+const String defaultDexCoin = 'FIRO';
 const String trezorWalletNamePrefix = 'my trezor';
 const List<Locale> localeList = [Locale('en')];
 const String assetsPath = 'assets';
 const String coinsAssetsPath = 'packages/komodo_defi_framework/assets';
 
-// Note: GLEEC does not appear to have a public Discord server.
-// Using info@gleec.com as primary support contact.
 final Uri discordSupportChannelUrl = Uri.parse(
-  'mailto:info@gleec.com?subject=GLEEC%20Wallet%20Support',
+  'https://discord.com/channels/412898016371015680/429676282196787200',
 );
-final Uri discordInviteUrl = Uri.parse(
-  'https://www.gleec.com/contact',
-);
+final Uri discordInviteUrl = Uri.parse('https://komodoplatform.com/discord');
 
 /// Const to define if Bitrefill integration is enabled in the app.
 const bool isBitrefillIntegrationEnabled = false;
@@ -56,20 +52,18 @@ const double kSimulatedBestOrdersFailureRate = 0.5; // 50%
 // This information is here because it is not contextual and is branded.
 // Names of their own are not localized. Also, the application is initialized before
 // the localization package is initialized.
-String get appTitle => 'GLEEC Wallet | Non-Custodial Multi-Coin Wallet & DEX';
-String get appShortTitle => 'GLEEC Wallet';
+String get appTitle => 'FiroDEX Wallet | Non-Custodial Multi-Coin Wallet & DEX';
+String get appShortTitle => 'FiroDEX Wallet';
 
 Map<String, int> priorityCoinsAbbrMap = {
-  // GLEEC has highest priority for GLEEC Wallet
-  'GLEEC': 1000,
-
-  // KMD has high priority (Komodo ecosystem)
-  'KMD': 900,
+  // FIRO always has highest priority
+  'FIRO': 1000,
 
   // Top 10 cryptocurrencies by market cap (as of current data)
   // Rank 1: Bitcoin (~$2.21 trillion)
   'BTC': 100,
   'BTC-segwit': 100,
+  'KMD': 100,
 
   // Rank 2: Ethereum (~$335 billion)
   'ETH': 90,
@@ -115,7 +109,6 @@ Map<String, int> priorityCoinsAbbrMap = {
 /// These coins will appear first in the order specified here, before other coins.
 /// Order matters: coins are displayed in the order they appear in this list.
 const List<String> unauthenticatedUserPriorityTickers = [
-  'GLEEC',
   'BTC',
   'KMD',
   'ETH',
@@ -145,7 +138,7 @@ const Set<String> excludedAssetList = {
   'SMTF-v2',
   'SFUSD',
 
-  // NFT v2 coins: https://github.com/GLEECBTC/coins/pull/1061 will be
+  // NFT v2 coins: https://github.com/KomodoPlatform/coins/pull/1061 will be
   // used in the background, so users do not need to see them.
   'NFT_ETH',
   'NFT_AVAX',
@@ -190,15 +183,23 @@ const List<String> appWalletOnlyAssetList = [
 
 /// Coins that are enabled by default on restore from seed or registration.
 /// This will not affect existing wallets.
-/// Reduced to minimize initial connections and resource usage.
+/// Reduced to only KMD to minimize initial connections and resource usage.
 List<String> get enabledByDefaultCoins => [
-  'GLEEC', // GLEEC ecosystem coin
-  'KMD', // Komodo ecosystem coin
+  'FIRO', // FIRO default coin
+  'KMD',  // KMD default coin
   'BTC-segwit', // Default Fiat Ramps coin
+  'USDT-PLG20',
+  'KMD',
+  'LTC-segwit',
+  'ETH',
+  'MATIC',
+  'BNB',
+  'AVAX',
+  'FTM'
 ];
 
 const String logsDbName = 'logs';
-const String appFolder = 'GleecWallet';
+const String appFolder = 'KomodoWallet';
 
 Future<String> get applicationDocumentsDirectory async => kIsWeb
     ? appFolder
