@@ -7,36 +7,36 @@
     <meta content="IE=Edge" http-equiv="X-UA-Compatible">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="description"
-        content="Trade, store, send, receive, and access fiat on-ramp across multiple blockchains with Gleec Dex.">
-    <title>Gleec Dex | Non-Custodial Multi-Coin Wallet &amp; DEX</title><!-- Open Graph Protocol -->
-    <meta property="og:site_name" content="Gleec Dex" />
+        content="Start using FiroDEX Wallet directly from your web browser. Buy crypto with fiat, and store, send, and/or receive crypto and NFTs across multiple blockchains.">
+    <title>FiroDEX Wallet | Non-Custodial Multi-Coin Wallet & DEX</title><!-- Open Graph Protocol -->
+    <meta property="og:site_name" content="FiroDEX Wallet" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Gleec Dex | Non-Custodial Multi-Coin Wallet &amp; DEX" />
+    <meta property="og:title" content="FiroDEX Wallet | Non-Custodial Multi-Coin Wallet & DEX" />
     <meta property="og:description"
-        content="Trade, store, send, receive, and access fiat on-ramp across multiple blockchains with Gleec Dex." />
+        content="Start using FiroDEX Wallet directly from your web browser. Buy crypto with fiat, and store, send, and/or receive crypto and NFTs across multiple blockchains." />
     <meta property="og:image" content="/thumbnail-dex-v2.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Gleec Dex social preview card" /><!-- Twitter Card -->
+    <meta property="og:image:alt" content="FiroDEX Wallet social preview card" /><!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Gleec Dex | Non-Custodial Multi-Coin Wallet &amp; DEX" />
+    <meta name="twitter:title" content="FiroDEX Wallet | Non-Custodial Multi-Coin Wallet & DEX" />
     <meta name="twitter:description"
-        content="Trade, store, send, receive, and access fiat on-ramp across multiple blockchains with Gleec Dex." />
-    <meta name="twitter:site" content="@GleecOfficial" />
+        content="Start using FiroDEX Wallet directly from your web browser. Buy crypto with fiat, and store, send, and/or receive crypto and NFTs across multiple blockchains." />
+    <meta name="twitter:site" content="@firoorg" />
     <meta name="twitter:image" content="/thumbnail-dex-v2.jpg" />
-    <meta name="twitter:image:alt" content="Gleec Dex social preview card" /><!-- iOS meta tags & icons -->
+    <meta name="twitter:image:alt" content="FiroDEX Wallet social preview card" /><!-- iOS meta tags & icons -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Gleec Dex">
+    <meta name="apple-mobile-web-app-title" content="FiroDEX Wallet">
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="manifest" href="manifest.json">
     <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#8C41FF">
     <link rel="shortcut icon" href="/favicon.ico">
-    <meta name="msapplication-TileColor" content="#8C41FF">
+    <meta name="msapplication-TileColor" content="#0175c2">
     <meta name="msapplication-config" content="/icons/browserconfig.xml">
-    <meta name="theme-color" content="#8C41FF">
+    <meta name="theme-color" content="#ffffff">
     <!-- Preload coin configs. This will no longer be needed in the near future when build-time coins are removed -->
     <link rel="preload" as="fetch" href="assets/packages/komodo_defi_framework/assets/config/coins.json" crossorigin>
     <link rel="preload" as="fetch" href="assets/packages/komodo_defi_framework/assets/config/coins_config.json"
@@ -52,22 +52,24 @@
     <script type="application/ld+json">{
             "@context": "https://schema.org",
             "@type": "WebApplication",
-            "name": "Gleec Dex",
-            "url": "https://dex.gleec.com/dex",
-            "description": "Trade, store, send, receive, and access fiat on-ramp across multiple blockchains with Gleec Dex.",
+            "name": "FiroDEX Wallet",
+            "url": "",
+            "description": "Start using FiroDEX Wallet directly from your web browser. Buy crypto with fiat, and store, send, and/or receive crypto and NFTs across multiple blockchains.",
             "applicationCategory": "FinanceApplication",
             "operatingSystem": "All",
-            "maintainer": {
+            maintainer: {
                 "@type": "Organization",
-                "name": "GLEEC",
-                "url": "https://www.gleec.com",
-                "email": "info@gleec.com",
+                "name": "Firo",
+                "url": "https://firo.org/",
+                "email": "",
+                "logo": "https://firo.org/img/firo-icon.svg",
                 "sameAs": [
-                    "https://x.com/GleecOfficial",
-                    "https://www.instagram.com/gleecofficial/",
-                    "https://www.linkedin.com/company/gleec/"
+                    "https://x.com/firoorg",
+                    "https://www.reddit.com/r/FiroProject/",
+                    "https://www.youtube.com/@Firoorg",
+                    "https://github.com/firoorg"
                     ],
-                "description": "GLEEC is a multi-chain cryptocurrency platform providing secure wallet and DEX solutions."
+                "description": "Firo (formerly known as Zcoin) is a privacy focused cryptocurrency that utilizes the Lelantus Spark protocol which supports high anonymity sets without requiring trusted setup and relying on standard cryptographic assumptions.",
               }
         }</script>
 </head>
@@ -80,7 +82,7 @@
         }
 
         body.dark {
-            background-color: #202337
+            background-color: #121420
         }
     </style>
     <script>var queryParams = new URLSearchParams(window.location.search), theme = queryParams.get("brightness"); theme ||= window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light", document.body.classList.add(theme)</script>
@@ -105,7 +107,6 @@
 
             #loading img {
                 animation: 1s ease-in-out 0s infinite alternate breathe;
-                border-radius: 50%;
                 opacity: .9;
                 transition: opacity .4s
             }
@@ -138,8 +139,8 @@
                     transform: scale(.01)
                 }
             }
-        </style><img src="/icons/logo_icon.webp" width="192" height="192"
-            alt="Gleec Dex is starting... Please wait." />
+        </style><img src="/icons/logo_icon.png" width="192" height="192"
+            alt="FiroDEX Wallet is starting... Please wait." />
     </div>
     <script
         async="false">window.addEventListener("DOMContentLoaded", (d => { const initWasm = window.kdf && window.kdf.init_wasm ? window.kdf.init_wasm : window.init_wasm; console.log("DOM fully loaded and parsed"), initWasm && !0 !== window.is_mm2_preload_busy && (window.is_mm2_preload_busy = !0, initWasm().then((() => { window.is_mm2_preloaded = !0 })).finally((() => { window.is_mm2_preload_busy = !1 }))) }))</script>
