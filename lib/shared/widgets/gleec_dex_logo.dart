@@ -5,7 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:web_dex/app_config/app_config.dart';
 
 /// The brand purple color used for the icon and "DEX" text.
-const Color gleecPurple = Color(0xFF8C41FF);
+const Color gleecPurple = Color(0xFF7C1624);
 
 /// A widget that displays the GLEEC DEX logo consisting of:
 /// - Purple G icon on the left
@@ -64,14 +64,14 @@ class GleecDexLogo extends StatelessWidget {
             width: iconSize,
             height: iconSize,
           ),
-          SizedBox(width: iconTextSpacing),
+          //SizedBox(width: iconTextSpacing),
 
           // GLEEC wordmark (theme-aware)
           SvgPicture.asset(
             '$assetsPath/logo/logo$themePostfix.svg',
             height: textHeight,
           ),
-          SizedBox(width: wordmarkDexSpacing),
+          //SizedBox(width: wordmarkDexSpacing),
 
           // Small offset to align DEX baseline with GLEEC wordmark
           Transform.translate(
